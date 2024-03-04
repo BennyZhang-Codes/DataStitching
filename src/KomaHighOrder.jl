@@ -16,13 +16,15 @@ include("simulation/HO_simulate.jl")
 include("datatypes/HO_Sequence.jl")
 
 include("simulation/HO_DiscreteSequence.jl") # include HO_Sequence
-include("ui/DisplayFunctions.jl")
+include("plot/HO_plot_seq.jl")
+include("plot/HO_plot_seqd.jl")
 
 export HO_signal_to_raw_data
 export HO_DiscreteSequence, HO_discretize
 export HO_Sequence
 export HO_simulate
-export HO_plot_seq, HO_plot_seqd
+export HO_plot_seq
+export HO_plot_seqd, HO_plot_hoseqd
 
 #Package version, KomaMRI.__VERSION__
 using Pkg
