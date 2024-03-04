@@ -14,6 +14,7 @@ GR_skope = reshape([KomaMRIBase.Grad(skopeStitched[idx,:], t, 0, 0, 0) for idx=1
 hoseq = HO_Sequence(seq)
 hoseq.GR_skope[:,8] = GR_skope
 HO_plot_hoseqd(hoseq)
+HO_plot_seq(hoseq)
 
 
 sim_params=KomaMRICore.default_sim_params()
