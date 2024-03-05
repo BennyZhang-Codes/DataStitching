@@ -4,20 +4,26 @@ module KomaHighOrder
 import Base.*, Base.+, Base.-, Base./, Base.vcat, Base.size, Base.abs, Base.getproperty, Base.copy
 # IMPORT PACKAGES
 using CUDA, Interpolations, PlotlyJS
+using ThreadsX
+# Printing
+using ProgressMeter
 using Reexport
 @reexport using KomaMRI
+
+import KomaMRI.KomaMRICore: SimulationMethod, SpinStateRepresentation
 @reexport import MAT
+import Functors: @functor
 
-export greet
-greet() = print("Hello World!")
+include("datatypes/Sequence.jl")
+include("mrd/signal_to_raw_data.jl")
 
-include("mrd/HO_signal_to_raw_data.jl")
-include("simulation/HO_simulate.jl")
-include("datatypes/HO_Sequence.jl")
-
-include("simulation/HO_DiscreteSequence.jl") # include HO_Sequence
-include("plot/HO_plot_seq.jl")
-include("plot/HO_plot_seqd.jl")
+include("simulation/DiscreteSequence.jl") # include HO_Sequence
+include("simulation/Simulate.jl")
+include("simulation/SimulatorCore.jl")
+include("simulation/Bloch/BlochSimulatitonMethod.jl")
+include("simulation/Bloch/HO1BlochSimulatitonMethod.jl")
+include("plot/plot_seq.jl")
+include("plot/plot_seqd.jl")
 
 export HO_signal_to_raw_data
 export HO_DiscreteSequence, HO_discretize

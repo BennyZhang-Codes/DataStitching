@@ -24,3 +24,4 @@ end
 # Perform reconstruction to get the image
 image = reconstruct_2d_image(raw)
 plot_image(image)
+plot_signal(raw)

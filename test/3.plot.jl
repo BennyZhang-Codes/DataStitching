@@ -46,6 +46,6 @@ config = PlotConfig(
 
 KomaMRIPlots.plot_koma([Gx,Gy,Gz]; config)
 HO_plot_hoseqd(hoseq;width=1200,height=200)
-open("C:/Users/82357/Desktop/p.html", "w") do io
+open("C:/Users/82357/Desktop/plot_hoseq.html", "w") do io
     PlotlyBase.to_html(io, p.plot)
     end

@@ -20,7 +20,7 @@ times. DiscreteSequence is the struct used for simulation.
 - `hoseqd`: (`::HO_DiscreteSequence`) HO_DiscreteSequence struct
 """
 struct HO_DiscreteSequence{T<:Real}
-    seqd::DiscreteSequence
+    seqd::DiscreteSequence{T}
     h0::AbstractVector{T}
     h1::AbstractVector{T}
     h2::AbstractVector{T}
@@ -31,6 +31,47 @@ struct HO_DiscreteSequence{T<:Real}
     h7::AbstractVector{T}
     h8::AbstractVector{T}
 end
+@functor HO_DiscreteSequence
+
+Base.length(hoseqd::HO_DiscreteSequence) = length(hoseqd.seqd.Δt)
+Base.getindex(hoseqd::HO_DiscreteSequence, i::Integer) = begin
+    HO_DiscreteSequence(hoseqd.seqd[i],
+                        hoseqd.h0[i, :],
+                        hoseqd.h1[i, :],
+                        hoseqd.h2[i, :],
+                        hoseqd.h3[i, :],
+                        hoseqd.h4[i, :],
+                        hoseqd.h5[i, :],
+                        hoseqd.h6[i, :],
+                        hoseqd.h7[i, :],
+                        hoseqd.h8[i, :])
+end
+Base.getindex(hoseqd::HO_DiscreteSequence, i::UnitRange) = begin
+    HO_DiscreteSequence(hoseqd.seqd[i.start:i.stop],
+                        hoseqd.h0[i.start:i.stop+1],
+                        hoseqd.h1[i.start:i.stop+1],
+                        hoseqd.h2[i.start:i.stop+1],
+                        hoseqd.h3[i.start:i.stop+1],
+                        hoseqd.h4[i.start:i.stop+1],
+                        hoseqd.h5[i.start:i.stop+1],
+                        hoseqd.h6[i.start:i.stop+1],
+                        hoseqd.h7[i.start:i.stop+1],
+                        hoseqd.h8[i.start:i.stop+1])
+end
+Base.view(hoseqd::HO_DiscreteSequence, i::UnitRange) = begin
+    @views HO_DiscreteSequence(hoseqd.seqd[i.start:i.stop],
+                                hoseqd.h0[i.start:i.stop+1],
+                                hoseqd.h1[i.start:i.stop+1],
+                                hoseqd.h2[i.start:i.stop+1],
+                                hoseqd.h3[i.start:i.stop+1],
+                                hoseqd.h4[i.start:i.stop+1],
+                                hoseqd.h5[i.start:i.stop+1],
+                                hoseqd.h6[i.start:i.stop+1],
+                                hoseqd.h7[i.start:i.stop+1],
+                                hoseqd.h8[i.start:i.stop+1])
+end
+Base.iterate(hoseqd::HO_DiscreteSequence) = (hoseqd[1], 2)
+Base.iterate(hoseqd::HO_DiscreteSequence, i) = (i <= length(hoseqd)) ? (hoseqd[i], i+1) : nothing
 
 """
     hoseqd = HO_discretize(hoseq::HO_Sequence; sampling_params=default_sampling_params())
