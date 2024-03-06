@@ -1,3 +1,5 @@
+import KomaMRI.KomaMRICore: run_spin_precession!, run_spin_excitation!
+
 """
     run_spin_precession(obj, hoseqd, Xt, sig)
 
@@ -15,7 +17,7 @@ precession.
 """
 function run_spin_precession!(p::Phantom{T}, hoseqd::HO_DiscreteSequence{T}, sig::AbstractArray{Complex{T}},
     M::Mag{T}, sim_method::Bloch) where {T<:Real}
-    return KomaMRICore.run_spin_precession!(p, hoseqd.seqd, sig, M, sim_method)
+    return run_spin_precession!(p, hoseqd.seqd, sig, M, sim_method)
 end
 
 """
@@ -35,5 +37,5 @@ It gives rise to a rotation of `M0` with an angle given by the efective magnetic
 """
 function run_spin_excitation!(p::Phantom{T}, hoseqd::HO_DiscreteSequence{T}, sig::AbstractArray{Complex{T}},
     M::Mag{T}, sim_method::Bloch) where {T<:Real}
-    return KomaMRICore.run_spin_excitation!(p, hoseqd.seqd, sig, M, sim_method)
+    return run_spin_excitation!(p, hoseqd.seqd, sig, M, sim_method)
 end

@@ -1,21 +1,22 @@
+import KomaMRI.KomaMRIBase: discretize, get_theo_Gi, get_grads
+
 """
-    seqd = HO_DiscreteSequence(Gx, Gy, Gz, B1, Δf, ADC)
+    seqd = HO_DiscreteSequence(seqd, h0, h1, h2, h3, h4, h5, h6, h7, h8)
 
 A sampled version of a HO_Sequence struct, containing vectors for event amplitudes at specified
 times. DiscreteSequence is the struct used for simulation.
 
 # Arguments
 - `seqd`: (`::DiscreteSequence`) 
-- `h0`: (`::AbstractVector{T<:Real}`, `[T]`) h0-gradient vector
-- `h1`: (`::AbstractVector{T<:Real}`, `[T/m]`) h1-gradient vector
-- `h2`: (`::AbstractVector{T<:Real}`, `[T/m]`) h2-gradient vector
-- `h3`: (`::AbstractVector{T<:Real}`, `[T/m]`) h3-gradient vector
-- `h4`: (`::AbstractVector{T<:Real}`, `[T/m²]`) h4-gradient vector
-- `h5`: (`::AbstractVector{T<:Real}`, `[T/m²]`) h5-gradient vector
-- `h6`: (`::AbstractVector{T<:Real}`, `[T/m²]`) h6-gradient vector
-- `h7`: (`::AbstractVector{T<:Real}`, `[T/m²]`) h7-gradient vector
-- `h8`: (`::AbstractVector{T<:Real}`, `[T/m²]`) h8-gradient vector
-
+- `h0`: (`::AbstractVector{T<:Real}`, `[T]`)    `1`
+- `h1`: (`::AbstractVector{T<:Real}`, `[T/m]`)  `x`
+- `h2`: (`::AbstractVector{T<:Real}`, `[T/m]`)  `y`
+- `h3`: (`::AbstractVector{T<:Real}`, `[T/m]`)  `z`
+- `h4`: (`::AbstractVector{T<:Real}`, `[T/m²]`) `xy`
+- `h5`: (`::AbstractVector{T<:Real}`, `[T/m²]`) `yz`
+- `h6`: (`::AbstractVector{T<:Real}`, `[T/m²]`) `3z² - (x²	+ y² + z²)`
+- `h7`: (`::AbstractVector{T<:Real}`, `[T/m²]`) `xz`
+- `h8`: (`::AbstractVector{T<:Real}`, `[T/m²]`) `x² - y²`
 # Returns
 - `hoseqd`: (`::HO_DiscreteSequence`) HO_DiscreteSequence struct
 """
@@ -74,7 +75,7 @@ Base.iterate(hoseqd::HO_DiscreteSequence) = (hoseqd[1], 2)
 Base.iterate(hoseqd::HO_DiscreteSequence, i) = (i <= length(hoseqd)) ? (hoseqd[i], i+1) : nothing
 
 """
-    hoseqd = HO_discretize(hoseq::HO_Sequence; sampling_params=default_sampling_params())
+    hoseqd = discretize(hoseq::HO_Sequence; sampling_params=default_sampling_params())
 
 This function returns a sampled Sequence struct with RF and gradient time refinements
 based on simulation parameters.
@@ -89,21 +90,21 @@ based on simulation parameters.
 # Returns
 - `hoseqd`: (`::HO_DiscreteSequence`) HO_DiscreteSequence struct
 """
-function HO_discretize(hoseq::HO_Sequence; sampling_params=KomaMRIBase.default_sampling_params())
+function discretize(hoseq::HO_Sequence; sampling_params=KomaMRIBase.default_sampling_params())::HO_DiscreteSequence
     t, Δt      = KomaMRIBase.get_variable_times(hoseq.SEQ; Δt=sampling_params["Δt"], Δt_rf=sampling_params["Δt_rf"])
     B1, Δf     = KomaMRIBase.get_rfs(hoseq.SEQ, t)
     Gx, Gy, Gz = KomaMRIBase.get_grads(hoseq.SEQ, t)
     tadc       = KomaMRIBase.get_adc_sampling_times(hoseq.SEQ)
     ADCflag    = [any(tt .== tadc) for tt in t] #Displaced 1 dt, sig[i]=S(ti+dt)
     seqd       = KomaMRIBase.DiscreteSequence(Gx, Gy, Gz, complex.(B1), Δf, ADCflag, t, Δt)
-    H0, H1, H2, H3, H4, H5, H6, H7, H8 = HO_get_grads(hoseq, t)
+    H0, H1, H2, H3, H4, H5, H6, H7, H8 = get_grads(hoseq, t)
     hoseqd = HO_DiscreteSequence(seqd, H0, H1, H2, H3, H4, H5, H6, H7, H8)
     return hoseqd
 end
 
 
 
-function HO_get_theo_Gi(hoseq::HO_Sequence, idx)
+function get_theo_Gi(hoseq::HO_Sequence, idx)
     N = length(hoseq.SEQ)
     T0 = KomaMRIBase.get_block_start_times(hoseq.SEQ)
     t = vcat([KomaMRIBase.get_theo_t(hoseq.GR_skope[idx,i]) .+ T0[i] for i=1:N]...)
@@ -113,16 +114,16 @@ function HO_get_theo_Gi(hoseq::HO_Sequence, idx)
 end
 
 
-function HO_get_grads(hoseq::HO_Sequence, t::Vector)
-    h0 = HO_get_theo_Gi(hoseq, 1)
-    h1 = HO_get_theo_Gi(hoseq, 2)
-    h2 = HO_get_theo_Gi(hoseq, 3)
-    h3 = HO_get_theo_Gi(hoseq, 4)
-    h4 = HO_get_theo_Gi(hoseq, 5)
-    h5 = HO_get_theo_Gi(hoseq, 6)
-    h6 = HO_get_theo_Gi(hoseq, 7)
-    h7 = HO_get_theo_Gi(hoseq, 8)
-    h8 = HO_get_theo_Gi(hoseq, 9)
+function get_grads(hoseq::HO_Sequence, t::Vector)
+    h0 = get_theo_Gi(hoseq, 1)
+    h1 = get_theo_Gi(hoseq, 2)
+    h2 = get_theo_Gi(hoseq, 3)
+    h3 = get_theo_Gi(hoseq, 4)
+    h4 = get_theo_Gi(hoseq, 5)
+    h5 = get_theo_Gi(hoseq, 6)
+    h6 = get_theo_Gi(hoseq, 7)
+    h7 = get_theo_Gi(hoseq, 8)
+    h8 = get_theo_Gi(hoseq, 9)
     H0 = linear_interpolation(h0..., extrapolation_bc=0)(t)
     H1 = linear_interpolation(h1..., extrapolation_bc=0)(t)
     H2 = linear_interpolation(h2..., extrapolation_bc=0)(t)

@@ -1,3 +1,5 @@
+import KomaMRI.KomaMRIBase: get_samples
+
 """
     hoseq = HO_Sequence()
     hoseq = HO_Sequence(GR_skope::Array{Grad,2})
@@ -116,7 +118,7 @@ Base.show(io::IO, s::HO_Sequence) = begin
 end
 
 """
-    samples = HO_get_samples(hoseq::HO_Sequence; off_val=0, max_rf_samples=Inf)
+    samples = get_samples(hoseq::HO_Sequence; off_val=0, max_rf_samples=Inf)
 
 Returns the samples of the events in `hoseq`.
 
@@ -133,7 +135,7 @@ Returns the samples of the events in `hoseq`.
     `h7`, `h8`, `gx`, `gy`, `gz`, `rf`, and `adc` events. Each event, represented by 
 	`e::NamedTuple`, includes time samples (`e.t`) and amplitude samples (`e.A`)
 """
-HO_get_samples(hoseq::HO_Sequence; off_val=0, max_rf_samples=Inf) = begin
+get_samples(hoseq::HO_Sequence; off_val=0, max_rf_samples=Inf) = begin
 	gx, gy, gz, rf, adc = KomaMRIBase.get_samples(hoseq.SEQ; off_val=Inf, max_rf_samples)
     N = length(hoseq.SEQ)
     T0 = KomaMRIBase.get_block_start_times(hoseq.SEQ)

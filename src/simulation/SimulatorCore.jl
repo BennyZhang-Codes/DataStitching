@@ -1,3 +1,5 @@
+import KomaMRI.KomaMRICore: run_spin_excitation_parallel!, run_spin_precession_parallel!, run_sim_time_iter!
+
 
 """
     sig, Xt = run_spin_precession_parallel(obj, hoseqd, M; Nthreads)
@@ -24,7 +26,7 @@ function run_spin_precession_parallel!(obj::Phantom{T}, hoseqd::HO_DiscreteSeque
     Nthreads=Threads.nthreads()) where {T<:Real}
 
     parts = kfoldperm(length(obj), Nthreads)
-    dims = [Colon() for i=1:KomaMRICore.output_Ndim(sim_method)] # :,:,:,... Ndim times
+    dims = [Colon() for i=1:output_Ndim(sim_method)] # :,:,:,... Ndim times
 
     ThreadsX.foreach(enumerate(parts)) do (i, p)
         run_spin_precession!(@view(obj[p]), hoseqd, @view(sig[dims...,i]), @view(Xt[p]), sim_method)
@@ -57,7 +59,7 @@ function run_spin_excitation_parallel!(obj::Phantom{T}, hoseqd::HO_DiscreteSeque
     Nthreads=Threads.nthreads()) where {T<:Real}
 
     parts = kfoldperm(length(obj), Nthreads)
-    dims = [Colon() for i=1:KomaMRICore.output_Ndim(sim_method)] # :,:,:,... Ndim times
+    dims = [Colon() for i=1:output_Ndim(sim_method)] # :,:,:,... Ndim times
 
     ThreadsX.foreach(enumerate(parts)) do (i, p)
         run_spin_excitation!(@view(obj[p]), hoseqd, @view(sig[dims...,i]), @view(Xt[p]), sim_method)
@@ -105,7 +107,7 @@ function run_sim_time_iter!(obj::Phantom, hoseqd::HO_DiscreteSequence, sig::Abst
         # excitation_bool = is_RF_on(seq_block) #&& is_ADC_off(seq_block) #PATCH: the ADC part should not be necessary, but sometimes 1 sample is identified as RF in an ADC block
         Nadc = sum(seq_block.seqd.ADC)
         acq_samples = samples:samples+Nadc-1
-        dims = [Colon() for i=1:KomaMRICore.output_Ndim(sim_method)] # :,:,:,... Ndim times
+        dims = [Colon() for i=1:output_Ndim(sim_method)] # :,:,:,... Ndim times
         # Simulation wrappers
         if excitation_bool[block]
             run_spin_excitation_parallel!(obj, seq_block, @view(sig[acq_samples, dims...]), Xt, sim_method; Nthreads)

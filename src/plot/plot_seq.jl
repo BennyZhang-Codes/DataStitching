@@ -1,5 +1,7 @@
+import KomaMRI.KomaMRIPlots: plot_seq
+
 """
-    p = HO_plot_seq(hoseq::HO_Sequence; kwargs...)
+    p = plot_seq(hoseq::HO_Sequence; kwargs...)
 
 Plots a high order sequence struct.
 
@@ -19,7 +21,7 @@ Plots a high order sequence struct.
 # Returns
 - `p`: (`::PlotlyJS.SyncPlot`) plot of the Sequence struct
 """
-function HO_plot_seq(
+function plot_seq(
       hoseq::HO_Sequence;
       width=nothing,
       height=nothing,
@@ -34,7 +36,7 @@ function HO_plot_seq(
       showlegend=true
     )
     # Get the samples of the events in the sequence
-    samples = HO_get_samples(hoseq; off_val=Inf, max_rf_samples)
+    samples = get_samples(hoseq; off_val=Inf, max_rf_samples)
 
     # Define general params and the vector of plots
     idx = ["Gx" "Gy" "Gz"]

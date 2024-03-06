@@ -20,8 +20,7 @@ function reconstruct_2d_image(raw::RawAcquisitionData)
     image2d = (abs.(image3d) * prod(size(image3d)[1:2]))[:,:,1]
     return image2d
 end
-
+plot_signal(raw)
 # Perform reconstruction to get the image
 image = reconstruct_2d_image(raw)
 plot_image(image)
-plot_signal(raw)

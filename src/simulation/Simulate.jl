@@ -1,6 +1,6 @@
-
+import KomaMRI.KomaMRICore: simulate
 """
-    out = HO_simulate(obj::Phantom, seq::Sequence, sys::Scanner; sim_params, w)
+    out = simulate(obj::Phantom, seq::HO_Sequence, sys::Scanner; sim_params, w)
 
 Returns the raw signal or the last state of the magnetization according to the value
 of the `"return_type"` key of the `sim_params` dictionary.
@@ -26,25 +26,25 @@ julia> seq_file = joinpath(dirname(pathof(KomaMRI)), "../examples/3.koma_paper/c
 
 julia> sys, obj, seq = Scanner(), brain_phantom2D(), read_seq(seq_file)
 
-julia> raw = simulate(obj, seq, sys)
+julia> raw = simulate(obj, hoseq, sys)
 
 julia> plot_signal(raw)
 ```
 """
-function HO_simulate(
+function simulate(
     obj::Phantom, hoseq::HO_Sequence, sys::Scanner;
     sim_params=Dict{String,Any}(), w=nothing
-)
+) 
     #Simulation parameter unpacking, and setting defaults if key is not defined
     sim_params = KomaMRICore.default_sim_params(sim_params)
     # Simulation init
-    hoseqd = HO_discretize(hoseq; sampling_params=sim_params) # Sampling of Sequence waveforms
+    hoseqd = discretize(hoseq; sampling_params=sim_params) # Sampling of Sequence waveforms
     parts, excitation_bool = KomaMRICore.get_sim_ranges(hoseqd.seqd; Nblocks=sim_params["Nblocks"]) # Generating simulation blocks
     t_sim_parts = [hoseqd.seqd.t[p[1]] for p ∈ parts]; append!(t_sim_parts, hoseqd.seqd.t[end])
     # Spins' state init (Magnetization, EPG, etc.), could include modifications to obj (e.g. T2*)
-    Xt, obj = KomaMRICore.initialize_spins_state(obj, sim_params["sim_method"])
+    Xt, obj = initialize_spins_state(obj, sim_params["sim_method"])
     # Signal init
-    Ndims = KomaMRICore.sim_output_dim(obj, hoseq.SEQ, sys, sim_params["sim_method"])
+    Ndims = sim_output_dim(obj, hoseq.SEQ, sys, sim_params["sim_method"])
     sig = zeros(ComplexF64, Ndims..., sim_params["Nthreads"])
     # Objects to GPU
     if sim_params["gpu"] #Default
@@ -68,7 +68,7 @@ function HO_simulate(
     end
     # Simulation
     @info "Running simulation in the $(sim_params["gpu"] ? "GPU ($gpu_name)" : "CPU with $(sim_params["Nthreads"]) thread(s)")" koma_version=KomaMRICore.__VERSION__ sim_method = sim_params["sim_method"] spins = length(obj) time_points = length(hoseqd.seqd.t) adc_points=Ndims[1]
-    @time timed_tuple = @timed KomaHighOrder.run_sim_time_iter!(obj, hoseqd, sig, Xt, sim_params["sim_method"]; Nblocks=length(parts), Nthreads=sim_params["Nthreads"], parts, excitation_bool, w)
+    @time timed_tuple = @timed run_sim_time_iter!(obj, hoseqd, sig, Xt, sim_params["sim_method"]; Nblocks=length(parts), Nthreads=sim_params["Nthreads"], parts, excitation_bool, w)
     # Result to CPU, if already in the CPU it does nothing
     sig = sum(sig; dims=length(Ndims)+1) |> cpu
     sig .*= KomaMRICore.get_adc_phase_compensation(hoseq.SEQ)

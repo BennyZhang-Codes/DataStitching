@@ -1,5 +1,7 @@
-function HO_plot_seqd(
-        hoseqd::HO_DiscreteSequence; 
+import KomaMRI.KomaMRIPlots: plot_seqd
+
+function plot_seqd(
+        hoseq::HO_Sequence, hoseqd::HO_DiscreteSequence; 
         WebGL=true,
         width=nothing,
         height=nothing,
@@ -28,7 +30,7 @@ function HO_plot_seqd(
     KomaMRIPlots.plot_koma([Gx,Gy,Gz,B1,ADC], l; config)
 end
 
-function HO_plot_seqd(
+function plot_seqd(
         hoseq::HO_Sequence; 
         sampling_params=KomaMRIBase.default_sampling_params(),
         WebGL=true,
@@ -43,9 +45,9 @@ function HO_plot_seqd(
         yaxis="y",
         showlegend=true
 )
-    hoseqd = HO_discretize(hoseq; sampling_params)
-    HO_plot_seqd(
-        hoseqd; 
+    hoseqd = discretize(hoseq; sampling_params)
+    plot_seqd(
+        hoseq, hoseqd; 
         WebGL=WebGL, 
         width=width, 
         height=height, 
@@ -60,8 +62,8 @@ function HO_plot_seqd(
     )
 end
 
-function HO_plot_hoseqd(
-        hoseq::HO_DiscreteSequence; 
+function plot_hoseqd(
+        hoseq::HO_Sequence, hoseqd::HO_DiscreteSequence; 
         WebGL=true,
         width=nothing,
         height=nothing,
@@ -74,7 +76,6 @@ function HO_plot_hoseqd(
         yaxis="y",
         showlegend=true
 )
-        hoseqd = HO_discretize(hoseq; sampling_params)
         scatter_used = WebGL ? scattergl : scatter
         Gx  = scatter_used(x=hoseqd.seqd.t*1e3, y=hoseqd.seqd.Gx*1e3, name="Gx", mode="markers+lines", marker_symbol=:circle, 
                 xaxis=xaxis, yaxis=yaxis, showlegend=showlegend, hovertemplate="(%{x:.4f} ms, %{y:.2f} mT/m)")
@@ -109,7 +110,7 @@ function HO_plot_hoseqd(
         KomaMRIPlots.plot_koma([Gx,Gy,Gz,B1,ADC,h0,h1,h2,h3,h4,h5,h6,h7,h8], l; config)
 end
 
-function HO_plot_hoseqd(
+function plot_hoseqd(
         hoseq::HO_Sequence; 
         sampling_params=KomaMRIBase.default_sampling_params(),
         WebGL=true,
@@ -124,9 +125,9 @@ function HO_plot_hoseqd(
         yaxis="y",
         showlegend=true
 )
-        hoseqd = HO_discretize(hoseq; sampling_params)
-        HO_plot_hoseqd(hoseqd;
-            sampling_params=sampling_params,
+        hoseqd = discretize(hoseq; sampling_params)
+        plot_hoseqd(
+            hoseq, hoseqd;
             WebGL=WebGL,
             width=width,
             height=height,
