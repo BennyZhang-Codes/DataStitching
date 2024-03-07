@@ -40,7 +40,9 @@ julia> plot_phantom_map(obj, :ρ)
 function brain_phantom2D(p::brain3D_02; axis="axial", ss=4, location=0.5) :: Phantom
     @assert 0 <= location <= 1
     # Get data from .mat file
-    data = MAT.matread("src\\phantom\\brain3D_0.2.mat")["data"]
+    path = @__DIR__
+    data = MAT.matread(path*"/brain3D_0.2.mat")["data"]
+    
     M, N, Z = size(data)
     if axis == "axial"
         z = Int32(ceil(Z*location))
@@ -117,7 +119,7 @@ function brain_phantom2D(p::brain3D_02; axis="axial", ss=4, location=0.5) :: Pha
 
     # Define and return the Phantom struct
     obj = Phantom{Float64}(
-        name = "brain2D_02"*axis,
+        name = "brain2D_02_"*axis,
 		x = y[ρ.!=0],
 		y = x[ρ.!=0],
 		z = 0*x[ρ.!=0],
