@@ -1,13 +1,15 @@
-import KomaMRI.KomaMRIBase: brain_phantom2D, Phantom
+import KomaMRI.KomaMRIBase: brain_phantom2D
+# import Base.show
 abstract type PhantomType end
 struct brain3D_02 <: PhantomType end
 
 export brain3D_02
 
 
-Base.show(io::IO, s::Phantom) = begin
-	print(io, "Phantom[name = $(s.name) | spins = $(length(s.x)) | x = $(minimum(s.x)*1e2):$(maximum(s.x)*1e2) cm | y = $(minimum(s.y)*1e2):$(maximum(s.y)*1e2) cm | z = $(minimum(s.z)*1e2):$(maximum(s.z)*1e2) cm ]")
+function info(s::Phantom)
+	print("Phantom[name = $(s.name) | spins = $(length(s.x)) | x = $(minimum(s.x)*1e2):$(maximum(s.x)*1e2) cm | y = $(minimum(s.y)*1e2):$(maximum(s.y)*1e2) cm | z = $(minimum(s.z)*1e2):$(maximum(s.z)*1e2) cm ]")
 end
+
 
 """
     obj = brain_phantom2D(p::brain3D_02, location::AbstractFloat; axis="axial", ss=4)
@@ -35,7 +37,8 @@ julia> obj = brain_phantom2D(p::brain3D_02, location::AbstractFloat; axis="sagit
 julia> plot_phantom_map(obj, :ρ)
 ```
 """
-function brain_phantom2D(p::brain3D_02, location::AbstractFloat; axis="axial", ss=4) :: Phantom
+function brain_phantom2D(p::brain3D_02; axis="axial", ss=4, location=0.5) :: Phantom
+    @assert 0 <= location <= 1
     # Get data from .mat file
     data = MAT.matread("src\\phantom\\brain3D_0.2.mat")["data"]
     M, N, Z = size(data)
