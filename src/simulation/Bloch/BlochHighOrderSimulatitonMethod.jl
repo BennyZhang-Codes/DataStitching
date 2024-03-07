@@ -10,7 +10,7 @@ end
 
 export BlochHighOrder
 Base.show(io::IO, b::BlochHighOrder) = begin
-	print(io, "BlochHighOrder(\n      zero order=$(b.ho0)\n     first order=$(b.ho1)\n    second order=$(b.ho2)\n)")
+	print(io, "BlochHighOrder(zero order=$(b.ho0) | first order=$(b.ho1) | second order=$(b.ho2)\n)")
 end
 
 output_Ndim(sim_method::BlochHighOrder) =  output_Ndim(Bloch())#time-points x coils

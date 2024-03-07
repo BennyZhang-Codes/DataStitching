@@ -13,7 +13,7 @@ hoseq = HO_Sequence(seq)
 hoseq.GR_skope[:,8] = GR_skope
 # hoseqd = discretize(hoseq)
 
-obj = brain_phantom2D(ss=10)
+obj = brain_phantom2D(brain3D_02(),0.8;ss=10)
 sys = Scanner()
 sim_params = KomaMRICore.default_sim_params()
 raw = simulate(obj, hoseq, sys)

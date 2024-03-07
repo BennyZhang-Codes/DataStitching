@@ -1,8 +1,20 @@
 seq = read_seq("E:/skope/20240308/spiral_fov220_nx220_1.00.seq")
-obj = brain_phantom2D(ss=10)
+
+
+
+# simulate
+obj = brain_phantom2D(ss=1)
 sys = Scanner()
 sim_params = KomaMRICore.default_sim_params()
-raw = HO_simulate(obj, seq, sys; sim_params=sim_params)
+sim_params["sim_method"] = BlochHighOrder()
+sim_params["Nblocks"] = 50
+raw = simulate(obj, hoseq, sys; sim_params)
+
+plot_signal(raw)
+# Perform reconstruction to get the image
+img = reconstruct_2d_image(raw)
+plot_image(img)
+
 
 
 # Auxiliary function for reconstruction
@@ -20,7 +32,4 @@ function reconstruct_2d_image(raw::RawAcquisitionData)
     image2d = (abs.(image3d) * prod(size(image3d)[1:2]))[:,:,1]
     return image2d
 end
-plot_signal(raw)
-# Perform reconstruction to get the image
-image = reconstruct_2d_image(raw)
-plot_image(image)
+

@@ -1,7 +1,7 @@
 module KomaHighOrder
 
 
-import Base.*, Base.+, Base.-, Base./, Base.vcat, Base.size, Base.abs, Base.getproperty, Base.copy
+import Base.*, Base.+, Base.-, Base./, Base.vcat, Base.size, Base.abs, Base.getproperty, Base.copy, Base.show
 # IMPORT PACKAGES
 using CUDA, Interpolations, PlotlyJS
 using ThreadsX
@@ -17,6 +17,7 @@ import Functors: @functor
 
 include("datatypes/Sequence.jl")
 include("mrd/signal_to_raw_data.jl")
+include("phantom/phantom.jl")
 
 include("simulation/DiscreteSequence.jl") # include HO_Sequence
 include("simulation/Simulate.jl")
