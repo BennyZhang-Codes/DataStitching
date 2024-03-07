@@ -26,7 +26,7 @@ include("simulation/Bloch/BlochSimulatitonMethod.jl")
 include("simulation/Bloch/BlochHighOrderSimulatitonMethod.jl")
 include("plot/plot_seq.jl")
 include("plot/plot_seqd.jl")
-
+include("reconstruction/recon_2d.jl")
 
 export HO_DiscreteSequence
 export HO_Sequence
@@ -34,6 +34,8 @@ export simulate
 export plot_seq
 export plot_seqd, plot_hoseqd
 export HO_signal_to_raw_data
+
+export reconstruct_2d_image
 
 export info
 #Package version, KomaMRI.__VERSION__
