@@ -35,6 +35,7 @@ export plot_seq
 export plot_seqd, plot_hoseqd
 export HO_signal_to_raw_data
 
+export info
 #Package version, KomaMRI.__VERSION__
 using Pkg
 __VERSION__ = VersionNumber(Pkg.TOML.parsefile(joinpath(@__DIR__, "..", "Project.toml"))["version"])

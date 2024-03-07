@@ -10,7 +10,7 @@ end
 
 export BlochHighOrder
 Base.show(io::IO, b::BlochHighOrder) = begin
-	print(io, "BlochHighOrder(zero order=$(b.ho0) | first order=$(b.ho1) | second order=$(b.ho2)\n)")
+	print(io, "BlochHighOrder[ zero order=$(b.ho0) | first order=$(b.ho1) | second order=$(b.ho2) ]")
 end
 
 output_Ndim(sim_method::BlochHighOrder) =  output_Ndim(Bloch())#time-points x coils
@@ -33,7 +33,6 @@ function run_spin_precession!(p::Phantom{T}, hoseqd::HO_DiscreteSequence{T}, sig
     yt = p.y .+ p.uy(p.x, p.y, p.z, seq.t')
     zt = p.z .+ p.uz(p.x, p.y, p.z, seq.t')
     #Effective field
-    Bzh0 = hoseqd.h0'
     Bzh1 = xt .* hoseqd.h1'
     Bzh2 = yt .* hoseqd.h2'
     Bzh3 = zt .* hoseqd.h3'
@@ -43,12 +42,9 @@ function run_spin_precession!(p::Phantom{T}, hoseqd::HO_DiscreteSequence{T}, sig
     Bzh7 = (xt .* zt) .* hoseqd.h7'
     Bzh8 = (xt.^2 .+ yt.^2) .* hoseqd.h8'
 
-    Bzho1 = Bzh1 .+ Bzh2 .+ Bzh3
-    Bzho2 = Bzh4 .+ Bzh5 .+ Bzh6 .+ Bzh7 .+ Bzh8
-
-    Bz0 = sim_method.ho0 ? Bzh0 : 0
-    Bz1 = sim_method.ho1 ? Bzho1 : xt .* seq.Gx' .+ yt .* seq.Gy' .+ zt .* seq.Gz'
-    Bz2 = sim_method.ho2 ? Bzho2 : 0
+    Bz0 = sim_method.ho0 ? hoseqd.h0' : 0
+    Bz1 = sim_method.ho1 ? Bzh1 .+ Bzh2 .+ Bzh3 : xt .* seq.Gx' .+ yt .* seq.Gy' .+ zt .* seq.Gz'
+    Bz2 = sim_method.ho2 ? Bzh4 .+ Bzh5 .+ Bzh6 .+ Bzh7 .+ Bzh8 : 0
 
     Bz = Bz0 .+ Bz1 .+ Bz2 .+ p.Δw / T(2π * γ)
     #Rotation
