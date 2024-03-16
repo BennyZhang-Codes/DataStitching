@@ -1,7 +1,10 @@
-function HO_signal_to_raw_data(
-    signal, seq;
+import KomaMRI.KomaMRICore: signal_to_raw_data
+
+function signal_to_raw_data(
+    signal, hoseq::HO_Sequence, hoseqd::HO_DiscreteSequence;
     phantom_name="Phantom", sys=Scanner(), sim_params=Dict{String,Any}(), ndims=2
 )
+    seq = hoseq.SEQ
     version = string(VersionNumber(Pkg.TOML.parsefile(joinpath(@__DIR__, "..", "..", "Project.toml"))["version"]))
     #Number of samples and FOV
     _, ktraj = get_kspace(seq) #kspace information

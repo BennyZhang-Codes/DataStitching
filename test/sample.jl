@@ -18,16 +18,23 @@ GR_skope = reshape([KomaMRIBase.Grad(skopeStitched[idx,:], t, 0, 0, 0) for idx=1
 hoseq = HO_Sequence(seq);
 hoseq.GR_skope[:,8] = GR_skope;
 
-obj = brain_phantom2D(brain3D_02(); ss=12, location=0.8); info(obj);
+obj = brain_phantom2D(brain3D_02(); ss=3, location=0.8); info(obj);
+obj.Δw .= 0;
 
 sys = Scanner();
 sim_params = KomaMRICore.default_sim_params(); 
 sim_params["sim_method"] = BlochHighOrder(ho0=false, ho1=false, ho2=false);
-sim_params["Nblocks"] = 50;
+sim_params["Nblocks"] = 150;
 sim_params["gpu"] = true;
 raw = simulate(obj, hoseq, sys; sim_params);
 
-plot_signal(raw)
+# using Dates
+# mrd = Sys.iswindows() ? ISMRMRDFile("E:/skope/$(seq.DEF["Name"])_$(Dates.now()).mrd") : ISMRMRDFile("/home/jyzhang/Desktop/skope/$(seq.DEF["Name"])_$(Dates.now()).mrd")
+# save(mrd, raw)
+
+# plot_signal(raw)
 img = reconstruct_2d_image(raw)
-p = plot_image(img; title="$(sim_params["sim_method"])")
+p = plot_image(img; title="$(sim_params["sim_method"])", height=600, width=750)
+
+plot_phantom_map(obj, :Δw; darkmode=true, width=500, height=500)
 

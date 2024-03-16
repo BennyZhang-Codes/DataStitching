@@ -16,7 +16,6 @@ import KomaMRI.KomaMRICore: SimulationMethod, SpinStateRepresentation
 import Functors: @functor
 
 include("datatypes/Sequence.jl")
-include("mrd/signal_to_raw_data.jl")
 include("phantom/phantom.jl")
 
 include("simulation/DiscreteSequence.jl") # include HO_Sequence
@@ -28,12 +27,15 @@ include("plot/plot_seq.jl")
 include("plot/plot_seqd.jl")
 include("reconstruction/recon_2d.jl")
 
+include("mrd/HO_signal_to_raw_data.jl")
+include("mrd/HO_signal_to_raw_data_2.jl")
+
 export HO_DiscreteSequence
 export HO_Sequence
 export simulate
 export plot_seq
 export plot_seqd, plot_hoseqd
-export HO_signal_to_raw_data
+# export signal_to_raw_data
 
 export reconstruct_2d_image
 
