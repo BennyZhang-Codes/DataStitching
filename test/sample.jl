@@ -15,6 +15,7 @@ t = Δt * ones(88100);
 GR_skope = reshape([KomaMRIBase.Grad(skopeStitched[idx,:], t, 0, 0, 0) for idx=1:9], :, 1);
 
 # hoseq
+seq.GR[1,:] = -seq.GR[1,:];
 hoseq = HO_Sequence(seq);
 hoseq.GR_skope[:,8] = GR_skope;
 
