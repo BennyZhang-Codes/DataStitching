@@ -25,6 +25,7 @@ include("simulation/Bloch/BlochSimulatitonMethod.jl")
 include("simulation/Bloch/BlochHighOrderSimulatitonMethod.jl")
 include("plot/plot_seq.jl")
 include("plot/plot_seqd.jl")
+include("plot/plot_kspace.jl")
 include("reconstruction/recon_2d.jl")
 
 include("mrd/HO_signal_to_raw_data.jl")

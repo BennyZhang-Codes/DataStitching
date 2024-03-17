@@ -221,16 +221,27 @@ Outputs the designed k-space trajectory of the Sequence `seq`.
 - `kspace_adc`: (`3-column ::Matrix{Float64}`) adc kspace
 """
 get_kspace(hoseq::HO_Sequence; Δt=1,
-skip_rf=zeros(Bool, sum(is_RF_on.(seq)))) = begin
-	t, Δt = get_variable_times(seq; Δt)
-	Gx, Gy, Gz = get_grads(seq, t)
-	G = Dict(1=>Gx, 2=>Gy, 3=>Gz)
+skip_rf=zeros(Bool, sum(is_RF_on.(hoseq.SEQ)))) = begin
+	t, Δt = get_variable_times(hoseq.SEQ; Δt)
+	
+	Gx, Gy, Gz = get_grads(hoseq.SEQ, t)
+	H0, H1, H2, H3, H4, H5, H6, H7, H8 = get_grads(hoseq, t)
 	t = t[1:end-1]
+
+	G_nominal = Dict(1=>Gx, 2=>Gy, 3=>Gz)
+	G_skope = Dict(1=>H1, 2=>H2, 3=>H3)
+	
+	K_nominal, K_nominal_adc = grad2kspace(hoseq.SEQ, G_nominal, t, Δt, skip_rf)
+	K_skope, K_skope_adc = grad2kspace(hoseq.SEQ, G_skope, t, Δt, skip_rf)
+	return K_nominal, K_nominal_adc, K_skope, K_skope_adc
+end
+
+function grad2kspace(seq::Sequence, G, t, Δt, skip_rf)
 	#kspace
 	Nt = length(t)
 	k = zeros(Nt,3)
 	#get_RF_center_breaks
-	idx_rf, rf_type = get_RF_types(seq, t)
+	idx_rf, rf_type = KomaMRIBase.get_RF_types(seq, t)
 	parts = kfoldperm(Nt, 1; breaks=idx_rf)
 	for i = 1:3
 		kf = 0
@@ -261,6 +272,5 @@ skip_rf=zeros(Bool, sum(is_RF_on.(seq)))) = begin
 	kz_adc = linear_interpolation(ts,kspace[:,3],extrapolation_bc=0)(t_adc)
 	kspace_adc = [kx_adc ky_adc kz_adc]
 	#Final
-	kspace, kspace_adc
-end
-
+	kspace, kspace_adc	
+end 
