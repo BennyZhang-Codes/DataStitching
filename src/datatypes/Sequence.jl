@@ -207,18 +207,20 @@ end
 
 
 """
-    kspace, kspace_adc = get_kspace(seq::Sequence; Δt=1)
+K_nominal, K_nominal_adc, K_skope, K_skope_adc = get_kspace(hoseq::HO_Sequence; Δt=1)
 
-Outputs the designed k-space trajectory of the Sequence `seq`.
+Outputs the designed k-space trajectory of the Sequence `hoseq`.
 
 # Arguments
-- `seq`: (`::Sequence`) Sequence struct
+- `hoseq`: (`::HO_Sequence`) HO_Sequence struct
 - `Δt`: (`::Real`, `=1`, `[s]`) nominal delta time separation between two time samples
     for ADC acquisition and Gradients
 
 # Returns
-- `kspace`: (`3-column ::Matrix{Float64}`) kspace
-- `kspace_adc`: (`3-column ::Matrix{Float64}`) adc kspace
+- `K_nominal`: (`3-column ::Matrix{Float64}`) nominal kspace
+- `K_nominal_adc`: (`3-column ::Matrix{Float64}`) nominal adc kspace
+- `K_skope`: (`3-column ::Matrix{Float64}`) skope kspace
+- `K_skope_adc`: (`3-column ::Matrix{Float64}`) skope adc kspace
 """
 get_kspace(hoseq::HO_Sequence; Δt=1,
 skip_rf=zeros(Bool, sum(is_RF_on.(hoseq.SEQ)))) = begin
