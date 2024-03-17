@@ -1,4 +1,4 @@
-import KomaMRI.KomaMRIBase: discretize, get_theo_Gi, get_grads
+import KomaMRI.KomaMRIBase: discretize, get_rfs, default_sampling_params, get_variable_times
 
 """
     seqd = HO_DiscreteSequence(seqd, h0, h1, h2, h3, h4, h5, h6, h7, h8)
@@ -90,13 +90,13 @@ based on simulation parameters.
 # Returns
 - `hoseqd`: (`::HO_DiscreteSequence`) HO_DiscreteSequence struct
 """
-function discretize(hoseq::HO_Sequence; sampling_params=KomaMRIBase.default_sampling_params())::HO_DiscreteSequence
-    t, Δt      = KomaMRIBase.get_variable_times(hoseq.SEQ; Δt=sampling_params["Δt"], Δt_rf=sampling_params["Δt_rf"])
-    B1, Δf     = KomaMRIBase.get_rfs(hoseq.SEQ, t)
-    Gx, Gy, Gz = KomaMRIBase.get_grads(hoseq.SEQ, t)
-    tadc       = KomaMRIBase.get_adc_sampling_times(hoseq.SEQ)
+function discretize(hoseq::HO_Sequence; sampling_params=default_sampling_params())::HO_DiscreteSequence
+    t, Δt      = get_variable_times(hoseq.SEQ; Δt=sampling_params["Δt"], Δt_rf=sampling_params["Δt_rf"])
+    B1, Δf     = get_rfs(hoseq.SEQ, t)
+    Gx, Gy, Gz = get_grads(hoseq.SEQ, t)
+    tadc       = get_adc_sampling_times(hoseq.SEQ)
     ADCflag    = [any(tt .== tadc) for tt in t] #Displaced 1 dt, sig[i]=S(ti+dt)
-    seqd       = KomaMRIBase.DiscreteSequence(Gx, Gy, Gz, complex.(B1), Δf, ADCflag, t, Δt)
+    seqd       = DiscreteSequence(Gx, Gy, Gz, complex.(B1), Δf, ADCflag, t, Δt)
     H0, H1, H2, H3, H4, H5, H6, H7, H8 = get_grads(hoseq, t)
     hoseqd = HO_DiscreteSequence(seqd, H0, H1, H2, H3, H4, H5, H6, H7, H8)
     return hoseqd
@@ -104,34 +104,3 @@ end
 
 
 
-function get_theo_Gi(hoseq::HO_Sequence, idx)
-    N = length(hoseq.SEQ)
-    T0 = KomaMRIBase.get_block_start_times(hoseq.SEQ)
-    t = vcat([KomaMRIBase.get_theo_t(hoseq.GR_skope[idx,i]) .+ T0[i] for i=1:N]...)
-    G = vcat([KomaMRIBase.get_theo_A(hoseq.GR_skope[idx,i]) for i=1:N]...) #; off_val=0 <---potential solution
-	Interpolations.deduplicate_knots!(t; move_knots=true)
-	return (t, G)
-end
-
-
-function get_grads(hoseq::HO_Sequence, t::Vector)
-    h0 = get_theo_Gi(hoseq, 1)
-    h1 = get_theo_Gi(hoseq, 2)
-    h2 = get_theo_Gi(hoseq, 3)
-    h3 = get_theo_Gi(hoseq, 4)
-    h4 = get_theo_Gi(hoseq, 5)
-    h5 = get_theo_Gi(hoseq, 6)
-    h6 = get_theo_Gi(hoseq, 7)
-    h7 = get_theo_Gi(hoseq, 8)
-    h8 = get_theo_Gi(hoseq, 9)
-    H0 = linear_interpolation(h0..., extrapolation_bc=0)(t)
-    H1 = linear_interpolation(h1..., extrapolation_bc=0)(t)
-    H2 = linear_interpolation(h2..., extrapolation_bc=0)(t)
-    H3 = linear_interpolation(h3..., extrapolation_bc=0)(t)
-    H4 = linear_interpolation(h4..., extrapolation_bc=0)(t)
-    H5 = linear_interpolation(h5..., extrapolation_bc=0)(t)
-    H6 = linear_interpolation(h6..., extrapolation_bc=0)(t)
-    H7 = linear_interpolation(h7..., extrapolation_bc=0)(t)
-    H8 = linear_interpolation(h8..., extrapolation_bc=0)(t)
-    return (H0, H1, H2, H3, H4, H5, H6, H7, H8)
-end
