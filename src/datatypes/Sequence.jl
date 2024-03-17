@@ -207,7 +207,7 @@ end
 
 
 """
-K_nominal, K_nominal_adc, K_skope, K_skope_adc = get_kspace(hoseq::HO_Sequence; Δt=1)
+    K_nominal, K_nominal_adc, K_skope, K_skope_adc = get_kspace(hoseq::HO_Sequence; Δt=1)
 
 Outputs the designed k-space trajectory of the Sequence `hoseq`.
 
