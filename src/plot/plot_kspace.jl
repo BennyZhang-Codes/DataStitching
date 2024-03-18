@@ -96,3 +96,91 @@ function plot_kspace(
 	return plot_koma(p, l; config)
 end
 
+function plot_kspace(
+	hoseq::HO_Sequence,
+	key::Symbol;
+	width=nothing,
+	height=nothing,
+	darkmode=false
+)
+	seq = hoseq.SEQ
+	bgcolor, text_color, plot_bgcolor, grid_color, sep_color = theme_chooser(darkmode)
+	K_nominal, K_nominal_adc, K_skope, K_skope_adc = get_kspace(hoseq; Δt=1)
+
+	t_adc = KomaMRIBase.get_adc_sampling_times(seq)
+
+	t, Δt = KomaMRIBase.get_variable_times(hoseq.SEQ; Δt=1)
+	t = t[1:end-1]
+	t_seq = t .+ Δt
+
+	#Layout
+	mink = minimum(K_nominal_adc,dims=1)
+	maxk = maximum(K_nominal_adc,dims=1)
+	dW = maximum(maxk .- mink, dims=2) * .3
+	mink .-= dW
+	maxk .+= dW
+	#Layout
+	l = Layout(;hovermode="closest",
+		xaxis_title="",
+		modebar=attr(orientation="h", yanchor="bottom", xanchor="right", y=1, x=0, bgcolor=bgcolor, color=text_color, activecolor=plot_bgcolor),
+		legend=attr(orientation="h", yanchor="bottom", xanchor="left", y=1, x=0),
+		plot_bgcolor=plot_bgcolor,
+		paper_bgcolor=bgcolor,
+		xaxis_gridcolor=grid_color,
+		yaxis_gridcolor=grid_color,
+		xaxis_zerolinecolor=grid_color,
+		yaxis_zerolinecolor=grid_color,
+		font_color=text_color,
+		yaxis_fixedrange = false,
+		xaxis=attr(
+			ticksuffix=" ms",
+			),
+		margin=attr(t=0,l=0,r=0,b=0)
+	)
+	if height !== nothing
+	l.height = height
+	end
+	if width !== nothing
+	l.width = width
+	end
+	#Plot
+	px = [scattergl() for j=1:5]
+	px[1] = scattergl(x=t_seq*1e3, y=K_nominal[:,1],mode="lines", line=attr(color="#636efa"),name="x",hoverinfo="skip",legendgroup="nominal", legendgrouptitle_text="nominal",hovertemplate="nominal<br>kx: %{y:.1f} m⁻¹<br><b>t_acq</b>: %{x:.3f} ms<extra></extra>")
+	px[2] = scattergl(x=t_seq*1e3, y=K_skope[:,1],mode="lines", line=attr(color="#EF553B"),name="x",hoverinfo="skip",legendgroup="measured", legendgrouptitle_text="measured",hovertemplate="measured<br>kx: %{y:.1f} m⁻¹<br><b>t_acq</b>: %{x:.3f} ms<extra></extra>")
+	px[3] = scattergl(x=t_seq*1e3, y=K_nominal[:,1]-K_skope[:,1],mode="lines", line=attr(color="#00cc96"),name="x",hoverinfo="skip",legendgroup="diff", legendgrouptitle_text="difference",hovertemplate="diff<br>kx: %{y:.1f} m⁻¹<br><b>t_acq</b>: %{x:.3f} ms<extra></extra>")
+	px[4] = scattergl(x=t_adc*1e3, y=K_nominal_adc[:,1],mode="markers",line=attr(color="#19d3f3"),marker=attr(size=5, symbol=:x),name="x",legendgroup="nominal ADC",legendgrouptitle_text="nominal ADC",hovertemplate="nominal ADC<br>kx: %{y:.1f} m⁻¹<br><b>t_acq</b>: %{x:.3f} ms<extra></extra>")
+	px[5] = scattergl(x=t_adc*1e3, y=K_skope_adc[:,1],mode="markers",line=attr(color="#FFA15A"),marker=attr(size=5, symbol=:x),name="x",legendgroup="measured ADC",legendgrouptitle_text="measured ADC",hovertemplate="measured ADC<br>kx: %{y:.1f} m⁻¹<br><b>t_acq</b>: %{x:.3f} ms<extra></extra>")
+	
+	py = [scattergl() for j=1:5]
+	py[1] = scattergl(x=t_seq*1e3, y=K_nominal[:,2],mode="lines", line=attr(color="#636efa"),name="y",hoverinfo="skip",legendgroup="nominal",legendgrouptitle_text="nominal",hovertemplate="nominal<br>ky: %{y:.1f} m⁻¹<br><b>t_acq</b>: %{x:.3f} ms<extra></extra>")
+	py[2] = scattergl(x=t_seq*1e3, y=K_skope[:,2],mode="lines", line=attr(color="#EF553B"),name="y",hoverinfo="skip",legendgroup="measured",legendgrouptitle_text="measured",hovertemplate="measured<br>ky: %{y:.1f} m⁻¹<br><b>t_acq</b>: %{x:.3f} ms<extra></extra>")
+	py[3] = scattergl(x=t_seq*1e3, y=K_nominal[:,2]-K_skope[:,2],mode="lines", line=attr(color="#00cc96"),name="y",hoverinfo="skip",legendgroup="diff",legendgrouptitle_text="difference",hovertemplate="diff<br>ky: %{y:.1f} m⁻¹<br><b>t_acq</b>: %{x:.3f} ms<extra></extra>")
+	py[4] = scattergl(x=t_adc*1e3, y=K_nominal_adc[:,2],mode="markers",line=attr(color="#19d3f3"),marker=attr(size=5, symbol=:x),name="y",legendgroup="nominal ADC",legendgrouptitle_text="nominal ADC",hovertemplate="nominal ADC<br>ky: %{y:.1f} m⁻¹<br><b>t_acq</b>: %{x:.3f} ms<extra></extra>")
+	py[5] = scattergl(x=t_adc*1e3, y=K_skope_adc[:,2],mode="markers",line=attr(color="#FFA15A"),marker=attr(size=5, symbol=:x),name="y",legendgroup="measured ADC",legendgrouptitle_text="measured ADC",hovertemplate="measured ADC<br>ky: %{y:.1f} m⁻¹<br><b>t_acq</b>: %{x:.3f} ms<extra></extra>")
+	
+	pz = [scattergl() for j=1:5]
+	pz[1] = scattergl(x=t_seq*1e3, y=K_nominal[:,3],mode="lines", line=attr(color="#636efa"),name="z",hoverinfo="skip",legendgroup="nominal",legendgrouptitle_text="nominal",hovertemplate="nominal<br>kz: %{y:.1f} m⁻¹<br><b>t_acq</b>: %{x:.3f} ms<extra></extra>")
+	pz[2] = scattergl(x=t_seq*1e3, y=K_skope[:,3],mode="lines", line=attr(color="#EF553B"),name="z",hoverinfo="skip",legendgroup="measured",legendgrouptitle_text="measured",hovertemplate="measured<br>kz: %{y:.1f} m⁻¹<br><b>t_acq</b>: %{x:.3f} ms<extra></extra>")
+	pz[3] = scattergl(x=t_seq*1e3, y=K_nominal[:,3]-K_skope[:,3],mode="lines", line=attr(color="#00cc96"),name="z",hoverinfo="skip",legendgroup="diff",legendgrouptitle_text="difference",hovertemplate="diff<br>kz: %{y:.1f} m⁻¹<br><b>t_acq</b>: %{x:.3f} ms<extra></extra>")
+	pz[4] = scattergl(x=t_adc*1e3, y=K_nominal_adc[:,3],mode="markers",line=attr(color="#19d3f3"),marker=attr(size=5, symbol=:x),name="z",legendgroup="nominal ADC",legendgrouptitle_text="nominal ADC",hovertemplate="nominal ADC<br>kz: %{y:.1f} m⁻¹<br><b>t_acq</b>: %{x:.3f} ms<extra></extra>")
+	pz[5] = scattergl(x=t_adc*1e3, y=K_skope_adc[:,3],mode="markers",line=attr(color="#FFA15A"),marker=attr(size=5, symbol=:x),name="z",legendgroup="measured ADC",legendgrouptitle_text="measured ADC",hovertemplate="measured ADC<br>kz: %{y:.1f} m⁻¹<br><b>t_acq</b>: %{x:.3f} ms<extra></extra>")
+	
+	config = PlotConfig(
+		displaylogo=false,
+		toImageButtonOptions=attr(
+			format="svg", # one of png, svg, jpeg, webp
+		).fields,
+		modeBarButtonsToRemove=["zoom", "pan", "tableRotation", "resetCameraLastSave3d", "orbitRotation", "resetCameraDefault3d"]
+	)
+	if key == :x
+		p = plot_koma(px, l; config)
+	elseif key == :y
+		p = plot_koma(py, l; config)
+	elseif key == :z
+		p = plot_koma(pz, l; config)
+	elseif key == :all
+		p = [plot_koma(px, l; config); plot_koma(py, l; config); plot_koma(pz, l; config)]
+	end
+
+	return p
+end
