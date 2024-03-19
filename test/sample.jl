@@ -19,7 +19,7 @@ seq.GR[1,:] = -seq.GR[1,:];
 hoseq = HO_Sequence(seq);
 hoseq.GR_skope[:,8] = GR_skope;
 
-obj = brain_phantom2D(brain3D_02(); ss=3, location=0.8); info(obj);
+obj = brain_phantom2D(brain3D_02(); ss=10, location=0.8); info(obj);
 obj.Δw .= 0;
 
 sys = Scanner();

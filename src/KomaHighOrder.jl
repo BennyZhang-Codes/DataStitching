@@ -8,6 +8,7 @@ using ThreadsX
 # Printing
 using ProgressMeter
 using Reexport
+using MRIBase
 @reexport using KomaMRI
 
 import KomaMRI.KomaMRICore: SimulationMethod, SpinStateRepresentation
@@ -29,7 +30,8 @@ include("plot/plot_kspace.jl")
 include("reconstruction/recon_2d.jl")
 
 include("mrd/signal_to_raw_data.jl")
-include("mrd/BlochHighOrder_signal_to_raw_data.jl")
+include("mrd/HO_signal_to_raw_data.jl")
+# include("mrd/AcquisitionData.jl")
 
 export HO_DiscreteSequence
 export HO_Sequence
