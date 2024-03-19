@@ -28,8 +28,8 @@ include("plot/plot_seqd.jl")
 include("plot/plot_kspace.jl")
 include("reconstruction/recon_2d.jl")
 
-include("mrd/HO_signal_to_raw_data.jl")
-include("mrd/HO_signal_to_raw_data_2.jl")
+include("mrd/signal_to_raw_data.jl")
+include("mrd/BlochHighOrder_signal_to_raw_data.jl")
 
 export HO_DiscreteSequence
 export HO_Sequence

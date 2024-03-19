@@ -1,13 +1,32 @@
 import KomaMRI.KomaMRICore: signal_to_raw_data
+"""
+    raw = signal_to_raw_data(signal, hoseq, sim_method; phantom_name, sys, sim_params)
 
+Transforms the raw signal into a RawAcquisitionData struct (nearly equivalent to the ISMRMRD
+format) used for reconstruction with MRIReco.
+
+# Arguments
+- `signal`: (`::Matrix{Complex}`) raw signal matrix
+- `hoseq`: (`::HO_Sequence`) HO_Sequence struct
+- `sim_method`: (`::BlochHighOrder`) simulation method
+
+# Keywords
+- `phantom_name`: (`::String`, `="Phantom"`) phantom name
+- `sys`: (`::Scanner`, `=Scanner()`) Scanner struct
+- `sim_params`: (`::Dict{String, Any}`, `=Dict{String,Any}()`) simulation parameter dictionary
+
+# Returns
+- `raw`: (`::RawAcquisitionData`) RawAcquisitionData struct
+```
+"""
 function signal_to_raw_data(
-    signal, hoseq::HO_Sequence, hoseqd::HO_DiscreteSequence;
-    phantom_name="Phantom", sys=Scanner(), sim_params=Dict{String,Any}(), ndims=2
+    signal, hoseq::HO_Sequence, sim_method::BlochHighOrder;
+    phantom_name="Phantom", sys=Scanner(), sim_params=Dict{String,Any}(), ndims=6
 )
     seq = hoseq.SEQ
     version = string(VersionNumber(Pkg.TOML.parsefile(joinpath(@__DIR__, "..", "..", "Project.toml"))["version"]))
     #Number of samples and FOV
-    _, ktraj = get_kspace(seq) #kspace information
+    _, ktraj, _, ktraj_skope = get_kspace(hoseq) #kspace information
     mink = minimum(ktraj, dims=1)
     maxk = maximum(ktraj, dims=1)
     Wk = maxk .- mink
@@ -34,6 +53,8 @@ function signal_to_raw_data(
     end
     #It needs to be transposed for the raw data
     ktraj = maximum(2*abs.(ktraj[:])) == 0 ? transpose(ktraj) : transpose(ktraj)./ maximum(2*abs.(ktraj[:]))
+    ktraj_skope = maximum(2*abs.(ktraj_skope[:])) == 0 ? transpose(ktraj_skope) : transpose(ktraj_skope)./ maximum(2*abs.(ktraj_skope[:]))
+    ktraj = [ktraj; ktraj_skope]
 
     #First we define the ISMRMRD data XML header
     #userParameters <- sim_params
