@@ -1,5 +1,7 @@
 import KomaMRI.KomaMRIPlots: plot_kspace, interp_map, theme_chooser, plot_koma
 
+
+
 """
     p = plot_kspace(seq::Sequence; width=nothing, height=nothing, darkmode=false)
 
@@ -212,12 +214,6 @@ function plot_grads_cumtrapz(
 	t_seq = t .+ Δt
 
 	#Layout
-	mink = minimum(K_skope,dims=1)
-	maxk = maximum(K_skope_adc,dims=1)
-	dW = maximum(maxk .- mink, dims=2) * .3
-	mink .-= dW
-	maxk .+= dW
-	#Layout
 	l = Layout(;hovermode="closest",
 		xaxis_title="",
 		modebar=attr(orientation="h", yanchor="bottom", xanchor="right", y=1, x=0, bgcolor=bgcolor, color=text_color, activecolor=plot_bgcolor),
@@ -241,11 +237,81 @@ function plot_grads_cumtrapz(
 	if width !== nothing
 	l.width = width
 	end
+	SH = SphericalHarmonics()
+	name = SH.dict["h$(order)"].name
+	unit = SH.dict["h$(order)"].cumtrapz_unit
+	expression = SH.dict["h$(order)"].expression
+	l.xaxis_title = "t_seq (ms)"
+	l.yaxis_title = "$(name) ($(expression) $(unit))"
 	#Plot
-	p = [scattergl() for j=1:2]
-    p[1] = scattergl(x=t_seq*1e3, y=K_skope[:,1],mode="lines", line=attr(color="#636efa"),name="h$(order)",hoverinfo="skip",legendgroup="measured", legendgrouptitle_text="measured",hovertemplate="measured<br>kx: %{y:.1f} m⁻¹<br><b>t_acq</b>: %{x:.3f} ms<extra></extra>")
-	p[2] = scattergl(x=t_adc*1e3, y=K_skope_adc[:,1],mode="markers",line=attr(color="#19d3f3"),marker=attr(size=5, symbol=:x),name="x",legendgroup="measured ADC",legendgrouptitle_text="measured ADC",hovertemplate="measured ADC<br>kx: %{y:.1f} m⁻¹<br><b>t_acq</b>: %{x:.3f} ms<extra></extra>")
+
+	p = [scattergl() for j=1:9]
+    p[1] = scattergl(x=t_seq*1e3, y=K_skope[:,1],mode="lines", line=attr(color="#636efa"),name="h$(order)",hoverinfo="skip",hovertemplate="$(name)[$(expression)]: %{y:.3f} $(unit)<br><b>t_acq</b>: %{x:.3f} ms<extra></extra>")
+	p[2] = scattergl(x=t_adc*1e3, y=K_skope_adc[:,1],mode="markers",line=attr(color="#19d3f3"),marker=attr(size=5, symbol=:x),name="h$(order) ADC",hovertemplate="$(name)[$(expression)]: %{y:.3f} $(unit)<br><b>t_acq</b>: %{x:.3f} ms<extra></extra>")
 	
+	config = PlotConfig(
+		displaylogo=false,
+		toImageButtonOptions=attr(
+			format="svg", # one of png, svg, jpeg, webp
+		).fields,
+		modeBarButtonsToRemove=["zoom", "pan", "tableRotation", "resetCameraLastSave3d", "orbitRotation", "resetCameraDefault3d"]
+	)
+	p = plot_koma(p, l; config)
+	return p
+end
+
+
+function plot_grads_cumtrapz(	
+	hoseq::HO_Sequence;
+	width=nothing,
+	height=nothing,
+	darkmode=false)
+	seq = hoseq.SEQ
+	bgcolor, text_color, plot_bgcolor, grid_color, sep_color = theme_chooser(darkmode)
+	_, _, K_skope, K_skope_adc = get_kspace(hoseq; Δt=1)
+
+	t_adc = KomaMRIBase.get_adc_sampling_times(seq)
+	t, Δt = KomaMRIBase.get_variable_times(hoseq.SEQ; Δt=1)
+	t = t[1:end-1]
+	t_seq = t .+ Δt
+	colors = ["#5f4690" "#1d6996" "#38a6a5" "#0f8554" "#73af48" "#edad08" "#e17c05" "#cc503e" "#94346e"] # prism, for skope measured gradients
+	#Layout
+	l = Layout(;hovermode="closest",
+		xaxis_title="",
+		modebar=attr(orientation="h", yanchor="bottom", xanchor="right", y=1, x=0, bgcolor=bgcolor, color=text_color, activecolor=plot_bgcolor),
+		legend=attr(orientation="h", yanchor="bottom", xanchor="left", y=1, x=0),
+		plot_bgcolor=plot_bgcolor,
+		paper_bgcolor=bgcolor,
+		xaxis_gridcolor=grid_color,
+		yaxis_gridcolor=grid_color,
+		xaxis_zerolinecolor=grid_color,
+		yaxis_zerolinecolor=grid_color,
+		font_color=text_color,
+		yaxis_fixedrange = false,
+		xaxis=attr(
+			ticksuffix=" ms",
+			),
+		margin=attr(t=0,l=0,r=0,b=0),
+		colorway=vec([colors; colors]) # prism, for skope measured gradients
+	)
+	if height !== nothing
+	l.height = height
+	end
+	if width !== nothing
+	l.width = width
+	end
+	SH = SphericalHarmonics()
+	l.xaxis_title = "t_seq (ms)"
+	#Plot
+	p = [scattergl() for j=1:18]
+
+	for h =0:8
+		name = SH.dict["h$(h)"].name
+		unit = SH.dict["h$(h)"].cumtrapz_unit
+		expression = SH.dict["h$(h)"].expression
+		p[1+h*2] = scattergl(x=t_seq*1e3, y=K_skope[:,h+1],mode="lines",name="h$(h)",legendgroup="h$(h)", hoverinfo="skip",hovertemplate="$(name)[$(expression)]: %{y:.3f} $(unit)<br><b>t_acq</b>: %{x:.3f} ms<extra></extra>")
+		p[2+h*2] = scattergl(x=t_adc*1e3, y=K_skope_adc[:,h+1],mode="markers",marker=attr(size=5, symbol=:circle),name="h$(h) ADC",showlegend=false, legendgroup="h$(h)", hovertemplate="h$(h) ADC<br>$(name)[$(expression)]: %{y:.3f} $(unit)<br><b>t_acq</b>: %{x:.3f} ms<extra></extra>")
+	end
 	config = PlotConfig(
 		displaylogo=false,
 		toImageButtonOptions=attr(
