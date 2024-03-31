@@ -13,7 +13,7 @@ times. DiscreteSequence is the struct used for simulation.
 - `h2`: (`::AbstractVector{T<:Real}`, `[T/m]`)  `y`
 - `h3`: (`::AbstractVector{T<:Real}`, `[T/m]`)  `z`
 - `h4`: (`::AbstractVector{T<:Real}`, `[T/m²]`) `xy`
-- `h5`: (`::AbstractVector{T<:Real}`, `[T/m²]`) `yz`
+- `h5`: (`::AbstractVector{T<:Real}`, `[T/m²]`) `zy`
 - `h6`: (`::AbstractVector{T<:Real}`, `[T/m²]`) `3z² - (x²	+ y² + z²)`
 - `h7`: (`::AbstractVector{T<:Real}`, `[T/m²]`) `xz`
 - `h8`: (`::AbstractVector{T<:Real}`, `[T/m²]`) `x² - y²`
