@@ -231,10 +231,10 @@ skip_rf=zeros(Bool, sum(is_RF_on.(hoseq.SEQ)))) = begin
 	t = t[1:end-1]
 
 	G_nominal = Dict(1=>Gx, 2=>Gy, 3=>Gz)
-	G_skope = Dict(1=>H1, 2=>H2, 3=>H3)
+	G_skope = Dict(1=>H0, 2=>H1, 3=>H2, 4=>H3, 5=>H4, 6=>H5, 7=>H6, 8=>H7, 9=>H8)
 	
 	K_nominal, K_nominal_adc = grad2kspace(hoseq.SEQ, G_nominal, t, Δt, skip_rf)
-	K_skope, K_skope_adc = grad2kspace(hoseq.SEQ, G_skope, t, Δt, skip_rf)
+	K_skope, K_skope_adc = grad2kspace(hoseq, G_skope, t, Δt, skip_rf)
 	return K_nominal, K_nominal_adc, K_skope, K_skope_adc
 end
 
@@ -274,5 +274,51 @@ function grad2kspace(seq::Sequence, G, t, Δt, skip_rf)
 	kz_adc = linear_interpolation(ts,kspace[:,3],extrapolation_bc=0)(t_adc)
 	kspace_adc = [kx_adc ky_adc kz_adc]
 	#Final
+	kspace, kspace_adc	
+end 
+
+function grad2kspace(hoseq::HO_Sequence, G, t, Δt, skip_rf)
+	seq = hoseq.SEQ
+	#kspace
+	Nt = length(t)
+	k = zeros(Nt,9)
+	#get_RF_center_breaks
+	idx_rf, rf_type = KomaMRIBase.get_RF_types(seq, t)
+	parts = kfoldperm(Nt, 1; breaks=idx_rf)
+	for i = 1:9
+		kf = 0
+		for (rf, p) in enumerate(parts)
+			k[p,i] = cumtrapz(Δt[p]', G[i][p[1]:p[end]+1]')[:] #This is the exact integral
+			if rf > 1
+				if !skip_rf[rf-1]
+					if rf_type[rf-1] == 0 # Excitation
+						k[p,i] .-= 0
+					elseif rf_type[rf-1] == 1 # Refocuse
+						k[p,i] .-= kf
+					end
+				else
+					k[p,i] .+= kf
+				end
+			end
+			kf = k[p[end],i]
+		end
+	end
+	kspace = γ * k #[m^-1]
+	#Interp, as Gradients are generally piece-wise linear, the integral is piece-wise quadratic
+	#Nevertheless, the integral is sampled at the ADC times so a linear interp is sufficient
+	#TODO: check if this interpolation is necessary
+	ts = t .+ Δt
+	t_adc =  get_adc_sampling_times(seq)
+	k0_adc = linear_interpolation(ts,kspace[:,1],extrapolation_bc=0)(t_adc)
+	k1_adc = linear_interpolation(ts,kspace[:,2],extrapolation_bc=0)(t_adc)
+	k2_adc = linear_interpolation(ts,kspace[:,3],extrapolation_bc=0)(t_adc)
+	k3_adc = linear_interpolation(ts,kspace[:,4],extrapolation_bc=0)(t_adc)
+	k4_adc = linear_interpolation(ts,kspace[:,5],extrapolation_bc=0)(t_adc)
+	k5_adc = linear_interpolation(ts,kspace[:,6],extrapolation_bc=0)(t_adc)
+	k6_adc = linear_interpolation(ts,kspace[:,7],extrapolation_bc=0)(t_adc)
+	k7_adc = linear_interpolation(ts,kspace[:,8],extrapolation_bc=0)(t_adc)
+	k8_adc = linear_interpolation(ts,kspace[:,9],extrapolation_bc=0)(t_adc)
+	#Final
+	kspace_adc = [k0_adc k1_adc k2_adc k3_adc k4_adc k5_adc k6_adc k7_adc k8_adc]
 	kspace, kspace_adc	
 end 

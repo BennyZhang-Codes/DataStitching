@@ -35,6 +35,9 @@ function plot_kspace(
 	bgcolor, text_color, plot_bgcolor, grid_color, sep_color = theme_chooser(darkmode)
 	#Calculations of theoretical k-space
 	K_nominal, K_nominal_adc, K_skope, K_skope_adc = get_kspace(hoseq; Δt=1) #sim_params["Δt"])
+	K_skope = K_skope[:, 2:4]          # H1, H2, H3 => x, y, z
+	K_skope_adc = K_skope_adc[:, 2:4]
+
 	t_adc = KomaMRIBase.get_adc_sampling_times(seq)
 	#Colormap
 	c_map = [[t, "hsv($(floor(Int,(1-t)*255)), 100, 50)"] for t=range(0,1;length=10)] # range(s,b,N) only works in Julia 1.7.3
@@ -103,9 +106,12 @@ function plot_kspace(
 	height=nothing,
 	darkmode=false
 )
+	@assert key == :x || key == :y || key == :z || key == :all "key must be one of :x, :y, :z, :all"
 	seq = hoseq.SEQ
 	bgcolor, text_color, plot_bgcolor, grid_color, sep_color = theme_chooser(darkmode)
 	K_nominal, K_nominal_adc, K_skope, K_skope_adc = get_kspace(hoseq; Δt=1)
+	K_skope = K_skope[:, 2:4]          # H1, H2, H3 => x, y, z
+	K_skope_adc = K_skope_adc[:, 2:4]
 
 	t_adc = KomaMRIBase.get_adc_sampling_times(seq)
 
@@ -182,5 +188,71 @@ function plot_kspace(
 		p = [plot_koma(px, l; config); plot_koma(py, l; config); plot_koma(pz, l; config)]
 	end
 
+	return p
+end
+
+
+function plot_grads_cumtrapz(	
+	hoseq::HO_Sequence,
+	order::Integer;
+	width=nothing,
+	height=nothing,
+	darkmode=false)
+	@assert 0 <= order <= 8 "order must be between 0 and 8"
+	seq = hoseq.SEQ
+	bgcolor, text_color, plot_bgcolor, grid_color, sep_color = theme_chooser(darkmode)
+	_, _, K_skope, K_skope_adc = get_kspace(hoseq; Δt=1)
+	K_skope = K_skope[:, order+1:order+1]          # H1, H2, H3 => x, y, z
+	K_skope_adc = K_skope_adc[:, order+1:order+1]
+
+	t_adc = KomaMRIBase.get_adc_sampling_times(seq)
+
+	t, Δt = KomaMRIBase.get_variable_times(hoseq.SEQ; Δt=1)
+	t = t[1:end-1]
+	t_seq = t .+ Δt
+
+	#Layout
+	mink = minimum(K_skope,dims=1)
+	maxk = maximum(K_skope_adc,dims=1)
+	dW = maximum(maxk .- mink, dims=2) * .3
+	mink .-= dW
+	maxk .+= dW
+	#Layout
+	l = Layout(;hovermode="closest",
+		xaxis_title="",
+		modebar=attr(orientation="h", yanchor="bottom", xanchor="right", y=1, x=0, bgcolor=bgcolor, color=text_color, activecolor=plot_bgcolor),
+		legend=attr(orientation="h", yanchor="bottom", xanchor="left", y=1, x=0),
+		plot_bgcolor=plot_bgcolor,
+		paper_bgcolor=bgcolor,
+		xaxis_gridcolor=grid_color,
+		yaxis_gridcolor=grid_color,
+		xaxis_zerolinecolor=grid_color,
+		yaxis_zerolinecolor=grid_color,
+		font_color=text_color,
+		yaxis_fixedrange = false,
+		xaxis=attr(
+			ticksuffix=" ms",
+			),
+		margin=attr(t=0,l=0,r=0,b=0)
+	)
+	if height !== nothing
+	l.height = height
+	end
+	if width !== nothing
+	l.width = width
+	end
+	#Plot
+	p = [scattergl() for j=1:2]
+    p[1] = scattergl(x=t_seq*1e3, y=K_skope[:,1],mode="lines", line=attr(color="#636efa"),name="h$(order)",hoverinfo="skip",legendgroup="measured", legendgrouptitle_text="measured",hovertemplate="measured<br>kx: %{y:.1f} m⁻¹<br><b>t_acq</b>: %{x:.3f} ms<extra></extra>")
+	p[2] = scattergl(x=t_adc*1e3, y=K_skope_adc[:,1],mode="markers",line=attr(color="#19d3f3"),marker=attr(size=5, symbol=:x),name="x",legendgroup="measured ADC",legendgrouptitle_text="measured ADC",hovertemplate="measured ADC<br>kx: %{y:.1f} m⁻¹<br><b>t_acq</b>: %{x:.3f} ms<extra></extra>")
+	
+	config = PlotConfig(
+		displaylogo=false,
+		toImageButtonOptions=attr(
+			format="svg", # one of png, svg, jpeg, webp
+		).fields,
+		modeBarButtonsToRemove=["zoom", "pan", "tableRotation", "resetCameraLastSave3d", "orbitRotation", "resetCameraDefault3d"]
+	)
+	p = plot_koma(p, l; config)
 	return p
 end
