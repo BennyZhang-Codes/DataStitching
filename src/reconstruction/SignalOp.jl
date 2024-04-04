@@ -112,6 +112,19 @@ function ctprod_SignalOp(xm::Vector{T}, x::Vector{Float64}, y::Vector{Float64}, 
   return vec(out)
 end
 
+function prod_SignalOp(xm::SubArray{T}, x::Vector{Float64}, y::Vector{Float64}, nodes::Matrix{Float64};
+    Nblocks::Int64=1, parts::Vector{UnitRange{Int64}}=[1:size(nodes,2)], use_gpu::Bool=false) where T<:Union{Real,Complex}
+	xm = xm[:,1]
+  return prod_SignalOp(xm, x, y, nodes; Nblocks=Nblocks, parts=parts, use_gpu=use_gpu)
+end
+
+function ctprod_SignalOp(xm::SubArray{T}, x::Vector{Float64}, y::Vector{Float64}, nodes::Matrix{Float64}; 
+    Nblocks::Int64=1, parts::Vector{UnitRange{Int64}}=[1:size(nodes,2)], use_gpu::Bool=false) where T<:Union{Real,Complex}
+	xm = xm[:,1]
+  return ctprod_SignalOp(xm, x, y, nodes; Nblocks=Nblocks, parts=parts, use_gpu=use_gpu)
+end
+
+
 function Base.adjoint(op::SignalOp{T}) where T
   return LinearOperator{T}(op.ncol, op.nrow, op.symmetric, op.hermitian,
                         op.ctprod!, nothing, op.prod!)
