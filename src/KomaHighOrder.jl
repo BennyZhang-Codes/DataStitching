@@ -28,11 +28,14 @@ include("simulation/Bloch/BlochHighOrderSimulatitonMethod.jl")
 include("plot/plot_seq.jl")
 include("plot/plot_seqd.jl")
 include("plot/plot_kspace.jl")
-include("reconstruction/recon_2d.jl")
+
 
 include("mrd/signal_to_raw_data.jl")
 include("mrd/HO_signal_to_raw_data.jl")
 # include("mrd/AcquisitionData.jl")
+
+include("reconstruction/recon.jl")
+
 
 export HO_DiscreteSequence
 export HO_Sequence
