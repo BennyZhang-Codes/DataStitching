@@ -36,6 +36,7 @@ include("mrd/HO_signal_to_raw_data.jl")
 
 include("reconstruction/recon.jl")
 
+include("demo/demo.jl")
 
 export HO_DiscreteSequence
 export HO_Sequence
