@@ -40,7 +40,7 @@ function run_spin_precession!(p::Phantom{T}, hoseqd::HO_DiscreteSequence{T}, sig
     Bzh5 = (zt .* yt) .* hoseqd.h5'
     Bzh6 = (3zt.^2-(xt.^2 .+ yt.^2 .+ zt.^2)) .* hoseqd.h6'
     Bzh7 = (xt .* zt) .* hoseqd.h7'
-    Bzh8 = (xt.^2 .+ yt.^2) .* hoseqd.h8'
+    Bzh8 = (xt.^2 .- yt.^2) .* hoseqd.h8'
 
     Bz0 = sim_method.ho0 ? hoseqd.h0' : 0
     Bz1 = sim_method.ho1 ? Bzh1 .+ Bzh2 .+ Bzh3 : xt .* seq.Gx' .+ yt .* seq.Gy' .+ zt .* seq.Gz'
