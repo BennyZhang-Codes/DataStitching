@@ -75,7 +75,7 @@ function prod_SignalOp(xm::Vector{T}, x::Vector{Float64}, y::Vector{Float64}, no
     end
     progress_bar = Progress(Nblocks)
     for (block, p) = enumerate(parts)
-        kx, ky = nodes[1,p], nodes[2,p]
+        kx, ky = @view(nodes[1,p]), @view(nodes[2,p])
         ϕ = (kx .* x') .+ (ky .* y')
         e = exp.(-2*1im*pi*ϕ)
         out[p] =  e * xm
@@ -100,7 +100,7 @@ function ctprod_SignalOp(xm::Vector{T}, x::Vector{Float64}, y::Vector{Float64}, 
     end
     progress_bar = Progress(Nblocks)
     for (block, p) = enumerate(parts)
-        kx, ky = nodes[1,p], nodes[2,p]
+        kx, ky = @view(nodes[1,p]), @view(nodes[2,p])
         ϕ = (x .* kx') .+ (y .* ky')
         e = exp.(-2*1im*pi*ϕ)
         out +=  conj(e) * xm[p]
