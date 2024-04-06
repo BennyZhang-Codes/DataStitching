@@ -23,24 +23,28 @@ end
 LinearOperators.storage_type(op::HighOrderOp) = typeof(op.Mv5)
 
 """
-    HighOrderOp(shape::NTuple{D,Int64}, tr::Trajectory; Nblocks::Int64=50, use_gpu::Bool=true) where D
+    HighOrderOp(shape::NTuple{D,Int64}, tr_nominal::Trajectory, tr_measured::Trajectory; Nblocks::Int64=50, use_gpu::Bool=true) where D
 
 generates a `HighOrderOp` which explicitely evaluates the MRI Fourier HighOrder encoding operator.
 
 # Arguments:
 * `shape::NTuple{D,Int64}`  - size of image to encode/reconstruct
-* `tr::Trajectory`          - Trajectory with the kspace nodes to sample
+* `tr_nominal::Trajectory`  - (must be 3 rows [x, y, z]') nominal Trajectory without normalization.
+* `tr_measured::Trajectory`    - (must be 9 rows [h0, h1, h2, h3, h4, h5, h6, h7, h8]') measured Trajectory without normalization. 
+``
                               this results in complex valued image even for real-valued input.
 * `Nblocks`                 - split trajectory into `Nblocks` blocks to avoid memory overflow.
 * `use_gpu`                 - use GPU for HighOrder encoding/decoding(default: `true`).
 """
-function HighOrderOp(shape::NTuple{D,Int64}, tr::Trajectory, tr_skope::Trajectory; Nblocks::Int64=50, use_gpu::Bool=true) where D
-    nodes = Float64.(kspaceNodes(tr))
-    nodes_skope = Float64.(kspaceNodes(tr_skope))
-    times = readoutTimes(tr)
-    nrow = size(nodes,2)
+function HighOrderOp(shape::NTuple{D,Int64}, tr_nominal::Trajectory, tr_measured::Trajectory, sim_method::BlochHighOrder; Nblocks::Int64=50, use_gpu::Bool=true) where D
+    nodes_measured = Float64.(kspaceNodes(tr_measured))
+    nodes_nominal = Float64.(kspaceNodes(tr_nominal))
+    @assert size(nodes_measured,1) == 9 "nodes for measured must have 9 rows"
+    @assert size(nodes_nominal,1) == 3 "nodes for nominal must have 3 rows"
+
+    nrow = size(nodes_measured,2)
     ncol = prod(shape)
-    k = size(nodes,2) # number of nodes
+    k = size(nodes_measured,2) # number of nodes
     Nblocks = Nblocks > k ? k : Nblocks # Nblocks must be <= k
     
     n = k÷Nblocks # number of nodes per block
@@ -62,21 +66,27 @@ function HighOrderOp(shape::NTuple{D,Int64}, tr::Trajectory, tr_skope::Trajector
 
     @info "HighOrderOp Nblocks=$Nblocks, use_gpu=$use_gpu"
     return HighOrderOp{ComplexF64,Nothing,Function}(nrow, ncol, false, false
-                , (res,xm)->(res .= prod_HighOrderOp(xm, x, y, z, nodes_skope; Nblocks=Nblocks, parts=parts, use_gpu=use_gpu))
+                , (res,xm)->(res .= prod_HighOrderOp(xm, x, y, z, nodes_measured, nodes_nominal;sim_method, Nblocks=Nblocks, parts=parts, use_gpu=use_gpu))
                 , nothing
-                , (res,ym)->(res .= ctprod_HighOrderOp(ym, x, y, z, nodes_skope; Nblocks=Nblocks, parts=parts, use_gpu=use_gpu))
+                , (res,ym)->(res .= ctprod_HighOrderOp(ym, x, y, z, nodes_measured, nodes_nominal;sim_method, Nblocks=Nblocks, parts=parts, use_gpu=use_gpu))
                 , 0,0,0, false, false, false, ComplexF64[], ComplexF64[])
 end
 
-function prod_HighOrderOp(xm::Vector{T}, x::Vector{Float64}, y::Vector{Float64}, z::Vector{Float64}, nodes::Matrix{Float64};
-    Nblocks::Int64=1, parts::Vector{UnitRange{Int64}}=[1:size(nodes,2)], use_gpu::Bool=false) where T<:Union{Real,Complex}
-    @assert size(nodes,1) == 9 "nodes for skope must have 9 columns"
+function prod_HighOrderOp(
+    xm::Vector{T}, x::Vector{Float64}, y::Vector{Float64}, z::Vector{Float64}, 
+    nodes_measured::Matrix{Float64}, nodes_nominal::Matrix{Float64};
+    sim_method::BlochHighOrder=BlochHighOrder("111"), 
+    Nblocks::Int64=1, 
+    parts::Vector{UnitRange{Int64}}=[1:size(nodes_measured,2)], 
+    use_gpu::Bool=false) where T<:Union{Real,Complex}
+
     @info "HighOrderOp prod Nblocks=$Nblocks, use_gpu=$use_gpu"
-    out = zeros(ComplexF64,size(nodes,2))
+    out = zeros(ComplexF64,size(nodes_measured,2))
     x0 = ones(Float64, size(x))
     if use_gpu
         out = out |> gpu
-        nodes = nodes |> gpu
+        nodes_measured = nodes_measured |> gpu
+        nodes_nominal = nodes_nominal |> gpu
         xm = xm |> gpu
         x0 = x0 |> gpu
         x = x |> gpu
@@ -85,12 +95,13 @@ function prod_HighOrderOp(xm::Vector{T}, x::Vector{Float64}, y::Vector{Float64},
     end
     progress_bar = Progress(Nblocks)
     for (block, p) = enumerate(parts)
-        h0, h1, h2, h3, h4, h5, h6, h7, h8 = @view(nodes[1,p]), @view(nodes[2,p]), @view(nodes[3,p]), @view(nodes[4,p]),
-                                       @view(nodes[5,p]), @view(nodes[6,p]), @view(nodes[7,p]), @view(nodes[8,p]), @view(nodes[9,p])
-        ϕ0 = h0 .* x0'
-        ϕ1 = (h1 .* x') .+ (h2 .* y') .+ (h3 .* z')
-        ϕ2 = h4 .* (x .* y)' .+ h5 .* (z .* y)' .+ h6 .* (3z.^2-(x.^2 .+ y.^2 .+ z.^2))' .+
-                h7 .* (x .* z)' .+ h8 .* (x.^2 .- y.^2)'
+        h0, h1, h2, h3, h4, h5, h6, h7, h8 = @view(nodes_measured[1,p]), @view(nodes_measured[2,p]), @view(nodes_measured[3,p]), @view(nodes_measured[4,p]),
+                                       @view(nodes_measured[5,p]), @view(nodes_measured[6,p]), @view(nodes_measured[7,p]), @view(nodes_measured[8,p]), @view(nodes_measured[9,p])
+        hx, hy, hz = @view(nodes_nominal[1,p]), @view(nodes_nominal[2,p]), @view(nodes_nominal[3,p])
+        ϕ0 = sim_method.ho0 ? h0 .* x0' : 0
+        ϕ1 = sim_method.ho1 ? (h1 .* x') .+ (h2 .* y') .+ (h3 .* z') : (hx .* x') .+ (hy .* y') .+ (hz .* z')
+        ϕ2 = sim_method.ho2 ? h4 .* (x .* y)' .+ h5 .* (z .* y)' .+ h6 .* (3z.^2-(x.^2 .+ y.^2 .+ z.^2))' .+
+                h7 .* (x .* z)' .+ h8 .* (x.^2 .- y.^2)' : 0
         ϕ = ϕ0 .+ ϕ1 .+ ϕ2
         e = exp.(-2*1im*pi*ϕ)
         out[p] =  e * xm
@@ -102,16 +113,21 @@ function prod_HighOrderOp(xm::Vector{T}, x::Vector{Float64}, y::Vector{Float64},
     return vec(out)
 end
 
-function ctprod_HighOrderOp(xm::Vector{T}, x::Vector{Float64}, y::Vector{Float64}, z::Vector{Float64}, nodes::Matrix{Float64}; 
-    Nblocks::Int64=1, parts::Vector{UnitRange{Int64}}=[1:size(nodes,2)], use_gpu::Bool=false) where T<:Union{Real,Complex}
-    @assert size(nodes,1) == 9 "nodes for skope must have 9 columns"
+function ctprod_HighOrderOp(
+    xm::Vector{T}, x::Vector{Float64}, y::Vector{Float64}, z::Vector{Float64},
+    nodes_measured::Matrix{Float64}, nodes_nominal::Matrix{Float64};
+    sim_method::BlochHighOrder=BlochHighOrder("111"), 
+    Nblocks::Int64=1, 
+    parts::Vector{UnitRange{Int64}}=[1:size(nodes_measured,2)], 
+    use_gpu::Bool=false) where T<:Union{Real,Complex}
     @info "HighOrderOp ctprod Nblocks=$Nblocks, use_gpu=$use_gpu"
     out = zeros(ComplexF64, size(x, 1))
     x0 = ones(Float64, size(x))
 
     if use_gpu
         out = out |> gpu
-        nodes = nodes |> gpu
+        nodes_measured = nodes_measured |> gpu
+        nodes_nominal = nodes_nominal |> gpu
         xm = xm |> gpu
         x0 = x0 |> gpu
         x = x |> gpu
@@ -120,12 +136,13 @@ function ctprod_HighOrderOp(xm::Vector{T}, x::Vector{Float64}, y::Vector{Float64
     end
     progress_bar = Progress(Nblocks)
     for (block, p) = enumerate(parts)
-        h0, h1, h2, h3, h4, h5, h6, h7, h8 = @view(nodes[1,p]), @view(nodes[2,p]), @view(nodes[3,p]), @view(nodes[4,p]),
-                                       @view(nodes[5,p]), @view(nodes[6,p]), @view(nodes[7,p]), @view(nodes[8,p]), @view(nodes[9,p])
-        ϕ0 = x0 .* h0'
-        ϕ1 = (x .* h1') .+ (y .* h2') .+ (z .* h3')
-        ϕ2 = (x .* y) .* h4' .+ (z .* y) .* h5' .+ (3z.^2-(x.^2 .+ y.^2 .+ z.^2)) .* h6' .+
-            (x .* z) .* h7' .+ (x.^2 .- y.^2) .* h8'
+        h0, h1, h2, h3, h4, h5, h6, h7, h8 = @view(nodes_measured[1,p]), @view(nodes_measured[2,p]), @view(nodes_measured[3,p]), @view(nodes_measured[4,p]),
+                                       @view(nodes_measured[5,p]), @view(nodes_measured[6,p]), @view(nodes_measured[7,p]), @view(nodes_measured[8,p]), @view(nodes_measured[9,p])
+        hx, hy, hz = @view(nodes_nominal[1,p]), @view(nodes_nominal[2,p]), @view(nodes_nominal[3,p])
+        ϕ0 = sim_method.ho0 ? x0 .* h0' : 0
+        ϕ1 = sim_method.ho1 ? (x .* h1') .+ (y .* h2') .+ (z .* h3') : (x .* hx') .+ (y .* hy') .+ (z .* hz')
+        ϕ2 = sim_method.ho2 ? (x .* y) .* h4' .+ (z .* y) .* h5' .+ (3z.^2-(x.^2 .+ y.^2 .+ z.^2)) .* h6' .+
+            (x .* z) .* h7' .+ (x.^2 .- y.^2) .* h8' : 0
         ϕ = ϕ0 .+ ϕ1 .+ ϕ2
 
         e = exp.(-2*1im*pi*ϕ)
