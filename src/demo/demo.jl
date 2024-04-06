@@ -27,7 +27,8 @@ function demo_hoseq() ::HO_Sequence
     return hoseq
 end
 
-function demo_raw(BHO::BlochHighOrder) ::RawAcquisitionData
+function demo_raw(name::String) ::RawAcquisitionData
+    BHO = BlochHighOrder(name)
     @info "demo_raw: $(BHO)"
     name = BHO.name
     path = @__DIR__
