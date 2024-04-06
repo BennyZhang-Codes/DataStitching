@@ -2,15 +2,24 @@ import KomaMRI.KomaMRICore: run_spin_precession!, run_spin_excitation!
 import KomaMRI.KomaMRICore: output_Ndim, initialize_spins_state, Bloch, sim_output_dim
 
 Base.@kwdef struct BlochHighOrder <: SimulationMethod 
-    skope::Bool = true
     ho0::Bool = true
     ho1::Bool = true
     ho2::Bool = true
+    name::String = string(Int(ho0)) * string(Int(ho1)) * string(Int(ho2))
+end
+
+function BlochHighOrder(name::String)
+    @assert name == "000" || name == "100" || name == "010" || name == "001" || name == "110" || name == "101" || 
+    name == "011" || name == "111" "Invalid name for BlochHighOrder simulation method. Valid names are: 000, 100, 010, 001, 110, 101, 011, 111"
+    ho0 = Bool(parse(Int64, name[1]))
+    ho1 = Bool(parse(Int64, name[2]))
+    ho2 = Bool(parse(Int64, name[3]))
+    return BlochHighOrder(ho0=ho0, ho1=ho1, ho2=ho2)
 end
 
 export BlochHighOrder
 Base.show(io::IO, b::BlochHighOrder) = begin
-	print(io, "BlochHighOrder[ zero order=$(b.ho0) | first order=$(b.ho1) | second order=$(b.ho2) ]")
+	print(io, "BlochHighOrder[[$(b.name)] zero order=$(b.ho0) | first order=$(b.ho1) | second order=$(b.ho2) ]")
 end
 
 output_Ndim(sim_method::BlochHighOrder) =  output_Ndim(Bloch())#time-points x coils
