@@ -1,4 +1,4 @@
-export demo, demo_raw, demo_hoseq
+export demo, demo_raw, demo_hoseq, demo_sim
 
 function demo() ::Nothing
     @info "demos:"
@@ -46,7 +46,7 @@ function demo_sim(;
     plot_hoseqd(hoseq)
 
     # phantom
-    info(obj);
+    info(obj)
     obj.Δw .= obj.Δw * 0; # γ*1.5*(-3.45)*1e-6 * 2π
 
     # scanner & sim_params

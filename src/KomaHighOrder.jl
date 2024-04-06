@@ -17,10 +17,11 @@ import KomaMRI.KomaMRICore: SimulationMethod, SpinStateRepresentation
 import Functors: @functor
 
 include("datatypes/Sequence.jl")
+include("datatypes/DiscreteSequence.jl") # include HO_Sequence
 include("phantom/phantom2d.jl")
 include("phantom/phantom3d.jl")
 
-include("simulation/DiscreteSequence.jl") # include HO_Sequence
+
 include("simulation/Simulate.jl")
 include("simulation/SimulatorCore.jl")
 include("simulation/Bloch/BlochSimulatitonMethod.jl")
