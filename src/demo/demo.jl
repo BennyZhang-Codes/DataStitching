@@ -4,6 +4,7 @@ function demo() ::Nothing
     @info "demos:"
     @info "    1. demo_hoseq => demo_hoseq()"
     @info "    2. raw (mrd)  => demo_raw(\"000\")"
+    @info "    3. sim (mat)  => raw, image = demo_sim()"
 end
 
 function demo_hoseq() ::HO_Sequence
@@ -26,9 +27,9 @@ function demo_hoseq() ::HO_Sequence
     return hoseq
 end
 
-function demo_raw(name::String) ::RawAcquisitionData
-    @assert name == "000" || name == "100" || name == "010" || name == "001" || name == "110" || name == "101" || 
-    name == "011" || name == "111" "has raw: 000, 100, 010, 001, 110, 101, 011, 111"
+function demo_raw(BHO::BlochHighOrder) ::RawAcquisitionData
+    @info "demo_raw: $(BHO)"
+    name = BHO.name
     path = @__DIR__
     raw_file = path*"/demo_raw/xw_sp2d-1mm-r1_$(name)_nominal.mrd"
     @assert ispath(raw_file) "the raw file does not exist: $(raw_file)"
@@ -41,8 +42,7 @@ function demo_sim(;
     hoseq = demo_hoseq(),
     obj = brain_phantom2D(brain3D_02(); ss=3, location=0.8),
     sim_params=Dict{String,Any}(),
-    sim_method::BlochHighOrder=BlochHighOrder("000")) ::Nothing
-    path = @__DIR__
+    sim_method::BlochHighOrder=BlochHighOrder("000"))
     plot_hoseqd(hoseq)
 
     # phantom
@@ -59,5 +59,6 @@ function demo_sim(;
     # simulate
     signal = simulate(obj, hoseq, sys; sim_params);
     raw = signal_to_raw_data(signal, hoseq, :nominal)
-    return raw, reconstruct_2d_image(raw)
+    image = reconstruct_2d_image(raw)
+    return raw, image 
 end
