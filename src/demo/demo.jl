@@ -41,7 +41,7 @@ function demo_sim(;
     hoseq = demo_hoseq(),
     obj = brain_phantom2D(brain3D_02(); ss=3, location=0.8),
     sim_params=Dict{String,Any}(),
-    sim_method::BlochHighOrder=BlochHighOrder("111")) ::Nothing
+    sim_method::BlochHighOrder=BlochHighOrder("000")) ::Nothing
     path = @__DIR__
     plot_hoseqd(hoseq)
 
@@ -59,11 +59,5 @@ function demo_sim(;
     # simulate
     signal = simulate(obj, hoseq, sys; sim_params);
     raw = signal_to_raw_data(signal, hoseq, :nominal)
-    plot_image(reconstruct_2d_image(raw); title="$(sim_params["sim_method"]) Nominal")
-
-    # protocolName = "$(hoseq.SEQ.DEF["Name"])_000_nominal"
-    protocolName = "demo"
-    raw.params["protocolName"] = protocolName
-    mrd = ISMRMRDFile(path*"/demo_raw/$(protocolName).mrd")
-    save(mrd, raw)
+    return raw, reconstruct_2d_image(raw)
 end
