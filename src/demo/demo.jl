@@ -37,19 +37,22 @@ function demo_raw(name::String) ::RawAcquisitionData
 end
 
 
-function demo_sim() ::Nothing
+function demo_sim(;
+    hoseq = demo_hoseq(),
+    obj = brain_phantom2D(brain3D_02(); ss=3, location=0.8),
+    sim_params=Dict{String,Any}(),
+    sim_method::BlochHighOrder=BlochHighOrder("111")) ::Nothing
     path = @__DIR__
-    hoseq = demo()
     plot_hoseqd(hoseq)
 
     # phantom
-    obj = brain_phantom2D(brain3D_02(); ss=3, location=0.8); info(obj);
+    info(obj);
     obj.Δw .= obj.Δw * 0; # γ*1.5*(-3.45)*1e-6 * 2π
 
     # scanner & sim_params
     sys = Scanner();
-    sim_params = KomaMRICore.default_sim_params(); 
-    sim_params["sim_method"] = BlochHighOrder(ho0=false, ho1=false, ho2=false);
+    sim_params = KomaMRICore.default_sim_params(sim_params)
+    sim_params["sim_method"] = sim_method;
     sim_params["gpu"] = true;
     sim_params["return_type"]="mat";
 
