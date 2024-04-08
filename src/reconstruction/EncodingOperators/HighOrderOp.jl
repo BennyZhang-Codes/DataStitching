@@ -36,7 +36,8 @@ generates a `HighOrderOp` which explicitely evaluates the MRI Fourier HighOrder 
 * `Nblocks`                 - split trajectory into `Nblocks` blocks to avoid memory overflow.
 * `use_gpu`                 - use GPU for HighOrder encoding/decoding(default: `true`).
 """
-function HighOrderOp(shape::NTuple{D,Int64}, tr_nominal::Trajectory, tr_measured::Trajectory, sim_method::BlochHighOrder; Nblocks::Int64=50, use_gpu::Bool=true) where D
+function HighOrderOp(shape::NTuple{D,Int64}, tr_nominal::Trajectory, tr_measured::Trajectory, sim_method::BlochHighOrder; 
+    Nblocks::Int64=50, use_gpu::Bool=true, verbose::Bool=false) where D
     nodes_measured = Float64.(kspaceNodes(tr_measured))
     nodes_nominal = Float64.(kspaceNodes(tr_nominal))
     @assert size(nodes_measured,1) == 9 "nodes for measured must have 9 rows"
@@ -66,9 +67,9 @@ function HighOrderOp(shape::NTuple{D,Int64}, tr_nominal::Trajectory, tr_measured
 
     @info "HighOrderOp Nblocks=$Nblocks, use_gpu=$use_gpu"
     return HighOrderOp{ComplexF64,Nothing,Function}(nrow, ncol, false, false
-                , (res,xm)->(res .= prod_HighOrderOp(xm, x, y, z, nodes_measured, nodes_nominal;sim_method, Nblocks=Nblocks, parts=parts, use_gpu=use_gpu))
+                , (res,xm)->(res .= prod_HighOrderOp(xm, x, y, z, nodes_measured, nodes_nominal;sim_method, Nblocks=Nblocks, parts=parts, use_gpu=use_gpu, verbose=verbose))
                 , nothing
-                , (res,ym)->(res .= ctprod_HighOrderOp(ym, x, y, z, nodes_measured, nodes_nominal;sim_method, Nblocks=Nblocks, parts=parts, use_gpu=use_gpu))
+                , (res,ym)->(res .= ctprod_HighOrderOp(ym, x, y, z, nodes_measured, nodes_nominal;sim_method, Nblocks=Nblocks, parts=parts, use_gpu=use_gpu, verbose=verbose))
                 , 0,0,0, false, false, false, ComplexF64[], ComplexF64[])
 end
 
@@ -78,9 +79,10 @@ function prod_HighOrderOp(
     sim_method::BlochHighOrder=BlochHighOrder("111"), 
     Nblocks::Int64=1, 
     parts::Vector{UnitRange{Int64}}=[1:size(nodes_measured,2)], 
-    use_gpu::Bool=false) where T<:Union{Real,Complex}
-
-    @info "HighOrderOp prod Nblocks=$Nblocks, use_gpu=$use_gpu"
+    use_gpu::Bool=false, verbose::Bool=false) where T<:Union{Real,Complex}
+    if verbose
+        @info "HighOrderOp prod Nblocks=$Nblocks, use_gpu=$use_gpu"
+    end
     out = zeros(ComplexF64,size(nodes_measured,2))
     x0 = ones(Float64, size(x))
     if use_gpu
@@ -105,7 +107,9 @@ function prod_HighOrderOp(
         ϕ = ϕ0 .+ ϕ1 .+ ϕ2
         e = exp.(-2*1im*pi*ϕ)
         out[p] =  e * xm
-        next!(progress_bar, showvalues=[(:Nblocks, block)])
+        if verbose
+            next!(progress_bar, showvalues=[(:Nblocks, block)])
+        end
     end
     if use_gpu
         out = out |> cpu
@@ -119,8 +123,10 @@ function ctprod_HighOrderOp(
     sim_method::BlochHighOrder=BlochHighOrder("111"), 
     Nblocks::Int64=1, 
     parts::Vector{UnitRange{Int64}}=[1:size(nodes_measured,2)], 
-    use_gpu::Bool=false) where T<:Union{Real,Complex}
-    @info "HighOrderOp ctprod Nblocks=$Nblocks, use_gpu=$use_gpu"
+    use_gpu::Bool=false, verbose::Bool=false) where T<:Union{Real,Complex}
+    if verbose
+        @info "HighOrderOp ctprod Nblocks=$Nblocks, use_gpu=$use_gpu"
+    end
     out = zeros(ComplexF64, size(x, 1))
     x0 = ones(Float64, size(x))
 
@@ -147,7 +153,9 @@ function ctprod_HighOrderOp(
 
         e = exp.(-2*1im*pi*ϕ)
         out +=  conj(e) * xm[p]
-        next!(progress_bar, showvalues=[(:Nblocks, block)])
+        if verbose
+            next!(progress_bar, showvalues=[(:Nblocks, block)])
+        end
     end
     if use_gpu
         out = out |> cpu

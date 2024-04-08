@@ -34,7 +34,7 @@ generates a `SignalOp` which explicitely evaluates the MRI Fourier signal encodi
 * `Nblocks`                 - split trajectory into `Nblocks` blocks to avoid memory overflow.
 * `use_gpu`                 - use GPU for signal encoding/decoding(default: `true`).
 """
-function SignalOp(shape::NTuple{D,Int64}, tr::Trajectory; Nblocks::Int64=50, use_gpu::Bool=true) where D
+function SignalOp(shape::NTuple{D,Int64}, tr::Trajectory; Nblocks::Int64=50, use_gpu::Bool=true, verbose::Bool=false) where D
     nodes = Float64.(kspaceNodes(tr))
     times = readoutTimes(tr)
     nrow = size(nodes,2)
@@ -56,15 +56,17 @@ function SignalOp(shape::NTuple{D,Int64}, tr::Trajectory; Nblocks::Int64=50, use
 
     @info "SignalOp Nblocks=$Nblocks, use_gpu=$use_gpu"
     return SignalOp{ComplexF64,Nothing,Function}(nrow, ncol, false, false
-                , (res,xm)->(res .= prod_SignalOp(xm, x, y, nodes; Nblocks=Nblocks, parts=parts, use_gpu=use_gpu))
+                , (res,xm)->(res .= prod_SignalOp(xm, x, y, nodes; Nblocks=Nblocks, parts=parts, use_gpu=use_gpu, verbose=verbose))
                 , nothing
-                , (res,ym)->(res .= ctprod_SignalOp(ym, x, y, nodes; Nblocks=Nblocks, parts=parts, use_gpu=use_gpu))
+                , (res,ym)->(res .= ctprod_SignalOp(ym, x, y, nodes; Nblocks=Nblocks, parts=parts, use_gpu=use_gpu, verbose=verbose))
                 , 0,0,0, false, false, false, ComplexF64[], ComplexF64[])
 end
 
 function prod_SignalOp(xm::Vector{T}, x::Vector{Float64}, y::Vector{Float64}, nodes::Matrix{Float64};
-    Nblocks::Int64=1, parts::Vector{UnitRange{Int64}}=[1:size(nodes,2)], use_gpu::Bool=false) where T<:Union{Real,Complex}
-    @info "SignalOp prod Nblocks=$Nblocks, use_gpu=$use_gpu"
+    Nblocks::Int64=1, parts::Vector{UnitRange{Int64}}=[1:size(nodes,2)], use_gpu::Bool=false, verbose::Bool=false) where T<:Union{Real,Complex}
+    if verbose
+        @info "SignalOp prod Nblocks=$Nblocks, use_gpu=$use_gpu"
+    end
     out = zeros(ComplexF64,size(nodes,2))
     if use_gpu
         out = out |> gpu
@@ -79,7 +81,9 @@ function prod_SignalOp(xm::Vector{T}, x::Vector{Float64}, y::Vector{Float64}, no
         ϕ = (kx .* x') .+ (ky .* y')
         e = exp.(-2*1im*pi*ϕ)
         out[p] =  e * xm
-        next!(progress_bar, showvalues=[(:Nblocks, block)])
+        if verbose
+            next!(progress_bar, showvalues=[(:Nblocks, block)])
+        end
     end
     if use_gpu
         out = out |> cpu
@@ -88,8 +92,10 @@ function prod_SignalOp(xm::Vector{T}, x::Vector{Float64}, y::Vector{Float64}, no
 end
 
 function ctprod_SignalOp(xm::Vector{T}, x::Vector{Float64}, y::Vector{Float64}, nodes::Matrix{Float64}; 
-    Nblocks::Int64=1, parts::Vector{UnitRange{Int64}}=[1:size(nodes,2)], use_gpu::Bool=false) where T<:Union{Real,Complex}
-    @info "SignalOp ctprod Nblocks=$Nblocks, use_gpu=$use_gpu"
+    Nblocks::Int64=1, parts::Vector{UnitRange{Int64}}=[1:size(nodes,2)], use_gpu::Bool=false, verbose::Bool=false) where T<:Union{Real,Complex}
+    if verbose
+        @info "SignalOp ctprod Nblocks=$Nblocks, use_gpu=$use_gpu"
+    end
     out = zeros(ComplexF64, size(x, 1))
     if use_gpu
         out = out |> gpu
@@ -104,7 +110,9 @@ function ctprod_SignalOp(xm::Vector{T}, x::Vector{Float64}, y::Vector{Float64}, 
         ϕ = (x .* kx') .+ (y .* ky')
         e = exp.(-2*1im*pi*ϕ)
         out +=  conj(e) * xm[p]
-        next!(progress_bar, showvalues=[(:Nblocks, block)])
+        if verbose
+            next!(progress_bar, showvalues=[(:Nblocks, block)])
+        end
     end
     if use_gpu
         out = out |> cpu
