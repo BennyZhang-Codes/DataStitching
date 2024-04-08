@@ -37,7 +37,7 @@ generates a `HighOrderOp` which explicitely evaluates the MRI Fourier HighOrder 
 * `use_gpu`                 - use GPU for HighOrder encoding/decoding(default: `true`).
 """
 function HighOrderOp(shape::NTuple{D,Int64}, tr_nominal::Trajectory, tr_measured::Trajectory, sim_method::BlochHighOrder; 
-    Nblocks::Int64=50, use_gpu::Bool=true, verbose::Bool=false) where D
+    Nblocks::Int64=50, use_gpu::Bool=true, verbose::Bool=false, Δx::Float64=1e-3, Δy::Float64=1e-3) where D
     nodes_measured = Float64.(kspaceNodes(tr_measured))
     nodes_nominal = Float64.(kspaceNodes(tr_nominal))
     @assert size(nodes_measured,1) == 9 "nodes for measured must have 9 rows"
@@ -55,9 +55,6 @@ function HighOrderOp(shape::NTuple{D,Int64}, tr_nominal::Trajectory, tr_measured
         push!(parts, n*Nblocks+1:k)
     end
 
-    Δx = 1e-3 # m
-    Δy = 1e-3
-    
     Nx, Ny = shape
     x, y = 1:Nx, 1:Ny
     x, y, z = vec(x .+ y'*0.0), vec(x*0.0 .+ y'), vec(x*0.0 .+ y'*0.0) #grid points

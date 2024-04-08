@@ -62,6 +62,34 @@ function SignalOp(shape::NTuple{D,Int64}, tr::Trajectory; Nblocks::Int64=50, use
                 , 0,0,0, false, false, false, ComplexF64[], ComplexF64[])
 end
 
+function SignalOp(shape::NTuple{D,Int64}, tr::Trajectory, Δx::Float64, Δy::Float64; Nblocks::Int64=50, use_gpu::Bool=true, verbose::Bool=false) where D
+    nodes = Float64.(kspaceNodes(tr))
+    times = readoutTimes(tr)
+    nrow = size(nodes,2)
+    ncol = prod(shape)
+    k = size(nodes,2) # number of nodes
+    Nblocks = Nblocks > k ? k : Nblocks # Nblocks must be <= k
+    
+    n = k÷Nblocks # number of nodes per block
+    parts = [n for i=1:Nblocks] # number of nodes per block
+    parts = [1+n*(i-1):n*i for i=1:Nblocks]
+    if k%Nblocks!= 0
+        push!(parts, n*Nblocks+1:k)
+    end
+
+    Nx, Ny = shape
+    x, y = 1:Nx, 1:Ny
+    x, y = vec(x .+ y'*0), vec(x*0 .+ y') #grid points
+    x, y = x .- Nx/2 .- 1, y .- Ny/2 .- 1
+    x, y = x * Δx, y * Δy 
+
+    @info "SignalOp Nblocks=$Nblocks, use_gpu=$use_gpu, Δx=$Δx, Δy=$Δy"
+    return SignalOp{ComplexF64,Nothing,Function}(nrow, ncol, false, false
+                , (res,xm)->(res .= prod_SignalOp(xm, x, y, nodes; Nblocks=Nblocks, parts=parts, use_gpu=use_gpu, verbose=verbose))
+                , nothing
+                , (res,ym)->(res .= ctprod_SignalOp(ym, x, y, nodes; Nblocks=Nblocks, parts=parts, use_gpu=use_gpu, verbose=verbose))
+                , 0,0,0, false, false, false, ComplexF64[], ComplexF64[])
+end
 function prod_SignalOp(xm::Vector{T}, x::Vector{Float64}, y::Vector{Float64}, nodes::Matrix{Float64};
     Nblocks::Int64=1, parts::Vector{UnitRange{Int64}}=[1:size(nodes,2)], use_gpu::Bool=false, verbose::Bool=false) where T<:Union{Real,Complex}
     if verbose
