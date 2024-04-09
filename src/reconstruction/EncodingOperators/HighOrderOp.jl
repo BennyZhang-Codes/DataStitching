@@ -62,7 +62,8 @@ function HighOrderOp(shape::NTuple{D,Int64}, tr_nominal::Trajectory, tr_measured
     x, y = x * Δx, y * Δy 
 
 
-    @info "HighOrderOp Nblocks=$Nblocks, use_gpu=$use_gpu"
+    @info "HighOrderOp Nblocks=$Nblocks, use_gpu=$use_gpu, Δx=$Δx, Δy=$Δy"
+    @info sim_method
     return HighOrderOp{ComplexF64,Nothing,Function}(nrow, ncol, false, false
                 , (res,xm)->(res .= prod_HighOrderOp(xm, x, y, z, nodes_measured, nodes_nominal;sim_method, Nblocks=Nblocks, parts=parts, use_gpu=use_gpu, verbose=verbose))
                 , nothing
