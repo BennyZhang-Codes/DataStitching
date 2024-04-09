@@ -6,7 +6,7 @@ BenchmarkTools.DEFAULT_PARAMETERS.seconds = 10000
 BenchmarkTools.DEFAULT_PARAMETERS.samples = trials
 
 path = @__DIR__
-path = path*"/test/recon/radial-ISMRM_reproducibility_challenge_1"
+path = path*"/src/demo/demo_recon/radial-ISMRM_reproducibility_challenge_1"
 f_sensitivity  = path*"/data/sensitivitiesMRIReco.h5"
 filename = path*"/data/rawdata_brain_radial_96proj_12ch.h5";
 
