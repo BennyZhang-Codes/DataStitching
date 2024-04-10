@@ -18,8 +18,7 @@ import Functors: @functor
 
 include("datatypes/Sequence.jl")
 include("datatypes/DiscreteSequence.jl") # include HO_Sequence
-include("phantom/phantom2d.jl")
-include("phantom/phantom3d.jl")
+include("phantom/phantom.jl")
 
 
 include("simulation/Simulate.jl")
@@ -46,10 +45,6 @@ export plot_seq
 export plot_seqd, plot_hoseqd
 export plot_grads_cumtrapz
 # export signal_to_raw_data
-
-export reconstruct_2d_image
-
-export info
 
 
 #Package version, KomaMRI.__VERSION__
