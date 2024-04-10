@@ -1,43 +1,34 @@
 import KomaMRI.KomaMRIBase: brain_phantom3D
 # import Base.show
-abstract type PhantomType end
-struct brain3D_03 <: PhantomType end
 
-export brain3D_03
+Base.@kwdef mutable struct brain3D <: PhantomType 
+    name::String = "3D phantom with 0.025 mm super-resolution in Z-axis"
+    file::String = "(171, 191)_brain3D_(400, 362, 434)_(0.025, 0.5, 0.5).mat"
+end
+
+
+export brain3D
 
 
 """
-    obj = brain_phantom2D(p::brain3D_02, location::AbstractFloat; axis="axial", ss=4)
+    obj = brain_phantom3D(p::brain3D; ss=4, start_end=[150, 250])
 
-Creates a two-dimensional brain Phantom struct.
-
-# References
-- B. Aubert-Broche, D.L. Collins, A.C. Evans: "A new improved version of the realistic
-    digital brain phantom" NeuroImage, in review - 2006
-- B. Aubert-Broche, M. Griffin, G.B. Pike, A.C. Evans and D.L. Collins: "20 new digital
-    brain phantoms for creation of validation image data bases" IEEE TMI, in review - 2006
-- https://brainweb.bic.mni.mcgill.ca/brainweb
-
-# Keywords
-- `axis`: (`::String`, `="axial"`, opts=[`"axial"`, `"coronal"`, `"sagittal"`]) orientation of the phantom
-- `ss`: (`::Integer`, `=4`) subsampling parameter in all axis
+Creates a three-dimensional brain Phantom struct.
 
 # Returns
 - `obj`: (`::Phantom`) Phantom struct
-
-# Examples
-```julia-repl
-julia> obj = brain_phantom2D(p::brain3D_02, location::AbstractFloat; axis="sagittal", ss=1)
-
-julia> plot_phantom_map(obj, :ρ)
 ```
 """
-function brain_phantom3D(p::brain3D_03; ss=4, start_end=[150, 250]) :: Phantom
-    @assert start_end[1] >= 1 && start_end[2] <= 400 "start_end must be between 1 and 400"
+function brain_phantom3D(p::PhantomType; ss=4, start_end=[150, 250]) :: Phantom
+    
     # Get data from .mat file
     path = @__DIR__
-    data = MAT.matread(path*"/brain3D_(400, 362, 434)_(0.025, 0.5, 0.5).mat")["data"]
-    
+    @assert isfile(path*"/$(p.file)") "File $(p.file) does not exist in $(path)"
+    data = MAT.matread(path*"/$(p.file)")["data"]
+    _,_,Nz = size(data)
+    @assert start_end[1] >= 1 && start_end[2] <= Nz "start_end must be between 1 and $Nz"
+
+
     class = data[1:ss:end,1:ss:end,start_end[1]:1:start_end[2]]
 
     # Define spin position vectors
@@ -109,7 +100,7 @@ function brain_phantom3D(p::brain3D_03; ss=4, start_end=[150, 250]) :: Phantom
 
     # Define and return the Phantom struct
     obj = Phantom{Float64}(
-        name = "brain3D_Z0.025",
+        name = "brain3D_ss$(ss)_[$(start_end[1]), $(start_end[2])]",
 		x = y[ρ.!=0],
 		y = x[ρ.!=0],
 		z = z[ρ.!=0],

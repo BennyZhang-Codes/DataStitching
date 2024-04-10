@@ -1,19 +1,18 @@
 import KomaMRI.KomaMRIBase: brain_phantom2D
 # import Base.show
-abstract type PhantomType end
-struct brain3D_02 <: PhantomType end
 
-export brain3D_02
-
-
-function info(s::Phantom)
-	print("Phantom[name = $(s.name) | spins = $(length(s.x)) | x = $(minimum(s.x)*1e2):$(maximum(s.x)*1e2) cm | y = $(minimum(s.y)*1e2):$(maximum(s.y)*1e2) cm | z = $(minimum(s.z)*1e2):$(maximum(s.z)*1e2) cm ]")
+Base.@kwdef mutable struct brain2D <: PhantomType 
+    name::String = "0.2 mm isotropic brain phantom"
+    file::String = "brain3D_0.2.mat"
 end
+export brain2D
+
+
+
 
 
 """
-    obj = brain_phantom2D(p::brain3D_02, location::AbstractFloat; axis="axial", ss=4)
-
+    obj = brain_phantom2D(p::brain2D; axis="axial", ss=4, location=0.5)
 Creates a two-dimensional brain Phantom struct.
 
 # References
@@ -26,22 +25,14 @@ Creates a two-dimensional brain Phantom struct.
 # Keywords
 - `axis`: (`::String`, `="axial"`, opts=[`"axial"`, `"coronal"`, `"sagittal"`]) orientation of the phantom
 - `ss`: (`::Integer`, `=4`) subsampling parameter in all axis
+- `location`: (`::Float64`, `=0.5`) location of the phantom in the Z-axis
 
-# Returns
-- `obj`: (`::Phantom`) Phantom struct
-
-# Examples
-```julia-repl
-julia> obj = brain_phantom2D(p::brain3D_02, location::AbstractFloat; axis="sagittal", ss=1)
-
-julia> plot_phantom_map(obj, :ρ)
-```
 """
-function brain_phantom2D(p::brain3D_02; axis="axial", ss=4, location=0.5) :: Phantom
-    @assert 0 <= location <= 1
-    # Get data from .mat file
+function brain_phantom2D(p::PhantomType; axis="axial", ss=4, location=0.5) :: Phantom
     path = @__DIR__
-    data = MAT.matread(path*"/brain3D_0.2.mat")["data"]
+    @assert isfile(path*"/$(p.file)") "File $(p.file) does not exist in $(path)"
+    @assert 0 <= location <= 1 "location must be between 0 and 1"
+    data = MAT.matread(path*"/$(p.file)")["data"]
     
     M, N, Z = size(data)
     if axis == "axial"
@@ -119,7 +110,7 @@ function brain_phantom2D(p::brain3D_02; axis="axial", ss=4, location=0.5) :: Pha
 
     # Define and return the Phantom struct
     obj = Phantom{Float64}(
-        name = "brain2D_02_"*axis,
+        name = "brain2D_$(axis)_ss$(ss)_location$(location)",
 		x = y[ρ.!=0],
 		y = x[ρ.!=0],
 		z = 0*x[ρ.!=0],
