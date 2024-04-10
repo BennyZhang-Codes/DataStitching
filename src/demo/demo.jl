@@ -1,11 +1,32 @@
-export demo, demo_raw, demo_hoseq, demo_sim
+export demo, demo_seq, demo_GR_skope, demo_raw, demo_hoseq, demo_sim
 
 function demo() ::Nothing
     @info "demos:"
-    @info "    1. demo_hoseq => demo_hoseq()"
-    @info "    2. raw (mrd)  => demo_raw(\"000\")"
-    @info "    3. sim (mat)  => raw, image = demo_sim()"
+    @info "    1. seq => demo_seq()"
+    @info "    2. GR_skope => demo_GR_skope()"
+    @info "    3. hoseq => demo_hoseq()"
+    @info "    4. raw (mrd)  => demo_raw(\"000\")"
+    @info "    5. sim (mat)  => raw, image = demo_sim()"
 end
+
+
+function demo_seq()
+    path = @__DIR__
+    seq = read_seq(path*"/xw_sp2d-1mm-r1_noDUM.seq");
+    return seq
+end
+
+function demo_GR_skope()
+    path = @__DIR__
+    grad = MAT.matread(path*"/grad_1mm.mat");
+    Δt = grad["dt"];
+    skopeStitched = [zeros(9) grad["skopeStitched"]'] * 1e-3; 
+    skopeStandard = [zeros(9) grad["skopeStandard"]'] * 1e-3;
+    t = Δt * ones(88100);
+    GR_skope = reshape([KomaMRIBase.Grad(skopeStitched[idx,:], t, 0, 0, 0) for idx=1:9], :, 1);
+    return GR_skope
+end
+
 
 function demo_hoseq() ::HO_Sequence
     path = @__DIR__
