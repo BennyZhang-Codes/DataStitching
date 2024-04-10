@@ -236,7 +236,7 @@ function signal_to_raw_data(
     if key == :nominal
         ktraj = ktraj
     elseif key == :measured
-        ktraj = ktraj_skope
+        ktraj = ktraj_skope[:,2:4]
     end
     mink = minimum(ktraj, dims=1)
     maxk = maximum(ktraj, dims=1)
