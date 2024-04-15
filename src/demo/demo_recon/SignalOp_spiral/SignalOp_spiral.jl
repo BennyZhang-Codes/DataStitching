@@ -2,8 +2,8 @@
 # using CUDA
 # device!(1) 
 
-using MRIReco, KomaHighOrder, MRICoilSensitivities, PlotlyJS
-dir = @__DIR__
+using MRIReco, KomaHighOrder, MRICoilSensitivities, PlotlyJS, MAT
+dir = "$(@__DIR__)/src/demo/demo_recon/SignalOp_spiral"
 BHO_simu = "000"
 raw = demo_raw(BHO_simu)
 Nx, Ny = raw.params["reconSize"][1:2];
@@ -80,7 +80,8 @@ recParams[:encodingOps] = reshape([Op], 1,1)
 p_iter_SignalOp = plot_image(abs.(rec.data[:,:]); title="iterative SignalOp", width=650, height=600)
 img_iter_SignalOp = abs.(rec.data[:,:]);
 
-plot_image(img_iter_SignalOp - img_iter_SignalOp_normalized; title="iter_SignalOp - iter_SignalOp_normalized", width=650, height=600)
+diff = img_iter_SignalOp - img_iter_SignalOp_normalized
+plot_image(diff; title="iter_SignalOp - iter_SignalOp_normalized", width=650, height=600, zmin=minimum(diff), zmax=maximum(diff))
 
 #######################################################################################
 # iterative HighOrderOp
@@ -100,9 +101,14 @@ recParams[:encodingOps] = reshape([Op], 1,1)
 # p_iter_HighOrderOp = plot_image(abs.(rec.data[:,:]); title="iterative HighOrderOp", width=650, height=600)
 img_iter_HighOrderOp = abs.(rec.data[:,:])
 
+imgs_dict = Dict(
+    "img_direct_NUFFTOp"=>img_direct_NUFFTOp, 
+    "img_iter_NUFFTOp"=>img_iter_NUFFTOp, 
+    "img_iter_SignalOp_normalized"=>img_iter_SignalOp_normalized, 
+    "img_iter_SignalOp"=>img_iter_SignalOp, 
+    "img_iter_HighOrderOp"=>img_iter_HighOrderOp)
 
-
-
+MAT.matwrite(dir*"/SignalOp_Simu_000.mat", imgs_dict; compress=true)
 
 ##### plots
 imgs = Array{Float32,3}(undef, Nx, Ny, 5)
