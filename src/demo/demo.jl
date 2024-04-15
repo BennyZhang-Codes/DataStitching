@@ -1,4 +1,4 @@
-export demo, demo_seq, demo_GR_skope, demo_raw, demo_hoseq, demo_sim
+export demo, demo_obj, demo_seq, demo_GR_skope, demo_raw, demo_hoseq, demo_sim
 
 function demo() ::Nothing
     @info "demos:"
@@ -11,7 +11,7 @@ end
 
 function demo_obj(; axis="axial", ss=5, location=0.8)
     @assert 0 <= location <= 1 "location must be between 0 and 1"
-    path = "$(@__DIR__)/$(phantom_dict[:path])/$(phantom_dict[:brain2d])"
+    path = "$(dirname(dirname(@__DIR__)))/$(phantom_dict[:path])/$(phantom_dict[:brain2d])"
     @assert isfile(path) "the phantom file does not exist: $(path)"
     data = MAT.matread(path)["data"]
 
