@@ -1,7 +1,7 @@
 ##########################################################################################################
 # plot_imgs
 ##########################################################################################################
-
+using PlotlyJS
 
 function plot_imgs(imgs, subplot_titles; title="HighOrderOp", width=1300, height=200)
     fig = make_subplots(rows=1,cols=length(subplot_titles));

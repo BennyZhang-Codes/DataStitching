@@ -54,18 +54,28 @@ mrd = ISMRMRDFile(path*"/src/demo/demo_phantom/rawdata/$(protocolName)_brain3d_2
 save(mrd, raw_withGz)
 
 
+
+
+
+raw_withGz = RawAcquisitionData(ISMRMRDFile(path*"/src/demo/demo_phantom/rawdata/xw_sp2d-1mm-r1_000_nominal_brain3d_285_withGz.mrd"))
+raw_withoutGz = RawAcquisitionData(ISMRMRDFile(path*"/src/demo/demo_phantom/rawdata/xw_sp2d-1mm-r1_000_nominal_brain3d_285_withoutGz.mrd"))
+
+
 img_withGz = reconstruct_2d_image(raw_withGz)
 img_withoutGz = reconstruct_2d_image(raw_withoutGz)
-img_error = img_withGz - img_withoutGz
+img_error = img_withGz - img_withoutGz;
 
 
-width = 400
+width = 420
 height = 350
 
 p_withGz = plot_image(img_withGz; title="withGz Nominal", width=width, height=height)
 p_withoutGz = plot_image(img_withoutGz; title="withoutGz Nominal", width=width, height=height)
-p_error = plot_image(img_error; title="withGz - withoutGz", width=width, height=height)
+p_error = plot_image(img_error; title="withGz - withoutGz", width=width, height=height, zmin = minimum(img_error), zmax = maximum(img_error))
+p_error_0 = plot_image(img_error; title="withGz - withoutGz", width=width, height=height)
 
-savefig(p_withGz,       path*"/throughplane_withGz.svg", width=width, height=height,format="svg")
-savefig(p_withoutGz,     path*"/throughplane_withoutGz.svg", width=width, height=height,format="svg")
-savefig(p_error,      path*"/throughplane_difference.svg", width=width, height=height,format="svg")
+
+savefig(p_withGz,       path*"/src/demo/demo_phantom/results/throughplane_withGz.svg", width=width, height=height,format="svg")
+savefig(p_withoutGz,     path*"/src/demo/demo_phantom/results/throughplane_withoutGz.svg", width=width, height=height,format="svg")
+savefig(p_error,      path*"/src/demo/demo_phantom/results/throughplane_difference.svg", width=width, height=height,format="svg")
+savefig(p_error_0,      path*"/src/demo/demo_phantom/results/throughplane_difference_0.svg", width=width, height=height,format="svg")
