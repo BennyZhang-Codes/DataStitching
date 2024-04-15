@@ -9,6 +9,36 @@ function demo() ::Nothing
     @info "    5. sim (mat)  => raw, image = demo_sim()"
 end
 
+function demo_obj(; axis="axial", ss=5, location=0.8)
+    @assert 0 <= location <= 1 "location must be between 0 and 1"
+    path = "$(@__DIR__)/$(phantom_dict[:path])/$(phantom_dict[:brain2d])"
+    @assert isfile(path) "the phantom file does not exist: $(path)"
+    data = MAT.matread(path)["data"]
+
+    M, N, Z = size(data)
+    if axis == "axial"
+        z = Int32(ceil(Z*location))
+        class = data[1:ss:end,1:ss:end, z]
+    elseif axis == "coronal"
+        m = Int32(ceil(M*location))
+        class = data[m, 1:ss:end,1:ss:end]   
+    elseif axis == "sagittal"
+        n = Int32(ceil(N*location))
+        class = data[1:ss:end, n,1:ss:end]
+    end
+    ρ = (class.==23)*1 .+ #CSF
+        (class.==46)*.86 .+ #GM
+        (class.==70)*.77 .+ #WM
+        (class.==93)*1 .+ #FAT1
+        (class.==116)*1 .+ #MUSCLE
+        (class.==139)*.7 .+ #SKIN/MUSCLE
+        (class.==162)*0 .+ #SKULL
+        (class.==185)*0 .+ #VESSELS
+        (class.==209)*.77 .+ #FAT2
+        (class.==232)*1 .+ #DURA
+        (class.==255)*.77 #MARROW
+    return ρ
+end
 
 function demo_seq()
     path = @__DIR__
