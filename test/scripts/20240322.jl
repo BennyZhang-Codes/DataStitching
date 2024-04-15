@@ -1,11 +1,9 @@
 using KomaHighOrder
-if Sys.iswindows()
-    seq = read_seq("E:/skope/skope_pulseq/xw_sp2d-1mm-r1_noDUM.seq"); # skope sequence
-    grad = MAT.matread("E:/skope/20240308/grad_1mm.mat"); # skope measured gradients
-elseif Sys.islinux()
-    seq = read_seq("/home/jyzhang/Desktop/skope/20240308/xw_sp2d-1mm-r1_noDUM.seq"); # skope sequence
-    grad = MAT.matread("/home/jyzhang/Desktop/skope/20240308/grad_1mm.mat"); # skope measured gradients
-end
+path = @__DIR__
+path = path*"/src/demo/"
+seq = read_seq(path*"/xw_sp2d-1mm-r1_noDUM.seq"); # skope sequence
+grad = MAT.matread(path*"/grad_1mm.mat"); # skope measured gradients
+
 # skope 
 Δt = grad["dt"];
 skopeStitched = [zeros(9) grad["skopeStitched"]'] * 1e-3; 
