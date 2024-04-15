@@ -2,8 +2,8 @@
 # using CUDA
 # device!(1) 
 
-using MRIReco, KomaHighOrder, MRICoilSensitivities, PlotlyJS
-dir = @__DIR__
+using MRIReco, KomaHighOrder, MRICoilSensitivities, PlotlyJS, MAT
+dir = "$(@__DIR__)/src/demo/demo_recon/HighOrderOp_spiral"
 BHO_simu = "000"
 raw = demo_raw(BHO_simu)
 Nx, Ny = raw.params["reconSize"][1:2];
@@ -65,7 +65,7 @@ p_111_error = plot_imgs(imgs_111_error, subplot_titles; title=title*", error map
 
 savefig(p_111,       dir*"/HighOrderOp_Simu_111.svg", width=1300, height=200,format="svg")
 savefig(p_111_error, dir*"/HighOrderOp_Simu_111_errormap.svg", width=1300, height=200,format="svg")
-
+MAT.matwrite(dir*"/HighOrderOp_Simu_111.mat", Dict("imgs"=>imgs_111, "imgs_error"=>imgs_111_error, "BHO"=>BHO_recos))
 #######################################################################################
 # HighOrderOp 
 # [1] Simu: 000, Reco: 000
@@ -114,6 +114,7 @@ p_000_error = plot_imgs(imgs_000_error, subplot_titles; title=title*", error map
 
 savefig(p_000,       dir*"/HighOrderOp_Simu_000.svg", width=1300, height=200,format="svg")
 savefig(p_000_error, dir*"/HighOrderOp_Simu_000_errormap.svg", width=1300, height=200,format="svg")
+MAT.matwrite(dir*"/HighOrderOp_Simu_000.mat", Dict("imgs"=>imgs_000, "imgs_error"=>imgs_000_error, "BHO"=>BHO_recos))
 
 ##########################################################################################################
 # plot_imgs
