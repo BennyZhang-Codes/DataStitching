@@ -1,5 +1,5 @@
 using KomaHighOrder
-hoseq = demo()
+hoseq = demo_hoseq()
 plot_hoseqd(hoseq)
 
 # phantom
@@ -13,7 +13,7 @@ sim_params = KomaMRICore.default_sim_params();
 sim_params["sim_method"] = BlochHighOrder(BHO_name);
 # sim_params["Nblocks"] = 150;
 sim_params["gpu"] = true;
-sim_params["gpu_device"] = 1;
+# sim_params["gpu_device"] = 1;
 sim_params["return_type"]="mat";
 
 # simulate
