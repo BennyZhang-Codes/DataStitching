@@ -78,12 +78,12 @@ function demo_hoseq() ::HO_Sequence
     return hoseq
 end
 
-function demo_raw(name::String) ::RawAcquisitionData
+function demo_raw(name::String; folder::String="base") ::RawAcquisitionData
+    @assert ispath("$(@__DIR__)/demo_raw/$(folder)") "folder not exist: $(folder)"
     BHO = BlochHighOrder(name)
-    @info "demo_raw: $(BHO)"
-    name = BHO.name
-    path = @__DIR__
-    raw_file = path*"/demo_raw/xw_sp2d-1mm-r1_$(name)_nominal.mrd"
+    @info "demo_raw: $(BHO) $(@__DIR__)/demo_raw/$(folder)/xw_sp2d-1mm-r1_$(BHO.name)_nominal.mrd"
+
+    raw_file = "$(@__DIR__)/demo_raw/$(folder)/xw_sp2d-1mm-r1_$(BHO.name)_nominal.mrd"
     @assert ispath(raw_file) "the raw file does not exist: $(raw_file)"
     raw = RawAcquisitionData(ISMRMRDFile(raw_file));
     return raw

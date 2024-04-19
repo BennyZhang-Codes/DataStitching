@@ -1,28 +1,46 @@
 using KomaHighOrder
+
+folder = "base"
+path = "$(@__DIR__)/src/demo/demo_raw/$(folder)"
+
 hoseq = demo_hoseq()
-plot_hoseqd(hoseq)
+# plot_hoseqd(hoseq)
 
 # phantom
-obj = brain_phantom2D(brain3D_02(); ss=3, location=0.8); info(obj);
+obj = brain_phantom2D(brain2D(); ss=3, location=0.8); info(obj);
 obj.Δw .= obj.Δw * 0; # γ*1.5*(-3.45)*1e-6 * 2π
+obj.T2 .= obj.T2 * Inf; 
 
-BHO_name = "000"
-# scanner & sim_params
-sys = Scanner();
-sim_params = KomaMRICore.default_sim_params(); 
-sim_params["sim_method"] = BlochHighOrder(BHO_name);
-# sim_params["Nblocks"] = 150;
-sim_params["gpu"] = true;
-# sim_params["gpu_device"] = 1;
-sim_params["return_type"]="mat";
+BHO_recos = ["000", "100", "010", "001", "011", "101", "110", "111"]
 
-# simulate
-signal = simulate(obj, hoseq, sys; sim_params);
-raw = signal_to_raw_data(signal, hoseq, :nominal)
-plot_image(reconstruct_2d_image(raw); title="$(sim_params["sim_method"]) Nominal", height=700, width=750)
+for idx in eachindex(BHO_recos)
+    BHO_name = BHO_recos[idx]
+    # scanner & sim_params
+    sys = Scanner();
+    sim_params = KomaMRICore.default_sim_params(); 
+    sim_params["sim_method"] = BlochHighOrder(BHO_name);
+    # sim_params["Nblocks"] = 150;
+    sim_params["gpu"] = true;
+    # sim_params["gpu_device"] = 1;
+    sim_params["return_type"]="mat";
 
-protocolName = "$(hoseq.SEQ.DEF["Name"])_$(BHO_name)_nominal"
-raw.params["protocolName"] = protocolName
-path = @__DIR__
-mrd = ISMRMRDFile(path*"/src/demo/demo_raw/$(protocolName).mrd")
-save(mrd, raw)
+    # simulate
+    signal = simulate(obj, hoseq, sys; sim_params);
+    raw = signal_to_raw_data(signal, hoseq, :nominal)
+    
+    protocolName = "$(hoseq.SEQ.DEF["Name"])_$(BHO_name)_nominal"
+
+    p = plot_image(reconstruct_2d_image(raw); title="$(sim_params["sim_method"]) Nominal", height=700, width=750)
+    savefig(p,  "$(path)/$(protocolName).svg",format="svg", height=700, width=750)
+    raw.params["protocolName"] = protocolName
+    mrd = ISMRMRDFile("$(path)/$(protocolName).mrd")
+    save(mrd, raw)
+end
+
+
+for i = 1.5:0.01:1.6
+    error = ρ2 - img_iter_NUFFTOp .* i
+    println(i, " ", sum(error))
+end
+
+
