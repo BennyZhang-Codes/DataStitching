@@ -81,7 +81,7 @@ end
 function demo_raw(name::String; folder::String="base") ::RawAcquisitionData
     @assert ispath("$(@__DIR__)/demo_raw/$(folder)") "folder not exist: $(folder)"
     BHO = BlochHighOrder(name)
-    @info "demo_raw:" "sim_method = $(BHO)" "mrd_file = $(@__DIR__)/demo_raw/$(folder)/xw_sp2d-1mm-r1_$(BHO.name)_nominal.mrd"
+    @info "demo_raw" sim_method=BHO mrd_file="$(@__DIR__)/demo_raw/$(folder)/xw_sp2d-1mm-r1_$(BHO.name)_nominal.mrd"
 
     raw_file = "$(@__DIR__)/demo_raw/$(folder)/xw_sp2d-1mm-r1_$(BHO.name)_nominal.mrd"
     @assert ispath(raw_file) "the raw file does not exist: $(raw_file)"
