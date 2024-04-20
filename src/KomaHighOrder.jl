@@ -16,6 +16,8 @@ import KomaMRI.KomaMRICore: SimulationMethod, SpinStateRepresentation
 @reexport import MAT
 import Functors: @functor
 
+include("utils/utils.jl")
+
 include("datatypes/Sequence.jl")
 include("datatypes/DiscreteSequence.jl") # include HO_Sequence
 include("phantom/phantom.jl")
