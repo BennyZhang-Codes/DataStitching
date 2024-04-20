@@ -3,7 +3,7 @@
 # device!(1) 
 
 using MRIReco, KomaHighOrder, MRICoilSensitivities, PlotlyJS, MAT
-dir = "$(@__DIR__)/src/demo/demo_recon/SignalOp_spiral"
+dir = "$(@__DIR__)/src/demo/demo_recon/SignalOp_spiral/results"
 BHO_simu = "000"
 raw = demo_raw(BHO_simu)
 Nx, Ny = raw.params["reconSize"][1:2];

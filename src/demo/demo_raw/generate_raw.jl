@@ -38,9 +38,4 @@ for idx in eachindex(BHO_recos)
 end
 
 
-for i = 1.5:0.01:1.6
-    error = ρ2 - img_iter_NUFFTOp .* i
-    println(i, " ", sum(error))
-end
-
 
