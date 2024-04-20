@@ -1,6 +1,7 @@
 export get_fan_mask
 
 function get_fan_mask(Nx::Int64, Ny::Int64, Nparts::Int64)
+    @info "fan mask" Nx=Nx Ny=Ny Nparts=Nparts
     m_x = (1:1:Nx) .* ones(1, Ny)
     m_y = ones(Nx) .* (1:1:Ny)'
 
