@@ -13,6 +13,21 @@ function standardization(img::AbstractArray{T,2}) where T<:Real
 end
 dir = "$(@__DIR__)/src/demo/demo_recon/SignalOp_spiral"
 
+Δx = Δy = 0.2
+
+ss=3
+location=0.8
+fov=(150, 150)
+resolution=(1,1)
+
+fov_x, fov_y = fov
+res_x, res_y = resolution
+
+M, N = size(a)
+a = a[get_center_range(M, Int64(ceil(fov_x / (Δx * ss)))), get_center_range(N, Int64(ceil(fov_y / (Δy * ss))))]
+a = imresize(a, (Int64(ceil(fov_x / res_x)), Int64(ceil(fov_y / res_y))))
+plot_image(a')
+
 ρ1 = demo_obj(; axis="axial", ss=1, location=0.8)';
 M, N = size(ρ1)
 ρ1 = ρ1[get_center_range(M, 750), get_center_range(N, 750)]; # 1mm 
@@ -23,6 +38,13 @@ plot_image(ρ1; title="1mm iso, ss=1")
 ρ2 = demo_obj(; axis="axial", ss=5, location=0.8)[get_center_range(217, 150), get_center_range(181, 150)]';
 plot_image(ρ2; title="1mm iso, ss=5")
 
+ρ3 = demo_obj(; axis="axial", ss=3, location=0.8)[get_center_range(362, 250), get_center_range(302, 250)]';
+plot_image(ρ3; title="1mm iso, ss=3")
+ρ3 = imresize(ρ3, (150, 150));
+
+
+plot_image(ρ3 - ρ2; title="difference: ρ3 - ρ2", zmin=minimum(ρ3 - ρ2), zmax=maximum(ρ3 - ρ2))
+plot_image(ρ3 - ρ1; title="difference: ρ3 - ρ1", zmin=minimum(ρ3 - ρ1), zmax=maximum(ρ3 - ρ1))
 plot_image(ρ1 - ρ2; title="difference: ρ1 - ρ2", zmin=minimum(ρ1 - ρ2), zmax=maximum(ρ1 - ρ2))
 
 
@@ -46,7 +68,7 @@ title="Simu: 000";
 imgs_error = Array{Float32,3}(undef, size(imgs));
 imgs_normalized = Array{Float32,3}(undef, size(imgs));
 for idx = 1:5
-    imgs_error[:,:, idx] = ρ2 - normalization(imgs[:,:, idx]);
+    imgs_error[:,:, idx] = ρ3 - normalization(imgs[:,:, idx]);
     imgs_normalized[:,:, idx] = normalization(imgs[:,:, idx]);
 end
 

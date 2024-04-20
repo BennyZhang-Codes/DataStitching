@@ -3,7 +3,7 @@ module KomaHighOrder
 
 import Base.*, Base.+, Base.-, Base./, Base.vcat, Base.size, Base.abs, Base.getproperty, Base.copy, Base.show
 # IMPORT PACKAGES
-using CUDA, Interpolations, PlotlyJS
+using CUDA, Interpolations, PlotlyJS, ImageTransformations
 using ThreadsX
 # Printing
 using ProgressMeter

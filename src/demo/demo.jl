@@ -1,4 +1,7 @@
-export demo, demo_obj, demo_seq, demo_GR_skope, demo_raw, demo_hoseq, demo_sim
+export demo, demo_seq, demo_GR_skope, demo_raw, demo_hoseq, demo_sim
+
+include("demo_recon/PhantomReference.jl")
+include("demo_recon/plot_imgs.jl")
 
 function demo() ::Nothing
     @info "demos:"
@@ -9,72 +12,38 @@ function demo() ::Nothing
     @info "    5. sim (mat)  => raw, image = demo_sim()"
 end
 
-function demo_obj(; axis="axial", ss=5, location=0.8)
-    @assert 0 <= location <= 1 "location must be between 0 and 1"
-    path = "$(dirname(dirname(@__DIR__)))/$(phantom_dict[:path])/$(phantom_dict[:brain2d])"
-    @assert isfile(path) "the phantom file does not exist: $(path)"
-    data = MAT.matread(path)["data"]
-
-    M, N, Z = size(data)
-    if axis == "axial"
-        z = Int32(ceil(Z*location))
-        class = data[1:ss:end,1:ss:end, z]
-    elseif axis == "coronal"
-        m = Int32(ceil(M*location))
-        class = data[m, 1:ss:end,1:ss:end]   
-    elseif axis == "sagittal"
-        n = Int32(ceil(N*location))
-        class = data[1:ss:end, n,1:ss:end]
-    end
-    ρ = (class.==23)*1 .+ #CSF
-        (class.==46)*.86 .+ #GM
-        (class.==70)*.77 .+ #WM
-        (class.==93)*1 .+ #FAT1
-        (class.==116)*1 .+ #MUSCLE
-        (class.==139)*.7 .+ #SKIN/MUSCLE
-        (class.==162)*0 .+ #SKULL
-        (class.==185)*0 .+ #VESSELS
-        (class.==209)*.77 .+ #FAT2
-        (class.==232)*1 .+ #DURA
-        (class.==255)*.77 #MARROW
-    return ρ
-end
-
 function demo_seq()
     path = @__DIR__
     seq = read_seq(path*"/xw_sp2d-1mm-r1_noDUM.seq");
     return seq
 end
 
-function demo_GR_skope()
+function demo_GR_skope(;key::Symbol=:Stitched)
+    @assert key in [:Stitched, :Standard] "key must be :Stitched or :Standard"
     path = @__DIR__
     grad = MAT.matread(path*"/grad_1mm.mat");
     Δt = grad["dt"];
     skopeStitched = [zeros(9) grad["skopeStitched"]'] * 1e-3; 
     skopeStandard = [zeros(9) grad["skopeStandard"]'] * 1e-3;
     t = Δt * ones(88100);
-    GR_skope = reshape([KomaMRIBase.Grad(skopeStitched[idx,:], t, 0, 0, 0) for idx=1:9], :, 1);
+    if key == :Stitched
+        GR_skope = reshape([KomaMRIBase.Grad(skopeStitched[idx,:], t, 0, 0, 0) for idx=1:9], :, 1);
+    elseif key == :Standard
+        GR_skope = reshape([KomaMRIBase.Grad(skopeStandard[idx,:], t, 0, 0, 0) for idx=1:9], :, 1);
+    end
     return GR_skope
 end
 
 
-function demo_hoseq() ::HO_Sequence
-    path = @__DIR__
-    seq = read_seq(path*"/xw_sp2d-1mm-r1_noDUM.seq"); # skope sequence
-    grad = MAT.matread(path*"/grad_1mm.mat"); # skope measured gradients
-    
-    # skope 
-    Δt = grad["dt"];
-    skopeStitched = [zeros(9) grad["skopeStitched"]'] * 1e-3; 
-    skopeStandard = [zeros(9) grad["skopeStandard"]'] * 1e-3;
-    t = Δt * ones(88100);
-    GR_skope = reshape([KomaMRIBase.Grad(skopeStitched[idx,:], t, 0, 0, 0) for idx=1:9], :, 1);
-    
-    # hoseq
+function demo_hoseq(;skope::Bool=true, skope_method::Symbol=:Stitched) ::HO_Sequence
+    seq = demo_seq(); # skope sequence
     seq.GR[1,:] = -seq.GR[1,:]; # reverse the sign of the gradient (axis x)
-    hoseq = HO_Sequence(seq);
-    hoseq.GR_skope[2:4, :] = hoseq.SEQ.GR;
-    hoseq.GR_skope[:,8] = GR_skope;
+    hoseq = HO_Sequence(seq); # hoseq
+    if skope
+        GR_skope = demo_GR_skope(;key=skope_method);
+        hoseq.GR_skope[2:4, :] = hoseq.SEQ.GR;
+        hoseq.GR_skope[:,8] = GR_skope;
+    end
     return hoseq
 end
 

@@ -1,9 +1,6 @@
-##########################################################################################################
-# plot_imgs
-##########################################################################################################
-using PlotlyJS
+export demo_plot_imgs
 
-function plot_imgs(imgs, subplot_titles; title="HighOrderOp", width=1300, height=200)
+function demo_plot_imgs(imgs, subplot_titles; title="HighOrderOp", width=1300, height=200)
     fig = make_subplots(rows=1,cols=length(subplot_titles));
     [add_trace!(fig, heatmap(z=imgs[:,:,idx], transpose=false,coloraxis="coloraxis"); row=1, col=idx) for idx in eachindex(subplot_titles)]
     l = Layout(;
@@ -32,6 +29,6 @@ function plot_imgs(imgs, subplot_titles; title="HighOrderOp", width=1300, height
     end
     annotations=[attr(text=subplot_titles[idx],yanchor="bottom",xanchor="center",xref="x$idx domain",x=0.5,yref="y$idx domain",y=1,showarrow=false,font=attr(size=16)) for idx in eachindex(subplot_titles)]
     push!(l.fields, :annotations=>annotations)
-    p = update(fig; layout=l)
+    p = PlotlyJS.update(fig; layout=l)
     return p
 end
