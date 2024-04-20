@@ -225,9 +225,10 @@ format) used for reconstruction with MRIReco.
 - `raw`: (`::RawAcquisitionData`) RawAcquisitionData struct
 """
 function signal_to_raw_data(
-    signal, hoseq::HO_Sequence, key::Symbol;
+    signal::Matrix{ComplexF64}, hoseq::HO_Sequence, key::Symbol;
     phantom_name="Phantom", sys=Scanner(), sim_params=Dict{String,Any}(), ndims=2
 )
+    TotalSamples, Ncoils = size(signal)
     @assert key == :nominal || key == :measured  "key must be :nominal or :measured"
     seq = hoseq.SEQ
     version = string(VersionNumber(Pkg.TOML.parsefile(joinpath(@__DIR__, "..", "..", "Project.toml"))["version"]))
@@ -357,8 +358,8 @@ function signal_to_raw_data(
                     UInt32(t0_us), #acquisition_time_stamp uint32: Acquisition clock, I am "miss"-using this variable to store t0 in us
                     UInt32.((0, 0, 0)), #physiology_time_stamp uint32x3: Physiology time stamps, e.g. ecg, breating, etc.
                     UInt16(number_of_samples), #number_of_samples uint16
-                    UInt16(1), #available_channels uint16: Available coils
-                    UInt16(1), #active_channels uint16: Active coils on current acquisiton
+                    UInt16(Ncoils), #available_channels uint16: Available coils
+                    UInt16(Ncoils), #active_channels uint16: Active coils on current acquisiton
                     Tuple(UInt64(0) for i=1:16), #channel_mask uint64x16: Active coils on current acquisiton
                     UInt16(0), #discard_pre uint16: Samples to be discarded at the beginning of acquisition
                     UInt16(0), #discard_post uint16: Samples to be discarded at the end of acquisition
