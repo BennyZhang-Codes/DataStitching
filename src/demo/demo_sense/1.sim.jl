@@ -20,7 +20,7 @@ sim_params["return_type"]="mat";
 
 signal = zeros(ComplexF64, sum(hoseq.SEQ.ADC.N), Ncoils);
 for coil_idx = 1:Ncoils
-    obj = brain_phantom2D(brain2D(), coil_idx, Ncoils; ss=3, location=0.8); 
+    obj = brain_phantom2D(brain2D(); ss=3, location=0.8, mask_idx=coil_idx, Nparts=Ncoils); 
     obj.Δw .= obj.Δw * 0; # γ*1.5*(-3.45)*1e-6 * 2π
     # obj.T2 .= obj.T2 * Inf; 
     # simulate

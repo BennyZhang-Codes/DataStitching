@@ -1,14 +1,15 @@
 using KomaHighOrder
 
-folder = "base"
+folder = "woT2_wB0"
 path = "$(@__DIR__)/src/demo/demo_raw/$(folder)"
+if ispath(path) == false mkdir(path) end
 
 hoseq = demo_hoseq()
 # plot_hoseqd(hoseq)
 
 # phantom
 obj = brain_phantom2D(brain2D(); ss=3, location=0.8); info(obj);
-obj.Δw .= obj.Δw * 0; # γ*1.5*(-3.45)*1e-6 * 2π
+# obj.Δw .= obj.Δw * 0; # γ*1.5*(-3.45)*1e-6 * 2π
 obj.T2 .= obj.T2 * Inf; 
 
 BHO_recos = ["000", "100", "010", "001", "011", "101", "110", "111"]
