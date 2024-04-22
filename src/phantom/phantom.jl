@@ -11,8 +11,9 @@ Base.show(io::IO, s::PhantomType) = begin
 end
 
 phantom_dict = Dict{Symbol, String}(
-    :path        => "src/phantom",
+    :path        => "/mat",
     :brain2d     => "brain3D_0.2.mat",
+    :brain2d_B0  => "brain3D_B0map_1.0.mat",
     :brain3d_171 => "(171, 191)_brain3D_(400, 362, 434)_(0.025, 0.5, 0.5).mat",
     :brain3d_285 => "(285, 305)_brain3D_(400, 362, 434)_(0.025, 0.5, 0.5).mat",
 )
@@ -25,4 +26,4 @@ include("phantom2d.jl")
 include("phantom3d.jl")
 include("PhantomReference.jl")
 
-export PhantomReference
+export PhantomReference, brain_phantom2D_B0map
