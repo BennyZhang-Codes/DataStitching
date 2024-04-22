@@ -34,17 +34,7 @@ generates a `SignalOp` which explicitely evaluates the MRI Fourier signal encodi
 * `Nblocks`                 - split trajectory into `Nblocks` blocks to avoid memory overflow.
 * `use_gpu`                 - use GPU for signal encoding/decoding(default: `true`).
 """
-function SignalOp(
-    shape::NTuple{D,Int64}, 
-    tr::Trajectory; 
-    fieldmap::Matrix{Float64}=zeros(Float64,shape), 
-    Nblocks::Int64=50, 
-    use_gpu::Bool=true, 
-    verbose::Bool=false,
-    ) where D
-    @assert size(fieldmap) == shape "fieldmap must have same size as shape"
-    fieldmap = vec(fieldmap)
-
+function SignalOp(shape::NTuple{D,Int64}, tr::Trajectory; Nblocks::Int64=50, use_gpu::Bool=true, verbose::Bool=false) where D
     nodes = Float64.(kspaceNodes(tr))
     times = readoutTimes(tr)
     nrow = size(nodes,2)
@@ -64,28 +54,15 @@ function SignalOp(
     x, y = vec(x .+ y'*0), vec(x*0 .+ y') #grid points
     x, y = x .- Nx/2 .- 1, y .- Ny/2 .- 1
 
-
     @info "SignalOp Nblocks=$Nblocks, use_gpu=$use_gpu"
     return SignalOp{ComplexF64,Nothing,Function}(nrow, ncol, false, false
-                , (res,xm)->(res .= prod_SignalOp(xm, x, y, nodes, times, fieldmap; Nblocks=Nblocks, parts=parts, use_gpu=use_gpu, verbose=verbose))
+                , (res,xm)->(res .= prod_SignalOp(xm, x, y, nodes; Nblocks=Nblocks, parts=parts, use_gpu=use_gpu, verbose=verbose))
                 , nothing
-                , (res,ym)->(res .= ctprod_SignalOp(ym, x, y, nodes, times, fieldmap; Nblocks=Nblocks, parts=parts, use_gpu=use_gpu, verbose=verbose))
+                , (res,ym)->(res .= ctprod_SignalOp(ym, x, y, nodes; Nblocks=Nblocks, parts=parts, use_gpu=use_gpu, verbose=verbose))
                 , 0,0,0, false, false, false, ComplexF64[], ComplexF64[])
 end
 
-function SignalOp(
-    shape::NTuple{D,Int64}, 
-    tr::Trajectory, 
-    Δx::Float64, 
-    Δy::Float64; 
-    fieldmap::Matrix{Float64}=zeros(Float64,shape), 
-    Nblocks::Int64=50, 
-    use_gpu::Bool=true, 
-    verbose::Bool=false,
-    ) where D
-    @assert size(fieldmap) == shape "fieldmap must have same size as shape"
-    fieldmap = vec(fieldmap)
-
+function SignalOp(shape::NTuple{D,Int64}, tr::Trajectory, Δx::Float64, Δy::Float64; Nblocks::Int64=50, use_gpu::Bool=true, verbose::Bool=false) where D
     nodes = Float64.(kspaceNodes(tr))
     times = readoutTimes(tr)
     nrow = size(nodes,2)
@@ -108,22 +85,13 @@ function SignalOp(
 
     @info "SignalOp Nblocks=$Nblocks, use_gpu=$use_gpu, Δx=$Δx, Δy=$Δy"
     return SignalOp{ComplexF64,Nothing,Function}(nrow, ncol, false, false
-                , (res,xm)->(res .= prod_SignalOp(xm, x, y, nodes, times, fieldmap; Nblocks=Nblocks, parts=parts, use_gpu=use_gpu, verbose=verbose))
+                , (res,xm)->(res .= prod_SignalOp(xm, x, y, nodes; Nblocks=Nblocks, parts=parts, use_gpu=use_gpu, verbose=verbose))
                 , nothing
-                , (res,ym)->(res .= ctprod_SignalOp(ym, x, y, nodes, times, fieldmap; Nblocks=Nblocks, parts=parts, use_gpu=use_gpu, verbose=verbose))
+                , (res,ym)->(res .= ctprod_SignalOp(ym, x, y, nodes; Nblocks=Nblocks, parts=parts, use_gpu=use_gpu, verbose=verbose))
                 , 0,0,0, false, false, false, ComplexF64[], ComplexF64[])
 end
-function prod_SignalOp(
-    xm::Vector{T}, 
-    x::Vector{Float64}, 
-    y::Vector{Float64}, 
-    times::Vector{Float64}, 
-    fieldmap::Matrix{Float64}, 
-    nodes::Matrix{Float64};
-    Nblocks::Int64=1, 
-    parts::Vector{UnitRange{Int64}}=[1:size(nodes,2)], 
-    use_gpu::Bool=false, 
-    verbose::Bool=false) where T<:Union{Real,Complex}
+function prod_SignalOp(xm::Vector{T}, x::Vector{Float64}, y::Vector{Float64}, nodes::Matrix{Float64};
+    Nblocks::Int64=1, parts::Vector{UnitRange{Int64}}=[1:size(nodes,2)], use_gpu::Bool=false, verbose::Bool=false) where T<:Union{Real,Complex}
     if verbose
         @info "SignalOp prod Nblocks=$Nblocks, use_gpu=$use_gpu"
     end
@@ -138,7 +106,7 @@ function prod_SignalOp(
     progress_bar = Progress(Nblocks)
     for (block, p) = enumerate(parts)
         kx, ky = @view(nodes[1,p]), @view(nodes[2,p])
-        ϕ = (kx .* x') .+ (ky .* y') .+ (times[p] .* fieldmap')
+        ϕ = (kx .* x') .+ (ky .* y')
         e = exp.(-2*1im*pi*ϕ)
         out[p] =  e * xm
         if verbose
@@ -151,17 +119,8 @@ function prod_SignalOp(
     return vec(out)
 end
 
-function ctprod_SignalOp(
-    xm::Vector{T}, 
-    x::Vector{Float64}, 
-    y::Vector{Float64}, 
-    times::Vector{Float64}, 
-    fieldmap::Matrix{Float64}, 
-    nodes::Matrix{Float64}; 
-    Nblocks::Int64=1, 
-    parts::Vector{UnitRange{Int64}}=[1:size(nodes,2)], 
-    use_gpu::Bool=false, 
-    verbose::Bool=false) where T<:Union{Real,Complex}
+function ctprod_SignalOp(xm::Vector{T}, x::Vector{Float64}, y::Vector{Float64}, nodes::Matrix{Float64}; 
+    Nblocks::Int64=1, parts::Vector{UnitRange{Int64}}=[1:size(nodes,2)], use_gpu::Bool=false, verbose::Bool=false) where T<:Union{Real,Complex}
     if verbose
         @info "SignalOp ctprod Nblocks=$Nblocks, use_gpu=$use_gpu"
     end
@@ -176,7 +135,7 @@ function ctprod_SignalOp(
     progress_bar = Progress(Nblocks)
     for (block, p) = enumerate(parts)
         kx, ky = @view(nodes[1,p]), @view(nodes[2,p])
-        ϕ = (x .* kx') .+ (y .* ky') .+ (times[p] .* fieldmap')
+        ϕ = (x .* kx') .+ (y .* ky')
         e = exp.(-2*1im*pi*ϕ)
         out +=  conj(e) * xm[p]
         if verbose
