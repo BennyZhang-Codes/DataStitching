@@ -1,6 +1,5 @@
 export demo, demo_seq, demo_GR_skope, demo_raw, demo_hoseq, demo_sim
 
-include("demo_recon/PhantomReference.jl")
 include("demo_recon/plot_imgs.jl")
 
 function demo() ::Nothing
