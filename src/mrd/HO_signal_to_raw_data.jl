@@ -65,10 +65,10 @@ function signal_to_raw_data(
     #XML header
     params = Dict(
         #AcquisitionSystemInformation
-        "systemVendor"                   => "KomaMRI.jl", #String
+        "systemVendor"                   => "KomaHighOrder.jl", #String
         "systemModel"                    => "v"*version, #String
         "systemFieldStrength_T"          => sys.B0, #Float
-        "institutionName"                => "Pontificia Universidad Catolica de Chile", #String
+        "institutionName"                => "BennyZhang", #String
         #subjectInformation
         "patientName"                    => phantom_name,
         #experimentalConditions
@@ -285,10 +285,10 @@ function signal_to_raw_data(
     #XML header
     params = Dict(
         #AcquisitionSystemInformation
-        "systemVendor"                   => "KomaMRI.jl", #String
+        "systemVendor"                   => "KomaHighOrder.jl", #String
         "systemModel"                    => "v"*version, #String
         "systemFieldStrength_T"          => sys.B0, #Float
-        "institutionName"                => "Pontificia Universidad Catolica de Chile", #String
+        "institutionName"                => "BennyZhang", #String
         #subjectInformation
         "patientName"                    => phantom_name,
         #experimentalConditions
