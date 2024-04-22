@@ -46,7 +46,7 @@ function demo_hoseq(;skope::Bool=true, skope_method::Symbol=:Stitched) ::HO_Sequ
     return hoseq
 end
 
-function demo_raw(name::String; folder::String="base") ::RawAcquisitionData
+function demo_raw(name::String; folder::String="woB0_wT2") ::RawAcquisitionData
     @assert ispath("$(@__DIR__)/demo_raw/$(folder)") "folder not exist: $(folder)"
     BHO = BlochHighOrder(name)
     @info "demo_raw" sim_method=BHO mrd_file="$(@__DIR__)/demo_raw/$(folder)/xw_sp2d-1mm-r1_$(BHO.name)_nominal.mrd"
