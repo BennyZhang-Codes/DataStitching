@@ -23,13 +23,8 @@ include("datatypes/DiscreteSequence.jl") # include HO_Sequence
 include("phantom/phantom.jl")
 
 
-include("simulation/Simulate.jl")
-include("simulation/SimulatorCore.jl")
-include("simulation/Bloch/BlochSimulatitonMethod.jl")
-include("simulation/Bloch/BlochHighOrderSimulatitonMethod.jl")
-include("plot/plot_seq.jl")
-include("plot/plot_seqd.jl")
-include("plot/plot_kspace.jl")
+include("simulation/simulation.jl")
+include("plot/plot.jl")
 
 
 include("mrd/signal_to_raw_data.jl")
@@ -43,9 +38,6 @@ include("demo/demo.jl")
 export HO_DiscreteSequence
 export HO_Sequence
 export simulate
-export plot_seq
-export plot_seqd, plot_hoseqd
-export plot_grads_cumtrapz
 # export signal_to_raw_data
 
 
