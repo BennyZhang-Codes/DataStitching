@@ -123,6 +123,9 @@ function brain_phantom2D(p::PhantomType; axis="axial", ss=4, location=0.5) :: Ph
 	return obj
 end
 
+"""
+split with fan mask
+"""
 function brain_phantom2D(p::PhantomType, mask_idx::Int64, Nparts::Int64; axis="axial", ss=4, location=0.5) :: Phantom
     path = @__DIR__
     @assert isfile(path*"/$(p.file)") "File $(p.file) does not exist in $(path)"
@@ -222,6 +225,10 @@ function brain_phantom2D(p::PhantomType, mask_idx::Int64, Nparts::Int64; axis="a
 	return obj
 end
 
+
+"""
+add B0 map
+"""
 function brain_phantom2D(p::PhantomType, loadB0map::Bool; axis="axial", ss=4, location=0.5) :: Phantom
     path = @__DIR__
     @assert isfile(path*"/$(p.file)") "File $(p.file) does not exist in $(path)"

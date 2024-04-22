@@ -2,6 +2,7 @@ abstract type PhantomType end
 
 function info(s::Phantom)
 	print("Phantom[name = $(s.name) | spins = $(length(s.x)) | x = $(minimum(s.x)*1e2):$(maximum(s.x)*1e2) cm | y = $(minimum(s.y)*1e2):$(maximum(s.y)*1e2) cm | z = $(minimum(s.z)*1e2):$(maximum(s.z)*1e2) cm ]")
+    print("\n")
 end
 
 Base.show(io::IO, s::PhantomType) = begin
@@ -22,3 +23,6 @@ export phantom_dict
 
 include("phantom2d.jl")
 include("phantom3d.jl")
+include("PhantomReference.jl")
+
+export PhantomReference

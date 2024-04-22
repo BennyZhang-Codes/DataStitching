@@ -1,3 +1,4 @@
 edit_phantom
 debug_recon
-phantom
+phantom/brain3D_B0map_0.2.mat
+phantom/load_phantom.jl
