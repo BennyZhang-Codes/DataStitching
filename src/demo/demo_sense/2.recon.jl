@@ -1,7 +1,7 @@
 using KomaHighOrder
 using MRIReco, MRICoilSensitivities, MRISampling
 
-Ncoils = 3
+Ncoils = 30
 BHO_name = "000"
 hoseq = demo_hoseq()
 filename = "$(hoseq.SEQ.DEF["Name"])_$(BHO_name)_nominal_Ncoils$(Ncoils)"
@@ -22,11 +22,11 @@ shape = (Nx, Ny);
 # sensitivity = espirit(acqDataCart, (6,6), 30, eigThresh_1=0.02, eigThresh_2=0.98);
 
 # fan mask
-mask = get_fan_mask(Nx, Ny, Ncoils);
-plot_image(mask')
+mask = get_fan_mask(Nx, Ny, Ncoils)';
+p_mask = plot_image(mask)
 sensitivity = Array{ComplexF32,4}(undef, Nx, Ny, 1, Ncoils);
 for c = 1:Ncoils
-    sensitivity[:,:,1,c] = ((mask .== c) .* 1)'
+    sensitivity[:,:,1,c] = ((mask .== c) .* 1)
 end
 
 
@@ -54,5 +54,11 @@ img_cg = Array{ComplexF32,2}(undef, Nx, Ny);
 
 img_cg = reconstruction(acqData, params).data;
 
-plot_image(abs.(img_cg[:,:]))
+p_img_cg = plot_image(abs.(img_cg[:,:]))
+
+savefig(p_mask,  "$(path)/$(raw.params["protocolName"])-Mask.svg", format="svg", height=400, width=450)
+savefig(p_img_cg,  "$(path)/$(raw.params["protocolName"])-Recon.svg", format="svg", height=400, width=450)
+
+
+
 
