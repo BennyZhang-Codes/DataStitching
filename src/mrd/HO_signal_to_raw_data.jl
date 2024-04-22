@@ -225,7 +225,16 @@ format) used for reconstruction with MRIReco.
 - `raw`: (`::RawAcquisitionData`) RawAcquisitionData struct
 """
 function signal_to_raw_data(
-    signal::Matrix{ComplexF64}, hoseq::HO_Sequence, key::Symbol;
+    signal::Any, hoseq::HO_Sequence, key::Symbol;
+    phantom_name="Phantom", sys=Scanner(), sim_params=Dict{String,Any}(), ndims=2
+)
+    if size(signal, 3) == 1
+        signal = signal[:,:,1]
+    end
+    return signal_to_raw_data(ComplexF32.(signal), hoseq, key, phantom_name=phantom_name, sys=sys, sim_params=sim_params, ndims=ndims)
+end
+function signal_to_raw_data(
+    signal::Matrix{ComplexF32}, hoseq::HO_Sequence, key::Symbol;
     phantom_name="Phantom", sys=Scanner(), sim_params=Dict{String,Any}(), ndims=2
 )
     TotalSamples, Ncoils = size(signal)
