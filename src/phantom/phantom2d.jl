@@ -7,12 +7,8 @@ Base.@kwdef mutable struct brain2D <: PhantomType
 end
 export brain2D
 
-
-
-
-
 """
-    obj = brain_phantom2D(p::PhantomType; axis="axial", ss=4, location=0.5)
+    obj = brain_phantom2D(p::PhantomType; axis="axial", ss=4, location=0.5, loadB0map=true, mask_idx=1, Nparts=1)
 Creates a two-dimensional brain Phantom struct.
 
 # References
@@ -116,7 +112,7 @@ function brain_phantom2D(
         (class.==232)*1 .+ #DURA
         (class.==255)*.77 #MARROW
     if loadB0map    
-        B0map = brain_phantom2D_B0map(; axis=axis, ss=ss, location=location)
+        B0map = brain_phantom2D_B0map(; axis=axis, ss=1, location=location)
         B0map = imresize(B0map, size(class))
         Δw = B0map*2π
     else
@@ -146,10 +142,9 @@ function brain_phantom2D(
 	return obj
 end
   
-    
-
 function brain_phantom2D_B0map(; axis="axial", ss=1, location=0.5)
     path = (@__DIR__) * phantom_dict[:path]
+    @assert axis in ["axial", "coronal", "sagittal"] "axis must be one of the following: axial, coronal, sagittal"
     @assert isfile(path*"/$(phantom_dict[:brain2d_B0])") "file is not found in $(path)"
     @assert 0 <= location <= 1 "location must be between 0 and 1"
     B0data = MAT.matread(path*"/$(phantom_dict[:brain2d_B0])")["data"];

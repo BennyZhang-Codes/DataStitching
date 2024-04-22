@@ -23,7 +23,7 @@ export info
 export phantom_dict
 
 include("phantom2d.jl")
+include("phantom2d_reference.jl")
 include("phantom3d.jl")
-include("PhantomReference.jl")
 
-export PhantomReference, brain_phantom2D_B0map
+export brain_phantom2D_reference

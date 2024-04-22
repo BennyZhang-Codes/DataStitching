@@ -5,18 +5,18 @@ function get_center_range(x::Int64, x_range::Int64)
 end
 
 
-function PhantomReference(; axis="axial", ss=3, location=0.8, key=:ρ, target_fov=(150, 150), target_resolution=(1,1))
-    @assert axis in ["axial", "coronal", "sagittal"] "axis must be axial, coronal, or sagittal"
-    @assert key in [:ρ, :T2, :T2s, :T1, :B0] "key must be ρ, T2, T2s, T1, or B0"
+function brain_phantom2D_reference(p::PhantomType; axis="axial", ss=3, location=0.8, key=:ρ, target_fov=(150, 150), target_resolution=(1,1))
+    path = (@__DIR__) * phantom_dict[:path]
+    @assert axis in ["axial", "coronal", "sagittal"] "axis must be one of the following: axial, coronal, sagittal"
+    @assert key in [:ρ, :T2, :T2s, :T1, :Δw] "key must be ρ, T2, T2s, T1, or Δw"
     @assert 0 <= location <= 1 "location must be between 0 and 1"
 
-    path = "$(dirname(dirname(@__DIR__)))/$(phantom_dict[:path])/$(phantom_dict[:brain2d])"
-    @assert isfile(path) "the phantom file does not exist: $(path)"
+    @assert isfile(path*"/$(p.file)") "the phantom file does not exist: $(path*"/$(p.file)")"
     Δx = Δy = 0.2   # resolution of phantom: phantom_dict[:brain2d]
     fov_x, fov_y = target_fov
     res_x, res_y = target_resolution
 
-    data = MAT.matread(path)["data"]
+    data = MAT.matread(path*"/$(p.file)")["data"]
 
     M, N, Z = size(data)
     if axis == "axial"
@@ -78,19 +78,9 @@ function PhantomReference(; axis="axial", ss=3, location=0.8, key=:ρ, target_fo
             (class.==209)*500 .+ #FAT2
             (class.==232)*2569 .+ #DURA
             (class.==255)*500 #MARROW
-    elseif key == :B0
-        B0data = MAT.matread("$(dirname(dirname(@__DIR__)))/phantom/brain3D_B0map_0.2.mat")["data"];
-        if axis == "axial"
-            loc = Int32(ceil(Z*location))
-            img = B0data[1:ss:end,1:ss:end, loc]
-        elseif axis == "coronal"
-            loc = Int32(ceil(M*location))
-            img = B0data[loc, 1:ss:end,1:ss:end]
-        elseif axis == "sagittal"
-            loc = Int32(ceil(N*location))
-            img = B0data[1:ss:end, loc,1:ss:end]
-        end
-
+    elseif key == :Δw
+        B0map = brain_phantom2D_B0map(; axis=axis, ss=1, location=location)
+        img = imresize(B0map, size(class))
     end
     M, N = size(img)
     center_range = (Int64(ceil(fov_x / (Δx * ss))), Int64(ceil(fov_y / (Δy * ss)))) 
