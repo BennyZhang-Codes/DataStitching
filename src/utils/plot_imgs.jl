@@ -1,11 +1,11 @@
-export demo_plot_imgs
+export plot_imgs
 
-function demo_plot_imgs(imgs, subplot_titles; title="HighOrderOp", width=1300, height=200)
+function plot_imgs(imgs, subplot_titles; title="HighOrderOp", width=1300, height=200)
     fig = make_subplots(rows=1,cols=length(subplot_titles));
     [add_trace!(fig, heatmap(z=imgs[:,:,idx], transpose=false,coloraxis="coloraxis"); row=1, col=idx) for idx in eachindex(subplot_titles)]
     l = Layout(;
         paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
-        title=attr(text=title, y=1, x=0.5, xanchor= "center", yanchor= "top", yref="container"),
+        title=attr(text=title, y=1, x=0, xanchor= "left", yanchor= "top", yref="container"),
         margin=attr(t=40,l=0,r=100,b=0),
         coloraxis=attr(colorscale="Greys",xanchor="left",colorbar=attr(x=1,thickness=20)),
         font=attr(family="Times New Roman",size=16,color="gray"),

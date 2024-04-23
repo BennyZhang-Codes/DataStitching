@@ -5,7 +5,7 @@
 using MRIReco, KomaHighOrder, MRICoilSensitivities, PlotlyJS, MAT
 dir = "$(@__DIR__)/src/demo/demo_recon/SignalOp_spiral/results"
 BHO_simu = "000"
-raw = demo_raw(BHO_simu)
+raw = demo_raw(BHO_simu; folder="woT2_wB0")
 Nx, Ny = raw.params["reconSize"][1:2];
 acqData = AcquisitionData(raw);
 acqData.traj[1].circular = false;
@@ -14,9 +14,9 @@ shape = (Nx, Ny);
 hoseq = demo_hoseq()
 _, K_nominal_adc, _, K_skope_adc = get_kspace(hoseq; Δt=1)
 
-# t_adc = KomaMRIBase.get_adc_sampling_times(hoseq.SEQ)
-# times = t_adc .- minimum(t_adc)
-times = KomaMRIBase.get_adc_sampling_times(hoseq.SEQ)
+t_adc = KomaMRIBase.get_adc_sampling_times(hoseq.SEQ)
+times = t_adc .- minimum(t_adc)
+# times = KomaMRIBase.get_adc_sampling_times(hoseq.SEQ)
 tr_skope = Trajectory(K_skope_adc'[:,:], acqData.traj[1].numProfiles, acqData.traj[1].numSamplingPerProfile; circular=false, times=times);
 tr_nominal = Trajectory(K_nominal_adc'[1:3,:], acqData.traj[1].numProfiles, acqData.traj[1].numSamplingPerProfile; circular=false, times=times);
 
@@ -79,7 +79,7 @@ recParams[:λ] = 1.e-2
 recParams[:iterations] = 20
 recParams[:solver] = "cgnr"
 
-Op = SignalOp(shape, tr_nominal, 1e-3, 1e-3; Nblocks=9)
+Op = SignalOp(shape, tr_nominal, 1e-3, 1e-3; fieldmap=zeros((150,150))+B0map, Nblocks=9)
 recParams[:encodingOps] = reshape([Op], 1,1)
 @time rec = reconstruction(acqData, recParams);
 p_iter_SignalOp = plot_image(abs.(rec.data[:,:]); title="iterative SignalOp", width=650, height=600)

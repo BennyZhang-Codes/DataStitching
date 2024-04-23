@@ -46,7 +46,7 @@ function SignalOp(
     fieldmap = vec(fieldmap)
 
     nodes = Float64.(kspaceNodes(tr))
-    times = readoutTimes(tr)
+    times = Float64.(readoutTimes(tr))
     nrow = size(nodes,2)
     ncol = prod(shape)
     k = size(nodes,2) # number of nodes
@@ -87,7 +87,7 @@ function SignalOp(
     fieldmap = vec(fieldmap)
 
     nodes = Float64.(kspaceNodes(tr))
-    times = readoutTimes(tr)
+    times = Float64.(readoutTimes(tr))
     nrow = size(nodes,2)
     ncol = prod(shape)
     k = size(nodes,2) # number of nodes
@@ -117,9 +117,9 @@ function prod_SignalOp(
     xm::Vector{T}, 
     x::Vector{Float64}, 
     y::Vector{Float64}, 
+    nodes::Matrix{Float64},
     times::Vector{Float64}, 
-    fieldmap::Matrix{Float64}, 
-    nodes::Matrix{Float64};
+    fieldmap::Vector{Float64};
     Nblocks::Int64=1, 
     parts::Vector{UnitRange{Int64}}=[1:size(nodes,2)], 
     use_gpu::Bool=false, 
@@ -134,6 +134,8 @@ function prod_SignalOp(
         xm = xm |> gpu
         x = x |> gpu
         y = y |> gpu
+        times = times |> gpu
+        fieldmap = fieldmap |> gpu
     end
     progress_bar = Progress(Nblocks)
     for (block, p) = enumerate(parts)
@@ -155,9 +157,9 @@ function ctprod_SignalOp(
     xm::Vector{T}, 
     x::Vector{Float64}, 
     y::Vector{Float64}, 
+    nodes::Matrix{Float64},
     times::Vector{Float64}, 
-    fieldmap::Matrix{Float64}, 
-    nodes::Matrix{Float64}; 
+    fieldmap::Vector{Float64};
     Nblocks::Int64=1, 
     parts::Vector{UnitRange{Int64}}=[1:size(nodes,2)], 
     use_gpu::Bool=false, 
@@ -172,11 +174,13 @@ function ctprod_SignalOp(
         xm = xm |> gpu
         x = x |> gpu
         y = y |> gpu
+        times = times |> gpu
+        fieldmap = fieldmap |> gpu
     end
     progress_bar = Progress(Nblocks)
     for (block, p) = enumerate(parts)
         kx, ky = @view(nodes[1,p]), @view(nodes[2,p])
-        ϕ = (x .* kx') .+ (y .* ky') .+ (times[p] .* fieldmap')
+        ϕ = (x .* kx') .+ (y .* ky') .+ (fieldmap .* times[p]')
         e = exp.(-2*1im*pi*ϕ)
         out +=  conj(e) * xm[p]
         if verbose
@@ -189,16 +193,32 @@ function ctprod_SignalOp(
   return vec(out)
 end
 
-function prod_SignalOp(xm::SubArray{T}, x::Vector{Float64}, y::Vector{Float64}, nodes::Matrix{Float64};
-    Nblocks::Int64=1, parts::Vector{UnitRange{Int64}}=[1:size(nodes,2)], use_gpu::Bool=false) where T<:Union{Real,Complex}
+function prod_SignalOp(
+    xm::SubArray{T}, 
+    x::Vector{Float64}, 
+    y::Vector{Float64}, 
+    nodes::Matrix{Float64},
+    times::Vector{Float64}, 
+    fieldmap::Vector{Float64};
+    Nblocks::Int64=1, 
+    parts::Vector{UnitRange{Int64}}=[1:size(nodes,2)], 
+    use_gpu::Bool=false) where T<:Union{Real,Complex}
 	xm = xm[:,1]
-  return prod_SignalOp(xm, x, y, nodes; Nblocks=Nblocks, parts=parts, use_gpu=use_gpu)
+  return prod_SignalOp(xm, x, y, nodes, times, fieldmap; Nblocks=Nblocks, parts=parts, use_gpu=use_gpu)
 end
 
-function ctprod_SignalOp(xm::SubArray{T}, x::Vector{Float64}, y::Vector{Float64}, nodes::Matrix{Float64}; 
-    Nblocks::Int64=1, parts::Vector{UnitRange{Int64}}=[1:size(nodes,2)], use_gpu::Bool=false) where T<:Union{Real,Complex}
+function ctprod_SignalOp(
+    xm::SubArray{T}, 
+    x::Vector{Float64}, 
+    y::Vector{Float64}, 
+    nodes::Matrix{Float64},
+    times::Vector{Float64}, 
+    fieldmap::Vector{Float64};
+    Nblocks::Int64=1, 
+    parts::Vector{UnitRange{Int64}}=[1:size(nodes,2)], 
+    use_gpu::Bool=false) where T<:Union{Real,Complex}
 	xm = xm[:,1]
-  return ctprod_SignalOp(xm, x, y, nodes; Nblocks=Nblocks, parts=parts, use_gpu=use_gpu)
+  return ctprod_SignalOp(xm, x, y, nodes, times, fieldmap; Nblocks=Nblocks, parts=parts, use_gpu=use_gpu)
 end
 
 

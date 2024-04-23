@@ -2,10 +2,15 @@
 # using CUDA
 # device!(1) 
 
-using MRIReco, KomaHighOrder, MRICoilSensitivities, PlotlyJS, MAT
-dir = "$(@__DIR__)/src/demo/demo_recon/HighOrderOp_spiral"
+using KomaHighOrder
+using MRIReco, MRICoilSensitivities, PlotlyJS, MAT
+
 BHO_simu = "000"
-raw = demo_raw(BHO_simu)
+folder = "woT2B0"   #  "woT2B0", "woB0_wT2"  
+
+dir = "$(@__DIR__)/src/demo/demo_recon/HighOrderOp_spiral/results/$folder"; if ispath(dir) == false mkdir(dir) end
+
+raw = demo_raw(BHO_simu; folder=folder)
 Nx, Ny = raw.params["reconSize"][1:2];
 acqData = AcquisitionData(raw);
 acqData.traj[1].circular = false;
@@ -28,7 +33,7 @@ tr_nominal = Trajectory(K_nominal_adc'[1:3,:], acqData.traj[1].numProfiles, acqD
 # [7] Simu: 111, Reco: 110
 # [8] Simu: 111, Reco: 111
 #######################################################################################
-BHO_simu = "111";raw = demo_raw(BHO_simu);
+BHO_simu = "111";raw = demo_raw(BHO_simu; folder=folder)
 Nx, Ny = raw.params["reconSize"][1:2];
 acqData = AcquisitionData(raw);acqData.traj[1].circular = false;shape = (Nx, Ny);
 
@@ -41,7 +46,7 @@ recParams[:λ] = 1.e-2
 recParams[:iterations] = 20
 recParams[:solver] = "cgnr"
 BHO_recos = ["000", "100", "010", "001", "011", "101", "110", "111"]
-imgs = Array{ComplexF32,3}(undef, Nx, Ny, length(BHO_recos))
+imgs = Array{ComplexF32,3}(undef, Nx, Ny, length(BHO_recos));
 for idx in eachindex(BHO_recos)
     @info "Simu: $(BHO_simu), Reco: $(BHO_recos[idx])"
     BHO_reco = BHO_recos[idx]
@@ -51,8 +56,8 @@ for idx in eachindex(BHO_recos)
     imgs[:,:, idx] = rec.data[:,:]
 end
 
-imgs_111 = abs.(imgs)
-imgs_111_error = Array{Float32,3}(undef, size(imgs_111))
+imgs_111 = abs.(imgs);
+imgs_111_error = Array{Float32,3}(undef, size(imgs_111));
 for idx in eachindex(BHO_recos)
     imgs_111_error[:,:, idx] = imgs_111[:,:, idx] - imgs_111[:,:, end]
 end
@@ -77,7 +82,7 @@ MAT.matwrite(dir*"/HighOrderOp_Simu_111.mat", Dict("imgs"=>imgs_111, "imgs_error
 # [7] Simu: 000, Reco: 110
 # [8] Simu: 000, Reco: 111
 #######################################################################################
-BHO_simu = "000";raw = demo_raw(BHO_simu);
+BHO_simu = "000";raw = demo_raw(BHO_simu; folder=folder)
 Nx, Ny = raw.params["reconSize"][1:2];
 acqData = AcquisitionData(raw);acqData.traj[1].circular = false;shape = (Nx, Ny);
 
@@ -90,7 +95,7 @@ recParams[:λ] = 1.e-2
 recParams[:iterations] = 20
 recParams[:solver] = "cgnr"
 BHO_recos = ["000", "100", "010", "001", "011", "101", "110", "111"]
-imgs = Array{ComplexF32,3}(undef, Nx, Ny, length(BHO_recos))
+imgs = Array{ComplexF32,3}(undef, Nx, Ny, length(BHO_recos));
 for idx in eachindex(BHO_recos)
     @info "Simu: $(BHO_simu), Reco: $(BHO_recos[idx])"
     BHO_reco = BHO_recos[idx]
@@ -100,8 +105,8 @@ for idx in eachindex(BHO_recos)
     imgs[:,:, idx] = rec.data[:,:]
 end
 
-imgs_000 = abs.(imgs)
-imgs_000_error = Array{Float32,3}(undef, size(imgs_000))
+imgs_000 = abs.(imgs);
+imgs_000_error = Array{Float32,3}(undef, size(imgs_000));
 for idx in eachindex(BHO_recos)
     imgs_000_error[:,:, idx] = imgs_000[:,:, idx] - imgs_000[:,:, 1]
 end

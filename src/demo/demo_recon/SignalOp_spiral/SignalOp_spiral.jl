@@ -2,10 +2,15 @@
 # using CUDA
 # device!(1) 
 
-using MRIReco, KomaHighOrder, MRICoilSensitivities, PlotlyJS, MAT
-dir = "$(@__DIR__)/src/demo/demo_recon/SignalOp_spiral/results"
+using KomaHighOrder
+using MRIReco, MRICoilSensitivities, PlotlyJS, MAT
+
 BHO_simu = "000"
-raw = demo_raw(BHO_simu)
+folder = "woB0_wT2"   #  "woT2B0"   
+
+dir = "$(@__DIR__)/src/demo/demo_recon/SignalOp_spiral/results/$folder"; if ispath(dir) == false mkdir(dir) end
+
+raw = demo_raw(BHO_simu; folder=folder)
 Nx, Ny = raw.params["reconSize"][1:2];
 acqData = AcquisitionData(raw);
 acqData.traj[1].circular = false;
@@ -111,7 +116,7 @@ imgs_dict = Dict(
 MAT.matwrite(dir*"/SignalOp_Simu_000.mat", imgs_dict; compress=true)
 
 ##### plots
-imgs = Array{Float32,3}(undef, Nx, Ny, 5)
+imgs = Array{Float32,3}(undef, Nx, Ny, 5);
 imgs[:,:, 1] = img_direct_NUFFTOp; imgs[:,:, 2] = img_iter_NUFFTOp; imgs[:,:, 3] = img_iter_SignalOp_normalized; imgs[:,:, 4] = img_iter_SignalOp; imgs[:,:, 5] = img_iter_HighOrderOp
 p_imgs = plot_imgs(imgs, ["direct NUFFTOp", "NUFFTOp", "SignalOp NormKspace", "SignalOp", "HighOrderOp"]; title="", width=1100, height=250)
 savefig(p_imgs, dir*"/SignalOp_compare_nominalrecon.svg", width=1100, height=250,format="svg")
