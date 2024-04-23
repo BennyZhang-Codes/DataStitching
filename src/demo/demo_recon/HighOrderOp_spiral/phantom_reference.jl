@@ -1,7 +1,7 @@
-using MAT, PlotlyJS, Statistics,ImageTransformations
+using MAT, PlotlyJS, Statistics
+using ImageTransformations, ImageQualityIndexes, ImageDistances
 
-
-folder = "woT2B0"   #  "woT2B0", "woB0_wT2"   
+folder = "woB0_wT2"   #  "woT2B0", "woB0_wT2"   
 dir = "$(@__DIR__)/src/demo/demo_recon/HighOrderOp_spiral/results/$folder"
 
 ρ = brain_phantom2D_reference(brain2D(); ss=3, location=0.8, key=:ρ, target_fov=(150, 150), target_resolution=(1,1));
@@ -17,6 +17,15 @@ BHO_recos = mat_111["BHO"];
 subplot_titles = ["Reco: $t" for t in BHO_recos];
 title="HighOrderOp, Simu: 111, $folder";
 
+# metrics 
+mse_values = Vector{Float32}(undef, length(BHO_recos))
+ssim_values = Vector{Float32}(undef, length(BHO_recos))
+for idx in eachindex(BHO_recos)
+    mse_values[idx] = mse(normalization(imgs_111[:,:, idx]), ρ)
+    ssim_values[idx] = assess_ssim(normalization(imgs_111[:,:, idx]), ρ)
+end
+
+# error map & imgs normalized to [0,1]
 imgs_error_111 = Array{Float32,3}(undef, size(imgs_111));
 imgs_normalized_111 = Array{Float32,3}(undef, size(imgs_111));
 for idx in eachindex(BHO_recos)
@@ -24,13 +33,19 @@ for idx in eachindex(BHO_recos)
     imgs_normalized_111[:,:, idx] = normalization(imgs_111[:,:, idx]);
 end
 
-p_111_normalized = plot_imgs(imgs_normalized_111, subplot_titles; title=title*" | normalized to [0,1]", width=1300, height=200)
-p_111_error = plot_imgs(imgs_error_111, subplot_titles; title=title*" | error map", width=1300, height=200)
-savefig(p_111_error,  dir*"/HighOrderOp_Simu_111_ErrorWithPhantom.svg", width=1300, height=200,format="svg")
-savefig(p_111_normalized,  dir*"/HighOrderOp_Simu_111_Normalized.svg", width=1300, height=200,format="svg")
+width=1200
+height=160
 
-error = standardization(ρ') - standardization(normalize(imgs_111[:,:,8]));
-error = ρ - imgs_111[:,:,8];
-error = standardization(ρ2) - standardization(normalize(imgs_111[:,:,8]));
-plot_image(error; title="$(BHO_recos[8]) - ρ", zmin=minimum(error), zmax=maximum(error))
+annotations = []
+for idx in eachindex(BHO_recos)
+    push!(annotations, attr(text="SSIM: $(ssim_values[idx])<br>MSE: $(mse_values[idx])",
+    yanchor="top",xanchor="center",xref="x$idx domain",x=0.5,yref="y$idx domain",y=0,showarrow=false,font=attr(size=14)))
+end
+p_111_error = plot_imgs(imgs_error_111, subplot_titles; title=title*" | error map", 
+                        width=width, height=height, annotations=annotations, margin_bottom=40)
+savefig(p_111_error,  dir*"/HighOrderOp_Simu_111_ErrorWithPhantom.svg", width=width+100, height=height+80,format="svg")
+
+p_111_normalized = plot_imgs(imgs_normalized_111, subplot_titles; title=title*" | normalized to [0,1]", width=width, height=height)
+savefig(p_111_normalized,  dir*"/HighOrderOp_Simu_111_Normalized.svg", width=width+100, height=height+40,format="svg")
+
 
