@@ -1,6 +1,5 @@
-export plot_imgs
 
-function plot_imgss(
+function plot_imgs(
     imgs, 
     subplot_titles; 
     title="HighOrderOp", 

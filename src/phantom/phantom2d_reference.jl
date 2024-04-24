@@ -8,7 +8,7 @@ end
 function brain_phantom2D_reference(p::PhantomType; axis="axial", ss=3, location=0.8, key=:ρ, target_fov=(150, 150), target_resolution=(1,1))
     path = (@__DIR__) * phantom_dict[:path]
     @assert axis in ["axial", "coronal", "sagittal"] "axis must be one of the following: axial, coronal, sagittal"
-    @assert key in [:ρ, :T2, :T2s, :T1, :Δw] "key must be ρ, T2, T2s, T1, or Δw"
+    @assert key in [:ρ, :T2, :T2s, :T1, :Δw, :raw, :binary] "key must be ρ, T2, T2s, T1, Δw, raw or binary"
     @assert 0 <= location <= 1 "location must be between 0 and 1"
 
     @assert isfile(path*"/$(p.file)") "the phantom file does not exist: $(path*"/$(p.file)")"
@@ -81,6 +81,10 @@ function brain_phantom2D_reference(p::PhantomType; axis="axial", ss=3, location=
     elseif key == :Δw
         B0map = brain_phantom2D_B0map(; axis=axis, ss=1, location=location)
         img = imresize(B0map, size(class))
+    elseif key == :raw
+        img = class
+    elseif key == :binary
+        img = (class.>0)*1 #All
     end
     M, N = size(img)
     center_range = (Int64(ceil(fov_x / (Δx * ss))), Int64(ceil(fov_y / (Δy * ss)))) 
@@ -88,5 +92,5 @@ function brain_phantom2D_reference(p::PhantomType; axis="axial", ss=3, location=
     @info "PhantomReference" key=key axis=axis location=location obj_size=(M, N) center_range=center_range target_fov=target_fov target_size=target_size
     img = img[get_center_range(M, center_range[1]), get_center_range(N, center_range[2])]
     img = imresize(img, target_size)
-    return img'
+    return Matrix(img')
 end
