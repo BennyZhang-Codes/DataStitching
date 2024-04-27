@@ -5,16 +5,28 @@ function get_center_range(x::Int64, x_range::Int64)
 end
 
 
-function brain_phantom2D_reference(p::PhantomType; axis="axial", ss=3, location=0.8, key=:ρ, target_fov=(150, 150), target_resolution=(1,1))
+function brain_phantom2D_reference(
+    p::PhantomType; 
+    axis="axial", 
+    ss::Int64=3, 
+    location::Float64=0.8, 
+    key::Symbol=:ρ, 
+    B0map::Symbol=:fat,     # load B0 map
+    maxOffresonance::Float64=125., # max off-resonance
+    target_fov=(150, 150), 
+    target_resolution=(1,1))
     path = (@__DIR__) * phantom_dict[:path]
     @assert axis in ["axial", "coronal", "sagittal"] "axis must be one of the following: axial, coronal, sagittal"
     @assert key in [:ρ, :T2, :T2s, :T1, :Δw, :raw, :binary] "key must be ρ, T2, T2s, T1, Δw, raw or binary"
+    @assert B0map in [:file, :fat, :quadratic] "B0map must be one of the following: :file, :fat, :quadratic"
     @assert 0 <= location <= 1 "location must be between 0 and 1"
 
     @assert isfile(path*"/$(p.file)") "the phantom file does not exist: $(path*"/$(p.file)")"
     Δx = Δy = 0.2   # resolution of phantom: phantom_dict[:brain2d]
     fov_x, fov_y = target_fov
     res_x, res_y = target_resolution
+    center_range = (Int64(ceil(fov_x / (Δx * ss))), Int64(ceil(fov_y / (Δy * ss)))) 
+    target_size = (Int64(ceil(fov_x / res_x)), Int64(ceil(fov_y / res_y)))
 
     data = MAT.matread(path*"/$(p.file)")["data"]
 
@@ -53,6 +65,7 @@ function brain_phantom2D_reference(p::PhantomType; axis="axial", ss=3, location=
             (class.==209)*70 .+ #FAT2
             (class.==232)*329 .+ #DURA
             (class.==255)*70 #MARROW
+        img = img .* 1e-3  # s
     elseif key == :T2s
         img = (class.==23)*58 .+ #CSF
             (class.==46)*69 .+ #GM
@@ -66,6 +79,7 @@ function brain_phantom2D_reference(p::PhantomType; axis="axial", ss=3, location=
             (class.==232)*58 .+ #DURA
             (class.==255)*61 .+#MARROW
             (class.==255)*70 #MARROW
+        img = img .* 1e-3  # s
     elseif key == :T1
         img = (class.==23)*2569 .+ #CSF
             (class.==46)*833 .+ #GM
@@ -78,17 +92,26 @@ function brain_phantom2D_reference(p::PhantomType; axis="axial", ss=3, location=
             (class.==209)*500 .+ #FAT2
             (class.==232)*2569 .+ #DURA
             (class.==255)*500 #MARROW
+        img = img .* 1e-3  # s
     elseif key == :Δw
-        B0map = brain_phantom2D_B0map(; axis=axis, ss=1, location=location)
-        img = imresize(B0map, size(class))
+        if B0map == :file
+            B0map = brain_phantom2D_B0map(; axis=axis, ss=1, location=location)
+            img = imresize(B0map, size(class))
+        elseif B0map == :fat
+            Δw_fat = γ * 1.5 * (-3.45) * 1e-6  # Hz
+            img = (class.==93)*Δw_fat .+ #FAT1 
+                (class.==209)*Δw_fat    #FAT2
+        elseif B0map == :quadratic
+            img = quadraticFieldmap(target_size...,maxOffresonance)[:,:,1]
+            center_range = target_size
+        end
     elseif key == :raw
         img = class
     elseif key == :binary
         img = (class.>0)*1 #All
     end
     M, N = size(img)
-    center_range = (Int64(ceil(fov_x / (Δx * ss))), Int64(ceil(fov_y / (Δy * ss)))) 
-    target_size = (Int64(ceil(fov_x / res_x)), Int64(ceil(fov_y / res_y)))
+
     @info "PhantomReference" key=key axis=axis location=location obj_size=(M, N) center_range=center_range target_fov=target_fov target_size=target_size
     img = img[get_center_range(M, center_range[1]), get_center_range(N, center_range[2])]
     img = imresize(img, target_size)

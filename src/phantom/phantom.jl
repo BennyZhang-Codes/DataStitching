@@ -27,3 +27,8 @@ include("phantom2d_reference.jl")
 include("phantom3d.jl")
 
 export brain_phantom2D_reference
+
+
+##########
+# obj = brain_phantom2D(brain2D(); ss=3, location=0.8, B0map=:quadratic, maxOffresonance=10.); info(obj); plot_phantom_map(obj, :Δw)
+# ref = brain_phantom2D_reference(brain2D();B0map=:quadratic,key=:Δw, maxOffresonance=10.); plot_image(ref,zmin=-10)

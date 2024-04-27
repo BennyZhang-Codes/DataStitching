@@ -5,6 +5,8 @@ import Base.*, Base.+, Base.-, Base./, Base.vcat, Base.size, Base.abs, Base.getp
 # IMPORT PACKAGES
 using CUDA, Interpolations, PlotlyJS, Statistics
 import ImageTransformations: imresize
+import MRISimulation: quadraticFieldmap
+
 using ThreadsX
 # Printing
 using ProgressMeter

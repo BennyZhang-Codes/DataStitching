@@ -32,16 +32,17 @@ function brain_phantom2D(
     axis::String="axial",   # orientation
     ss::Int64=4,            # undersample
     location::Float64=0.5,  # relative location in the Z-axis
-    loadB0map::Bool=true,   # load B0 map
+    B0map::Symbol=:fat,     # load B0 map
+    maxOffresonance::Float64=125.,
     mask_idx::Int64=1,      # mask index
     Nparts::Int64=1,        # number of partitions (split in fan shape)
     ) :: Phantom
     path = (@__DIR__) * phantom_dict[:path]
     @assert axis in ["axial", "coronal", "sagittal"] "axis must be one of the following: axial, coronal, sagittal"
+    @assert B0map in [:file, :fat, :quadratic] "B0map must be one of the following: :file, :fat, :quadratic"
     @assert isfile(path*"/$(p.file)") "File $(p.file) does not exist in $(path)"
     @assert 0 <= location <= 1 "location must be between 0 and 1"
     @assert 1 <= mask_idx <= Nparts "mask_idx must be between 1 and Nparts"
-
     data = MAT.matread(path*"/$(p.file)")["data"]
     
     M, N, Z = size(data)
@@ -111,14 +112,17 @@ function brain_phantom2D(
         (class.==209)*.77 .+ #FAT2
         (class.==232)*1 .+ #DURA
         (class.==255)*.77 #MARROW
-    if loadB0map    
-        B0map = brain_phantom2D_B0map(; axis=axis, ss=1, location=location)
-        B0map = imresize(B0map, size(class))
-        Δw = B0map*2π
-    else
+    if B0map == :file    
+        fieldmap = brain_phantom2D_B0map(; axis=axis, ss=1, location=location)
+        fieldmap = imresize(fieldmap, size(class))
+        Δw = fieldmap*2π
+    elseif B0map == :fat
         Δw_fat = -220*2π
         Δw = (class.==93)*Δw_fat .+ #FAT1
             (class.==209)*Δw_fat    #FAT2
+    elseif B0map == :quadratic
+        fieldmap = quadraticFieldmap(size(class)...,maxOffresonance)[:,:,1]
+        Δw = fieldmap*2π
     end
 
 	T1 = T1*1e-3
