@@ -77,7 +77,7 @@ function plot_imgg(
       title = ""
   )
 	#Layout
-	bgcolor, text_color, plot_bgcolor, grid_color, sep_color = KomaHighOrder.HO_theme_chooser(thememode)
+	bgcolor, text_color, plot_bgcolor, grid_color, sep_color = HO_theme_chooser(thememode)
 	l = Layout(;title=title,
     # yaxis_title="y",
     # xaxis_title="x",
