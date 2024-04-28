@@ -13,7 +13,7 @@ Plots a high order sequence struct.
 - `height`: (`::Integer`, `=nothing`) plot height
 - `slider`: (`::Bool`, `=true`) boolean to indicate whether to display a slider
 - `show_seq_blocks`: (`::Bool`, `=false`) boolean to indicate whether to display sequence blocks
-- `darkmode`: (`::Bool`, `=false`) boolean to indicate whether to display darkmode style
+- `thememode`: (`::Bool`, `=false`) boolean to indicate whether to display thememode style
 - `range`: (`::Vector{Real}`, `=[]`) time range to be displayed initially
 - `title`: (`::String`, `=""`) plot title
 - `max_rf_samples`: (`::Integer`, `=100`) maximum number of RF samples
@@ -27,7 +27,7 @@ function plot_seq(
       height=nothing,
       slider=false,
       show_seq_blocks=false,
-      darkmode=false,
+      thememode=:dark,
       max_rf_samples=Inf,
       range=[],
       title="",
@@ -85,6 +85,70 @@ function plot_seq(
     p[2O+3+1+9] = scatter(x=samples.h8.t*1e3, y=samples.h8.A*1e3, name="h8", hovertemplate="(%{x:.4f} ms, %{y:.2f} mT/m²)",
                     xaxis=xaxis, yaxis=yaxis, legendgroup="h8", showlegend=showlegend, marker=attr(color="#94346e"))
     # Return the plot
-    l, config = KomaMRIPlots.generate_seq_time_layout_config(title, width, height, range, slider, show_seq_blocks, darkmode; T0=KomaMRIBase.get_block_start_times(hoseq.SEQ))
+    l, config = plot_hoseq_generate_seq_time_layout_config(title, width, height, range, slider, show_seq_blocks, thememode; T0=KomaMRIBase.get_block_start_times(hoseq.SEQ))
     return KomaMRIPlots.plot_koma(p, l; config)
+end
+
+function plot_hoseq_generate_seq_time_layout_config(title, width, height, range, slider, show_seq_blocks, thememode; T0)
+	#LAYOUT
+	bgcolor, text_color, plot_bgcolor, grid_color, sep_color = HO_theme_chooser(thememode)
+	#Shapes
+	shapes = []
+    N = length(T0)
+	if show_seq_blocks
+		aux = [line(
+			xref="x", yref="paper",
+			x0=T0[i]*1e3, y0=0,
+			x1=T0[i]*1e3, y1=1,
+			line=attr(color=sep_color, width=2),
+			) for i = 1:N]
+		append!(shapes, aux)
+	end
+	l = Layout(;title=title, hovermode="closest",
+			xaxis_title="",
+			modebar=attr(orientation="h", yanchor="bottom", xanchor="right", y=1, x=0, bgcolor=bgcolor, color=text_color, activecolor=plot_bgcolor),
+			legend=attr(orientation="h", yanchor="bottom", xanchor="left", y=1, x=0),
+			plot_bgcolor=plot_bgcolor,
+			paper_bgcolor=bgcolor,
+			xaxis_gridcolor=grid_color,
+			yaxis_gridcolor=grid_color,
+			xaxis_zerolinecolor=grid_color,
+			yaxis_zerolinecolor=grid_color,
+			font_color=text_color,
+			yaxis_fixedrange = false,
+			xaxis=attr(
+				ticksuffix=" ms",
+				domain=range[:],
+				range=range[:],
+				rangeslider=attr(visible=slider),
+				rangeselector=attr(
+					buttons=[
+						attr(count=1,
+						label="1m",
+						step=10,
+						stepmode="backward"),
+						attr(step="all")
+						]
+					),
+				),
+			shapes = shapes,
+			margin=attr(t=0,l=0,r=0,b=0)
+		)
+	if height !== nothing
+		l.height = height
+	end
+	if width !== nothing
+		l.width = width
+	end
+	#CONFIG
+	config = PlotConfig(
+		displaylogo=false,
+		toImageButtonOptions=attr(
+			format="svg", # one of png, svg, jpeg, webp
+		).fields,
+		modeBarButtonsToRemove=["zoom", "select2d", "lasso2d", "autoScale", "resetScale2d", "pan",
+								"tableRotation", "resetCameraLastSave", "zoomIn", "zoomOut"]
+	)
+
+	l, config
 end

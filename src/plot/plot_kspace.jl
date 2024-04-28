@@ -3,7 +3,7 @@ import KomaMRI.KomaMRIPlots: plot_kspace, interp_map, theme_chooser, plot_koma
 
 
 """
-    p = plot_kspace(seq::Sequence; width=nothing, height=nothing, darkmode=false)
+    p = plot_kspace(seq::Sequence; width=nothing, height=nothing, thememode=:dark)
 
 Plots the k-space of a Sequence struct.
 
@@ -13,7 +13,7 @@ Plots the k-space of a Sequence struct.
 # Keywords
 - `width`: (`::Integer`, `=nothing`) plot width
 - `height`: (`::Integer`, `=nothing`) plot height
-- `darkmode`: (`::Bool`, `=false`) boolean to indicate whether to display darkmode style
+- `thememode`: (`::Bool`, `=false`) boolean to indicate whether to display thememode style
 
 # Returns
 - `p`: (`::PlotlyJS.SyncPlot`) plot of the k-space of the Sequence struct
@@ -31,10 +31,10 @@ function plot_kspace(
       hoseq::HO_Sequence;
       width=nothing,
       height=nothing,
-      darkmode=false
+      thememode=:dark
   )
     seq = hoseq.SEQ
-	bgcolor, text_color, plot_bgcolor, grid_color, sep_color = theme_chooser(darkmode)
+	bgcolor, text_color, plot_bgcolor, grid_color, sep_color = HO_theme_chooser(thememode)
 	#Calculations of theoretical k-space
 	K_nominal, K_nominal_adc, K_skope, K_skope_adc = get_kspace(hoseq; Δt=1) #sim_params["Δt"])
 	K_skope = K_skope[:, 2:4]          # H1, H2, H3 => x, y, z
@@ -106,11 +106,11 @@ function plot_kspace(
 	key::Symbol;
 	width=nothing,
 	height=nothing,
-	darkmode=false
+	thememode=:dark
 )
 	@assert key == :x || key == :y || key == :z || key == :all "key must be one of :x, :y, :z, :all"
 	seq = hoseq.SEQ
-	bgcolor, text_color, plot_bgcolor, grid_color, sep_color = theme_chooser(darkmode)
+	bgcolor, text_color, plot_bgcolor, grid_color, sep_color = HO_theme_chooser(thememode)
 	K_nominal, K_nominal_adc, K_skope, K_skope_adc = get_kspace(hoseq; Δt=1)
 	K_skope = K_skope[:, 2:4]          # H1, H2, H3 => x, y, z
 	K_skope_adc = K_skope_adc[:, 2:4]
@@ -199,10 +199,10 @@ function plot_grads_cumtrapz(
 	order::Integer;
 	width=nothing,
 	height=nothing,
-	darkmode=false)
+	thememode=:dark)
 	@assert 0 <= order <= 8 "order must be between 0 and 8"
 	seq = hoseq.SEQ
-	bgcolor, text_color, plot_bgcolor, grid_color, sep_color = theme_chooser(darkmode)
+	bgcolor, text_color, plot_bgcolor, grid_color, sep_color = HO_theme_chooser(thememode)
 	_, _, K_skope, K_skope_adc = get_kspace(hoseq; Δt=1)
 	K_skope = K_skope[:, order+1:order+1]          # H1, H2, H3 => x, y, z
 	K_skope_adc = K_skope_adc[:, order+1:order+1]
@@ -265,9 +265,9 @@ function plot_grads_cumtrapz(
 	hoseq::HO_Sequence;
 	width=nothing,
 	height=nothing,
-	darkmode=false)
+	thememode=:dark)
 	seq = hoseq.SEQ
-	bgcolor, text_color, plot_bgcolor, grid_color, sep_color = theme_chooser(darkmode)
+	bgcolor, text_color, plot_bgcolor, grid_color, sep_color = HO_theme_chooser(thememode)
 	_, _, K_skope, K_skope_adc = get_kspace(hoseq; Δt=1)
 
 	t_adc = KomaMRIBase.get_adc_sampling_times(seq)

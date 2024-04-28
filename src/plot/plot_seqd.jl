@@ -7,7 +7,7 @@ function plot_seqd(
         height=nothing,
         slider=false,
         show_seq_blocks=false,
-        darkmode=false,
+        thememode=:dark,
         range=[],
         title="",
         xaxis="x",
@@ -26,7 +26,7 @@ function plot_seqd(
     ADC = scatter_used(x=hoseqd.seqd.t[hoseqd.seqd.ADC]*1e3, y=zeros(sum(hoseqd.seqd.ADC)), name="ADC", mode="markers", marker_symbol=:x, 
             xaxis=xaxis, yaxis=yaxis, showlegend=showlegend, hovertemplate="(%{x:.4f} ms, %{y:i})")
     # Return the plot
-    l, config = HO_generate_seq_time_layout_config(title, width, height, range, slider, show_seq_blocks, darkmode; T0=KomaMRIBase.get_block_start_times(hoseq.SEQ))
+    l, config = plot_hoseqd_generate_seq_time_layout_config(title, width, height, range, slider, show_seq_blocks, thememode; T0=KomaMRIBase.get_block_start_times(hoseq.SEQ))
     KomaMRIPlots.plot_koma([Gx,Gy,Gz,B1,ADC], l; config)
 end
 
@@ -38,7 +38,7 @@ function plot_seqd(
         height=nothing,
         slider=false,
         show_seq_blocks=false,
-        darkmode=false,
+        thememode=:dark,
         range=[],
         title="",
         xaxis="x",
@@ -53,7 +53,7 @@ function plot_seqd(
         height=height, 
         slider=slider, 
         show_seq_blocks=show_seq_blocks, 
-        darkmode=darkmode, 
+        thememode=thememode, 
         range=range, 
         title=title, 
         xaxis=xaxis, 
@@ -69,7 +69,7 @@ function plot_hoseqd(
         height=nothing,
         slider=false,
         show_seq_blocks=false,
-        darkmode=false,
+        thememode=:dark,
         range=[],
         title="",
         xaxis="x",
@@ -106,7 +106,7 @@ function plot_hoseqd(
         h8  = scatter_used(x=hoseqd.seqd.t*1e3, y=hoseqd.h8*1e3, name="h8", mode="markers+lines", marker_symbol=:circle, 
                 xaxis=xaxis, yaxis=yaxis, showlegend=showlegend, hovertemplate="(%{x:.4f} ms, %{y:.2f} mT/m²)")
         # Return the plot
-        l, config = HO_generate_seq_time_layout_config(title, width, height, range, slider, show_seq_blocks, darkmode; T0=KomaMRIBase.get_block_start_times(hoseq.SEQ))
+        l, config = plot_hoseqd_generate_seq_time_layout_config(title, width, height, range, slider, show_seq_blocks, thememode; T0=KomaMRIBase.get_block_start_times(hoseq.SEQ))
         KomaMRIPlots.plot_koma([Gx,Gy,Gz,B1,ADC,h0,h1,h2,h3,h4,h5,h6,h7,h8], l; config)
 end
 
@@ -118,7 +118,7 @@ function plot_hoseqd(
         height=nothing,
         slider=false,
         show_seq_blocks=false,
-        darkmode=false,
+        thememode=:dark,
         range=[],
         title="",
         xaxis="x",
@@ -133,7 +133,7 @@ function plot_hoseqd(
             height=height,
             slider=slider,
             show_seq_blocks=show_seq_blocks,
-            darkmode=darkmode,
+            thememode=thememode,
             range=range,
             title=title,
             xaxis=xaxis,
@@ -142,9 +142,9 @@ function plot_hoseqd(
             )
 end
 
-function HO_generate_seq_time_layout_config(title, width, height, range, slider, show_seq_blocks, darkmode; T0)
+function plot_hoseqd_generate_seq_time_layout_config(title, width, height, range, slider, show_seq_blocks, thememode; T0)
 	#LAYOUT
-	bgcolor, text_color, plot_bgcolor, grid_color, sep_color = KomaMRIPlots.theme_chooser(darkmode)
+	bgcolor, text_color, plot_bgcolor, grid_color, sep_color = HO_theme_chooser(thememode)
 	#Shapes
 	shapes = []
     N = length(T0)
