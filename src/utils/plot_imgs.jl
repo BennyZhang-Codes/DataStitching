@@ -67,23 +67,28 @@ Plots an image matrix.
 # Returns
 - `p`: (`::PlotlyJS.SyncPlot`) plot of the image matrix
 """
-function plot_imgg(
+function plot_img(
       image;
       height = nothing,
       width = nothing,
       zmin = minimum(image[:]),
       zmax = maximum(image[:]),
       thememode = :dark,
-      title = ""
+      title = "",
+      margin_top=40,
+      margin_bottom=0,
+      margin_left=0,
+      margin_right=0,
   )
 	#Layout
 	bgcolor, text_color, plot_bgcolor, grid_color, sep_color = HO_theme_chooser(thememode)
-	l = Layout(;title=title,
+	l = Layout(;
+    title=attr(text=title, y=1, x=0, xanchor= "left", yanchor= "top", yref="container"),
     # yaxis_title="y",
     # xaxis_title="x",
     xaxis=attr(constrain="domain",showticklabels=false,showgrid=false,zerolinecolor="rgba(0,0,0,0)",gridcolor="rgba(0,0,0,0)"),
     yaxis=attr(scaleanchor="x", anchor="x", showticklabels=false,showgrid=false,zerolinecolor="rgba(0,0,0,0)",gridcolor="rgba(0,0,0,0)"),
-    margin=attr(t=50,l=0,r=0,b=0),
+    margin=attr(t=margin_top,l=margin_left,r=margin_right,b=margin_bottom),
 	font_color=text_color,
     modebar=attr(orientation="v",bgcolor=bgcolor,color=text_color,activecolor=plot_bgcolor),
     hovermode="closest",
