@@ -5,13 +5,22 @@ using ImageTransformations, ImageQualityIndexes, ImageDistances
 folder = "woB0_wT2"   #  "woT2B0", "woB0_wT2"   
 dir = "$(@__DIR__)/src/demo/demo_recon/SignalOp_spiral/results/$folder"
 
-ρ = brain_phantom2D_reference(brain2D(); ss=3, location=0.8, key=:ρ, target_fov=(150, 150), target_resolution=(1,1));
-mask = brain_phantom2D_reference(brain2D(); ss=3, location=0.8, key=:binary, target_fov=(150, 150), target_resolution=(1,1));
 
-p_ref = plot_image(ρ; title="PhantomReference[ $(size(ρ)) | 1mm | ρ ]")
-savefig(p_ref,  dir*"/PhantomReference_ss3_location0.8_rho.svg", width=500, height=450,format="svg")
+mask = brain_phantom2D_reference(brain2D(); ss=3, location=0.8, key=:binary, target_fov=(150, 150), target_resolution=(1,1));
 p_ref_mask = plot_image(mask; title="PhantomReference[ $(size(mask)) | 1mm | binarymask ]")
 savefig(p_ref_mask,  dir*"/PhantomReference_ss3_location0.8_binary.svg", width=500, height=450,format="svg")
+
+ρ = brain_phantom2D_reference(brain2D(); ss=3, location=0.8, key=:ρ, target_fov=(150, 150), target_resolution=(1,1));
+if folder == "woB0_wT2"
+    T2map = brain_phantom2D_reference(brain2D(); ss=3, location=0.8, key=:T2, target_fov=(150, 150), target_resolution=(1,1)); # plot_image(T2map; title="T2map", width=650, height=600)
+    T2map = (T2map.<=46*1e-3) .* Inf .+ T2map; R2map = 1 ./ T2map;
+    ρ = normalization(ρ .* exp.(-0.0149415 .* R2map))
+    p_ref = plot_image(ρ; title="PhantomReference[ $(size(ρ)) | 1mm | ρ ] withT2")
+    savefig(p_ref,  dir*"/PhantomReference_ss3_location0.8_rho_withT2.svg", width=500, height=450,format="svg")
+elseif folder == "woT2B0"
+    p_ref = plot_image(ρ; title="PhantomReference[ $(size(ρ)) | 1mm | ρ ]")
+    savefig(p_ref,  dir*"/PhantomReference_ss3_location0.8_rho.svg", width=500, height=450,format="svg")
+end
 
 mat = MAT.matread("$dir/SignalOp_Simu_000.mat");  # keys: ["img_direct_NUFFTOp","img_iter_NUFFTOp","img_iter_SignalOp_normalized","img_iter_SignalOp","img_iter_HighOrderOp"]
 img_direct_NUFFTOp = mat["img_direct_NUFFTOp"];
@@ -23,7 +32,6 @@ img_iter_HighOrderOp = mat["img_iter_HighOrderOp"];
 imgs = Array{Float32,3}(undef, size(img_direct_NUFFTOp)..., 5);
 imgs[:,:, 1] = img_direct_NUFFTOp; imgs[:,:, 2] = img_iter_NUFFTOp; imgs[:,:, 3] = img_iter_SignalOp_normalized; imgs[:,:, 4] = img_iter_SignalOp; imgs[:,:, 5] = img_iter_HighOrderOp;
 p_imgs = plot_imgs(imgs, ["direct NUFFTOp", "NUFFTOp", "SignalOp NormKspace", "SignalOp", "HighOrderOp"]; title="", width=1100, height=250)
-
 
 # error map & imgs normalized to [0,1]
 imgs_error = Array{Float32,3}(undef, size(imgs));

@@ -28,7 +28,8 @@ tr_nominal = Trajectory(K_nominal_adc'[1:3,:], acqData.traj[1].numProfiles, acqD
 T2map = brain_phantom2D_reference(brain2D(); ss=3, location=0.8, key=:T2, target_fov=(150, 150), target_resolution=(1,1));
 plot_image(T2map; title="T2map", width=650, height=600)
 T2map = (T2map.<=46*1e-3) .* Inf .+ T2map;
-plot_image(exp.(-0.10 ./ T2map))
+R2map = 1 ./ T2map
+plot_image(exp.(-0.10 .* R2map))
 
 
 ρ = brain_phantom2D_reference(brain2D(); ss=3, location=0.8, key=:ρ, target_fov=(150, 150), target_resolution=(1,1));
