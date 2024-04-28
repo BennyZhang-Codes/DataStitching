@@ -25,7 +25,7 @@ function HO_theme_chooser(mode::Symbol)
     elseif mode == :light_fontblack
         bgcolor = "rgba(0,0,0,0)"#"white"
 		text_color = "black"#"rgb(49,70,101)"
-		plot_bgcolor = "rgb(229,236,246)"
+		plot_bgcolor = "rgb(242,242,242)"
 		grid_color = "white"
 		sep_color = "black"
 	elseif mode == :white
@@ -42,14 +42,14 @@ end
 
 """
 hoseq = demo_hoseq()
-thememode = :white
+thememode = :light_fontblack
+
+plot_seq(hoseq; thememode=thememode)
 
 plot_grads_cumtrapz(hoseq; thememode=thememode)
 plot_grads_cumtrapz(hoseq, 2; thememode=thememode)
 plot_kspace(hoseq; thememode=thememode)
 plot_kspace(hoseq, :x; thememode=thememode)
-
-plot_seq(hoseq; thememode=thememode)
 
 plot_seqd(hoseq; thememode=thememode)
 plot_hoseqd(hoseq; thememode=thememode)
