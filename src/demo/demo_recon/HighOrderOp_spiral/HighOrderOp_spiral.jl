@@ -6,7 +6,7 @@ using KomaHighOrder
 using MRIReco, MRICoilSensitivities, PlotlyJS, MAT
 
 BHO_simu = "000"
-folder = "woT2B0"   #  "woT2B0", "woB0_wT2"  
+folder = "woB0_wT2"   #  "woT2B0", "woB0_wT2"  
 skope_method = "Standard"   # :Stitched or :Standard
 dir = "$(@__DIR__)/src/demo/demo_recon/HighOrderOp_spiral/results_$skope_method/$folder"; if ispath(dir) == false mkdir(dir) end
 
@@ -65,11 +65,13 @@ end
 subplot_titles = ["Reco: $t" for t in BHO_recos]
 title="HighOrderOp, Simu: $(BHO_simu)"
 
-p_111       = plot_imgs(imgs_111, subplot_titles; title=title, width=1200, height=160)
-p_111_error = plot_imgs(imgs_111_error, subplot_titles; title=title*", error map", width=1200, height=160)
+width = 1200 
+height = 160
+p_111       = plot_imgs(imgs_111, subplot_titles; title=title, width=width+100, height=height+40)
+p_111_error = plot_imgs(imgs_111_error, subplot_titles; title=title*", error map", width=width+100, height=height+40)
 
-savefig(p_111,       dir*"/HighOrderOp_Simu_111.svg", width=1200, height=160,format="svg")
-savefig(p_111_error, dir*"/HighOrderOp_Simu_111_errormap.svg", width=1200, height=160,format="svg")
+savefig(p_111,       dir*"/HighOrderOp_Simu_111.svg", width=width+100, height=height+40,format="svg")
+savefig(p_111_error, dir*"/HighOrderOp_Simu_111_errormap.svg", width=width+100, height=height+40,format="svg")
 MAT.matwrite(dir*"/HighOrderOp_Simu_111.mat", Dict("imgs"=>imgs_111, "imgs_error"=>imgs_111_error, "BHO"=>BHO_recos))
 #######################################################################################
 # HighOrderOp 
