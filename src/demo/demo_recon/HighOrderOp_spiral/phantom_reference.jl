@@ -61,7 +61,10 @@ for idx in eachindex(BHO_recos)
 end
 p_error = plot_imgs(imgs_error, subplot_titles; title=title*" | error map", 
                         width=width, height=height, annotations=annotations, margin_bottom=40)
+p_error_abs = plot_imgs(abs.(imgs_error), subplot_titles; title=title*" | error map", 
+                        width=width, height=height, annotations=annotations, margin_bottom=40)
 savefig(p_error,  dir*"/HighOrderOp_Simu_111_ErrorWithPhantom.svg", width=width+100, height=height+80,format="svg")
+savefig(p_error_abs,  dir*"/HighOrderOp_Simu_111_ErrorWithPhantom_abs.svg", width=width+100, height=height+80,format="svg")
 
 # plot_imgs: error map masked
 mse_values = Vector{Float32}(undef, length(BHO_recos))
@@ -77,7 +80,10 @@ for idx in eachindex(subplot_titles)
 end
 p_error_mask = plot_imgs(imgs_error_mask, subplot_titles; title=title*" | error map masked", 
                         width=width, height=height, annotations=annotations, margin_bottom=40)
+p_error_mask_abs = plot_imgs(abs.(imgs_error_mask), subplot_titles; title=title*" | error map masked", 
+                        width=width, height=height, annotations=annotations, margin_bottom=40)
 savefig(p_error_mask,  dir*"/HighOrderOp_Simu_111_ErrorWithPhantom_masked.svg",format="svg", width=width+100, height=height+40+40)
+savefig(p_error_mask_abs,  dir*"/HighOrderOp_Simu_111_ErrorWithPhantom_masked_abs.svg",format="svg", width=width+100, height=height+40+40)
 
 
 # plot_imgs: imgs normalized to [0,1]

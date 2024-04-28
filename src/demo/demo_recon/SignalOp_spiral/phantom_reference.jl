@@ -2,7 +2,7 @@ using MAT, PlotlyJS, Statistics
 using ImageTransformations, ImageQualityIndexes, ImageDistances
 
 
-folder = "woB0_wT2"   #  "woT2B0", "woB0_wT2"   
+folder = "woT2B0"   #  "woT2B0", "woB0_wT2"   
 dir = "$(@__DIR__)/src/demo/demo_recon/SignalOp_spiral/results/$folder"
 
 
@@ -65,6 +65,10 @@ end
 p_error = plot_imgs(imgs_error, subplot_titles; title=title*" | error map", 
                     width=width, height=height, annotations=annotations, margin_bottom=40)
 savefig(p_error,  dir*"/SignalOp_Simu_000_ErrorWithPhantom.svg",format="svg", width=width+100, height=height+40+40)
+p_error_abs = plot_imgs(abs.(imgs_error), subplot_titles; title=title*" | error map", 
+                    width=width, height=height, annotations=annotations, margin_bottom=40)
+savefig(p_error_abs,  dir*"/SignalOp_Simu_000_ErrorWithPhantom_abs.svg",format="svg", width=width+100, height=height+40+40)
+
 
 # plot_imgs: error map masked
 mse_values = Vector{Float32}(undef, size(imgs)[end])
@@ -81,6 +85,11 @@ end
 p_error_mask = plot_imgs(imgs_error_mask, subplot_titles; title=title*" | error map masked", 
                         width=width, height=height, annotations=annotations, margin_bottom=40)
 savefig(p_error_mask,  dir*"/SignalOp_Simu_000_ErrorWithPhantom_masked.svg",format="svg", width=width+100, height=height+40+40)
+p_error_mask_abs = plot_imgs(abs.(imgs_error_mask), subplot_titles; title=title*" | error map masked", 
+                        width=width, height=height, annotations=annotations, margin_bottom=40)
+savefig(p_error_mask_abs,  dir*"/SignalOp_Simu_000_ErrorWithPhantom_masked_abs.svg",format="svg", width=width+100, height=height+40+40)
+
+
 
 # plot_imgs: imgs normalized to [0,1]
 p_normalized = plot_imgs(imgs_normalized, subplot_titles; title=title*" | normalized to [0,1]", width=width, height=height)
