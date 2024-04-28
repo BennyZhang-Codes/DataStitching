@@ -291,7 +291,7 @@ function plot_grads_cumtrapz(
 		xaxis=attr(
 			ticksuffix=" ms",
 			),
-		margin=attr(t=0,l=0,r=0,b=0),
+		margin=attr(t=0,l=50,r=0,b=0),
 		colorway=vec([colors; colors]) # prism, for skope measured gradients
 	)
 	if height !== nothing
