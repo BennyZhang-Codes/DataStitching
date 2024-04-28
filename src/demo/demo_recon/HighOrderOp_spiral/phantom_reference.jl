@@ -2,7 +2,8 @@ using MAT, PlotlyJS, Statistics
 using ImageTransformations, ImageQualityIndexes, ImageDistances
 
 folder = "woB0_wT2"   #  "woT2B0", "woB0_wT2"   
-dir = "$(@__DIR__)/src/demo/demo_recon/HighOrderOp_spiral/results/$folder"
+skope_method = "Standard"   # :Stitched or :Standard
+dir = "$(@__DIR__)/src/demo/demo_recon/HighOrderOp_spiral/results_$skope_method/$folder"; if ispath(dir) == false mkdir(dir) end
 
 
 mask = brain_phantom2D_reference(brain2D(); ss=3, location=0.8, key=:binary, target_fov=(150, 150), target_resolution=(1,1));
