@@ -6,9 +6,10 @@ using KomaHighOrder
 using MRIReco, MRICoilSensitivities, PlotlyJS, MAT
 
 BHO_simu = "000"
-folder = "woB0_wT2"   #  "woT2B0", "woB0_wT2"  
-skope_method = "Standard"   # :Stitched or :Standard
+folder = "woT2B0"   #  "woT2B0", "woB0_wT2"  
+skope_method = "Stitched"   # :Stitched or :Standard
 dir = "$(@__DIR__)/src/demo/demo_recon/HighOrderOp_spiral/results_$skope_method/$folder"; if ispath(dir) == false mkdir(dir) end
+
 
 raw = demo_raw(BHO_simu; folder=folder)
 Nx, Ny = raw.params["reconSize"][1:2];
@@ -21,7 +22,8 @@ _, K_nominal_adc, _, K_skope_adc = get_kspace(hoseq; Δt=1)
 
 tr_skope = Trajectory(K_skope_adc'[:,:], acqData.traj[1].numProfiles, acqData.traj[1].numSamplingPerProfile, circular=false);
 tr_nominal = Trajectory(K_nominal_adc'[1:3,:], acqData.traj[1].numProfiles, acqData.traj[1].numSamplingPerProfile, circular=false);
-
+# plot_traj2d(Trajectory(K_skope_adc'[2:3,:], acqData.traj[1].numProfiles, acqData.traj[1].numSamplingPerProfile, circular=false))
+# plot_traj2d(Trajectory(K_nominal_adc'[1:3,:], acqData.traj[1].numProfiles, acqData.traj[1].numSamplingPerProfile, circular=false))
 #######################################################################################
 # HighOrderOp 
 # [1] Simu: 111, Reco: 000
@@ -72,7 +74,8 @@ p_111_error = plot_imgs(imgs_111_error, subplot_titles; title=title*", error map
 
 savefig(p_111,       dir*"/HighOrderOp_Simu_111.svg", width=width+100, height=height+40,format="svg")
 savefig(p_111_error, dir*"/HighOrderOp_Simu_111_errormap.svg", width=width+100, height=height+40,format="svg")
-MAT.matwrite(dir*"/HighOrderOp_Simu_111.mat", Dict("imgs"=>imgs_111, "imgs_error"=>imgs_111_error, "BHO"=>BHO_recos))
+
+# MAT.matwrite(dir*"/HighOrderOp_Simu_111.mat", Dict("imgs"=>imgs_111, "imgs_error"=>imgs_111_error, "BHO"=>BHO_recos))
 #######################################################################################
 # HighOrderOp 
 # [1] Simu: 000, Reco: 000

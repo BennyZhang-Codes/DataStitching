@@ -4,8 +4,8 @@ function plot_imgs(
     subplot_titles; 
     title="HighOrderOp",
     thememode=:dark, 
-    width=1300, 
-    height=200, 
+    width=nothing, 
+    height=nothing, 
     annotations=[],
     margin_top=40,
     margin_bottom=0,
