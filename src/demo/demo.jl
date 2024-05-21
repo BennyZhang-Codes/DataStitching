@@ -1,6 +1,5 @@
 export demo, demo_seq, demo_GR_skope, demo_raw, demo_hoseq, demo_sim
 
-
 function demo() ::Nothing
     @info "demos:"
     @info "    1. seq => demo_seq()"
@@ -9,6 +8,29 @@ function demo() ::Nothing
     @info "    4. raw (mrd)  => demo_raw(\"000\")"
     @info "    5. sim (mat)  => raw, image = demo_sim()"
 end
+
+Base.@kwdef struct SimType
+    B0::Bool = true
+    T2::Bool = true
+    ss::Int64 = 3
+    name::String = "B0$(B0 ? "w" : "wo")_T2$(T2 ? "w" : "wo")_ss$(ss)"
+end
+export SimType
+Base.show(io::IO, b::SimType) = begin
+	print(io, "SimType[[$(b.name)] B0=$(b.B0) | T2=$(b.T2) | ss=$(b.ss) ]")
+end
+
+function SimType(name::String)
+    @assert length(split(name,"_")) == 3 "Invalid name for SimType. Valid name like: B0wo_T2w_ss3"
+    B0, T2, ss = split(name,"_")
+    @assert !isnothing(findfirst("B0", B0)) && !isnothing(findfirst("T2", T2)) && !isnothing(findfirst("ss", ss)) "Invalid name for SimType. Valid name like: B0wo_T2w_ss3"
+    B0, T2, ss = split(B0, "B0")[2], split(T2, "T2")[2], split(ss, "ss")[2]
+    B0, T2, ss = B0 == "w", T2 == "w", parse(Int, ss)
+    return SimType(B0=B0, T2=T2, ss=ss)
+end
+
+include("demo_raw/generate_raw.jl")
+export generate_raw
 
 function demo_seq()
     path = @__DIR__
@@ -45,10 +67,10 @@ function demo_hoseq(;skope::Bool=true, skope_method::Symbol=:Stitched) ::HO_Sequ
     return hoseq
 end
 
-function demo_raw(name::String; folder::String="woB0_wT2") ::RawAcquisitionData
+function demo_raw(BHO::BlochHighOrder; simtype::SimType=SimType("B0wo_T2w_ss3")) ::RawAcquisitionData
+    folder = simtype.name
     @assert ispath("$(@__DIR__)/demo_raw/$(folder)") "folder not exist: $(folder)"
-    BHO = BlochHighOrder(name)
-    @info "demo_raw" sim_method=BHO mrd_file="$(@__DIR__)/demo_raw/$(folder)/xw_sp2d-1mm-r1_$(BHO.name)_nominal.mrd"
+    @info "demo_raw" sim_method=BHO.name mrd_file="$(@__DIR__)/demo_raw/$(folder)/xw_sp2d-1mm-r1_$(BHO.name)_nominal.mrd"
 
     raw_file = "$(@__DIR__)/demo_raw/$(folder)/xw_sp2d-1mm-r1_$(BHO.name)_nominal.mrd"
     @assert ispath(raw_file) "the raw file does not exist: $(raw_file)"
