@@ -70,9 +70,9 @@ end
 function demo_raw(BHO::BlochHighOrder; simtype::SimType=SimType("B0wo_T2w_ss3")) ::RawAcquisitionData
     folder = simtype.name
     @assert ispath("$(@__DIR__)/demo_raw/$(folder)") "folder not exist: $(folder)"
-    @info "demo_raw" sim_method=BHO.name mrd_file="$(@__DIR__)/demo_raw/$(folder)/xw_sp2d-1mm-r1_$(BHO.name)_nominal.mrd"
+    @info "demo_raw" sim_method=BHO.name mrd_file="$(@__DIR__)/demo_raw/$(folder)/xw_sp2d-1mm-r1_$(BHO.name).mrd"
 
-    raw_file = "$(@__DIR__)/demo_raw/$(folder)/xw_sp2d-1mm-r1_$(BHO.name)_nominal.mrd"
+    raw_file = "$(@__DIR__)/demo_raw/$(folder)/xw_sp2d-1mm-r1_$(BHO.name).mrd"
     @assert ispath(raw_file) "the raw file does not exist: $(raw_file)"
     raw = RawAcquisitionData(ISMRMRDFile(raw_file));
     return raw

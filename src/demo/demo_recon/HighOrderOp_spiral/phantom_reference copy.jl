@@ -1,37 +1,42 @@
 using MAT, PlotlyJS, Statistics
 using ImageTransformations, ImageQualityIndexes, ImageDistances
 
-folder = "woB0_wT2"   #  "woT2B0", "woB0_wT2"   
+simtype = SimType(B0=false, T2=true, ss=5)
+
 skope_method = "Stitched"   # :Stitched or :Standard
-dir = "$(@__DIR__)/src/demo/demo_recon/HighOrderOp_spiral/results_$skope_method/$folder"; if ispath(dir) == false mkdir(dir) end
+dir = "$(@__DIR__)/src/demo/demo_recon/HighOrderOp_spiral/results_$skope_method/$(simtype.name)"; if ispath(dir) == false mkdir(dir) end
 
 
-mask = brain_phantom2D_reference(brain2D(); ss=3, location=0.8, key=:binary, target_fov=(150, 150), target_resolution=(1,1));
+mask = brain_phantom2D_reference(brain2D(); ss=simtype.ss, location=0.8, key=:binary, target_fov=(150, 150), target_resolution=(1,1));
 p_ref_mask = plot_image(mask; title="PhantomReference[ $(size(mask)) | 1mm | binarymask ]")
 # savefig(p_ref_mask,  dir*"/PhantomReference_ss3_location0.8_binary.svg", width=500, height=450,format="svg")
 
-ρ = brain_phantom2D_reference(brain2D(); ss=5, location=0.8, key=:ρ, target_fov=(150, 150), target_resolution=(1,1));
-if folder == "woB0_wT2"
-    T2map = brain_phantom2D_reference(brain2D(); ss=5, location=0.8, key=:T2, target_fov=(150, 150), target_resolution=(1,1)); # plot_image(T2map; title="T2map", width=650, height=600)
+ρ = brain_phantom2D_reference(brain2D(); ss=simtype.ss, location=0.8, key=:ρ, target_fov=(150, 150), target_resolution=(1,1));
+if simtype.T2 == true
+    T2map = brain_phantom2D_reference(brain2D(); ss=simtype.ss, location=0.8, key=:T2, target_fov=(150, 150), target_resolution=(1,1)); # plot_image(T2map; title="T2map", width=650, height=600)
     T2map = (T2map.<=46*1e-3) .* Inf .+ T2map; R2map = 1 ./ T2map;
     ρ = ρ .* exp.(-0.0149415 .* R2map)
     p_ref = plot_image(ρ; title="PhantomReference[ $(size(ρ)) | 1mm | ρ ] withT2")
     # savefig(p_ref,  dir*"/PhantomReference_ss3_location0.8_rho_withT2.svg", width=500, height=450,format="svg")
-elseif folder == "woT2B0"
+elseif simtype.T2 == false
     p_ref = plot_image(ρ; title="PhantomReference[ $(size(ρ)) | 1mm | ρ ]")
     # savefig(p_ref,  dir*"/PhantomReference_ss3_location0.8_rho.svg", width=500, height=450,format="svg")
 end
 
-
 mat_111 = MAT.matread("$dir/HighOrderOp_Simu_111.mat")  # keys: ["imgs", "imgs_error", "BHO"]
-mat_000 = MAT.matread("$dir/HighOrderOp_Simu_000.mat")
-
 
 imgs    = mat_111["imgs"];
 imgs_error = mat_111["imgs_error"];
 BHO_recos = mat_111["BHO"];
 subplot_titles = ["Reco: $t" for t in BHO_recos];
-title="HighOrderOp, Simu: 111, $folder";
+title="HighOrderOp, Simu: 111, $(simtype.name)";
+
+# for x in range(4, 6, 20)
+#     print(x, "  ")
+#     println(mse(imgs[:,:, 8]*x, ρ))
+# end
+
+
 
 
 # error map & imgs normalized to [0,1]
