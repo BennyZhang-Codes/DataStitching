@@ -1,14 +1,14 @@
 using MAT, PlotlyJS, Statistics
 using ImageTransformations, ImageQualityIndexes, ImageDistances, ImageMorphology
 
-simtype = SimType(B0=false, T2=false, ss=5)
+simtype = SimType(B0=false, T2=true, ss=5)
 
 skope_method = "Stitched"   # :Stitched or :Standard
 dir = "$(@__DIR__)/src/demo/demo_recon/HighOrderOp_spiral/results_$skope_method/$(simtype.name)"; if ispath(dir) == false mkdir(dir) end
 
 
 mask = brain_phantom2D_reference(brain2D(); ss=simtype.ss, location=0.8, key=:binary, target_fov=(150, 150), target_resolution=(1,1));
-# mask = dilate(mask; r=3)
+mask = dilate(mask; r=3)
 p_ref_mask = plot_image(mask; title="PhantomReference[ $(size(mask)) | 1mm | binarymask ]")
 savefig(p_ref_mask,  dir*"/PhantomReference_ss$(simtype.ss)_location0.8_binary.svg", width=500, height=450,format="svg")
 
@@ -84,7 +84,7 @@ p_error_mask = plot_imgs(imgs_error_mask, subplot_titles; title=title*" | error 
 p_error_mask_abs = plot_imgs(abs.(imgs_error_mask), subplot_titles; title=title*" | error map masked, scale $scale", 
                         width=width, height=height, annotations=annotations_mask, margin_bottom=40)
 savefig(p_error_mask,  dir*"/HighOrderOp_Simu_111_ErrorWithPhantom_masked.svg",format="svg", width=width+100, height=height+40+40)
-savefig(p_error_mask_abs,  dir*"/HighOrderOp_Simu_111_ErrorWithPhantom_masked_abs.svg",format="svg", width=width+100, height=height+40+40)
+savefig(p_error_mask_abs,  dir*"/HighOrderOp_Simu_111_ErrorWithPhantom_masked_abs_dilate3.svg",format="svg", width=width+100, height=height+40+40)
 
 
 p_imgs = plot_imgs(imgs, subplot_titles; title=title*" | images", width=width, height=height)
