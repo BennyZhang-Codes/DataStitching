@@ -1,7 +1,7 @@
 using MAT, PlotlyJS, Statistics
 using ImageTransformations, ImageQualityIndexes, ImageDistances, ImageMorphology
 
-simtype = SimType(B0=false, T2=true, ss=3)
+simtype = SimType(B0=false, T2=false, ss=5)
 
 skope_method = "Stitched"   # :Stitched or :Standard
 dir = "$(@__DIR__)/src/demo/demo_recon/HighOrderOp_spiral/results_$skope_method/$(simtype.name)"; if ispath(dir) == false mkdir(dir) end

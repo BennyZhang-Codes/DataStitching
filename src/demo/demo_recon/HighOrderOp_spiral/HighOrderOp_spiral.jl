@@ -4,7 +4,7 @@
 
 using KomaHighOrder
 using MRIReco, MRICoilSensitivities, PlotlyJS, MAT
-simtype = SimType(B0=false, T2=true, ss=5)
+simtype = SimType(B0=false, T2=false, ss=5)
 BHO = BlochHighOrder("111")
 skope_method = "Stitched"   # :Stitched or :Standard
 dir = "$(@__DIR__)/src/demo/demo_recon/HighOrderOp_spiral/results_$skope_method/$(simtype.name)"; if ispath(dir) == false mkdir(dir) end
