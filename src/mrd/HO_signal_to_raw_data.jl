@@ -231,12 +231,13 @@ function signal_to_raw_data(
     if size(signal, 3) == 1
         signal = signal[:,:,1]
     end
-    return signal_to_raw_data(ComplexF32.(signal), hoseq, key, phantom_name=phantom_name, sys=sys, sim_params=sim_params, ndims=ndims)
+    return signal_to_raw_data(signal, hoseq, key, phantom_name=phantom_name, sys=sys, sim_params=sim_params, ndims=ndims)
 end
 function signal_to_raw_data(
-    signal::Matrix{ComplexF32}, hoseq::HO_Sequence, key::Symbol;
+    signal::Matrix, hoseq::HO_Sequence, key::Symbol;
     phantom_name="Phantom", sys=Scanner(), sim_params=Dict{String,Any}(), ndims=2
 )
+    sim_params = KomaMRICore.default_sim_params(sim_params)
     TotalSamples, Ncoils = size(signal)
     @assert key == :nominal || key == :measured  "key must be :nominal or :measured"
     seq = hoseq.SEQ
@@ -247,6 +248,14 @@ function signal_to_raw_data(
         ktraj = ktraj
     elseif key == :measured
         ktraj = ktraj_skope[:,2:4]
+    end
+
+    if sim_params["precision"] == "f32" #Default
+        signal = signal |> f32 
+        ktraj  = ktraj  |> f32 
+    elseif sim_params["precision"] == "f64"
+        signal = signal |> f64
+        ktraj  = ktraj  |> f64
     end
     mink = minimum(ktraj, dims=1)
     maxk = maximum(ktraj, dims=1)
@@ -407,7 +416,7 @@ function signal_to_raw_data(
                 dat =  signal[sample_range_start:sample_range_end, :]
 
                 #Saving profile
-                push!(profiles, Profile(head, Float32.(traj), ComplexF32.(dat)))
+                push!(profiles, Profile(head, traj, dat))
             end
             #Update counters
             # scan_counter += 1

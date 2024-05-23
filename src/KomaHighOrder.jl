@@ -30,9 +30,7 @@ include("simulation/simulation.jl")
 include("plot/plot.jl")
 
 
-include("mrd/signal_to_raw_data.jl")
-include("mrd/HO_signal_to_raw_data.jl")
-# include("mrd/AcquisitionData.jl")
+include("mrd/mrd.jl")
 
 include("reconstruction/recon.jl")
 
