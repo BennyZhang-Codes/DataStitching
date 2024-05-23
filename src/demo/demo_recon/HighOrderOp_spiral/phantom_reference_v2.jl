@@ -1,7 +1,7 @@
 using MAT, PlotlyJS, Statistics
 using ImageTransformations, ImageQualityIndexes, ImageDistances, ImageMorphology
 
-simtype = SimType(B0=false, T2=false, ss=5)
+simtype = SimType(B0=false, T2=true, ss=5)
 
 skope_method = "Stitched"   # :Stitched or :Standard
 dir = "$(@__DIR__)/src/demo/demo_recon/HighOrderOp_spiral/results_$skope_method/$(simtype.name)"; if ispath(dir) == false mkdir(dir) end
@@ -31,15 +31,25 @@ BHO_recos = mat_111["BHO"];
 subplot_titles = ["Reco: $t" for t in BHO_recos];
 title="HighOrderOp, Simu: 111, $(simtype.name)";
 
+# for idx in eachindex(BHO_recos)
+#     scales = []
+#     mses = []
+#     for s in range(4, 5, 9001)
+#         # print(s, "  ")
+#         # println(mse(imgs[:,:, 8]*s, ρ))
+#         append!(scales, s)
+#         append!(mses, mse(imgs[:,:, idx]*s, ρ))
+#     end
+#     _, min_idx = findmin(mses); scale = scales[min_idx]
+#     println(round(scale, digits=3))
+# end
 scales = []
 mses = []
 for s in range(1, 10, 91)
-    # print(s, "  ")
-    # println(mse(imgs[:,:, 8]*s, ρ))
     append!(scales, s)
     append!(mses, mse(imgs[:,:, 8]*s, ρ))
 end
-_, min_idx = findmin(mses); scale = scales[min_idx] 
+_, min_idx = findmin(mses); scale = scales[min_idx]
 imgs = imgs .* scale
 
 # error map & imgs normalized to [0,1]
