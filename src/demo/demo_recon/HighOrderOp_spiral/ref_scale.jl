@@ -1,7 +1,7 @@
 using MAT, PlotlyJS, Statistics
 using ImageTransformations, ImageQualityIndexes, ImageDistances, ImageMorphology
 
-simtype = SimType(B0=false, T2=true, ss=5)
+simtype = SimType(B0=false, T2=false, ss=5)
 
 skope_method = "Stitched"   # :Stitched or :Standard
 dir = "$(@__DIR__)/src/demo/demo_recon/HighOrderOp_spiral/results_$skope_method/$(simtype.name)"; if ispath(dir) == false mkdir(dir) end
@@ -57,7 +57,7 @@ imgs_mask       = Array{Float32,3}(undef, size(imgs));
 imgs_error      = Array{Float32,3}(undef, size(imgs));
 imgs_error_mask = Array{Float32,3}(undef, size(imgs));
 for idx in eachindex(BHO_recos)
-    imgs_mask[:,:, idx]  = mat_111["imgs"][:,:, idx] .* mask;
+    imgs_mask[:,:, idx]  = imgs[:,:, idx] .* mask;
     imgs_error[:,:, idx] = ρ - imgs[:,:, idx];
     imgs_error_mask[:,:, idx]  = imgs_error[:,:, idx] .* mask;
 end
@@ -85,19 +85,19 @@ p_error = plot_imgs(imgs_error, subplot_titles; title=title*" | error map, scale
                         width=width, height=height, annotations=annotations, margin_bottom=40)
 p_error_abs = plot_imgs(abs.(imgs_error), subplot_titles; title=title*" | error map, scale $scale", 
                         width=width, height=height, annotations=annotations, margin_bottom=40)
-savefig(p_error,  dir*"/HighOrderOp_Simu_111_ErrorWithPhantom.svg", width=width+100, height=height+80,format="svg")
-savefig(p_error_abs,  dir*"/HighOrderOp_Simu_111_ErrorWithPhantom_abs.svg", width=width+100, height=height+80,format="svg")
+savefig(p_error,  dir*"/scale_Simu_111_error.svg", width=width+100, height=height+80,format="svg")
+savefig(p_error_abs,  dir*"/scale_Simu_111_error_abs.svg", width=width+100, height=height+80,format="svg")
 
 # plot_imgs: error map masked
 p_error_mask = plot_imgs(imgs_error_mask, subplot_titles; title=title*" | error map masked, scale $scale", 
                         width=width, height=height, annotations=annotations_mask, margin_bottom=40)
 p_error_mask_abs = plot_imgs(abs.(imgs_error_mask), subplot_titles; title=title*" | error map masked, scale $scale", 
                         width=width, height=height, annotations=annotations_mask, margin_bottom=40)
-savefig(p_error_mask,  dir*"/HighOrderOp_Simu_111_ErrorWithPhantom_masked.svg",format="svg", width=width+100, height=height+40+40)
-savefig(p_error_mask_abs,  dir*"/HighOrderOp_Simu_111_ErrorWithPhantom_masked_abs.svg",format="svg", width=width+100, height=height+40+40)
+savefig(p_error_mask,  dir*"/scale_Simu_111_error_mask.svg",format="svg", width=width+100, height=height+40+40)
+savefig(p_error_mask_abs,  dir*"/scale_Simu_111_error_mask_abs.svg",format="svg", width=width+100, height=height+40+40)
 
 
-p_imgs = plot_imgs(mat_111["imgs"], subplot_titles; title=title*" | images", width=width, height=height)
-p_imgs_mask = plot_imgs(imgs_mask, subplot_titles; title=title*" | images, masked", width=width, height=height)
-savefig(p_imgs,  dir*"/HighOrderOp_Simu_111.svg",format="svg", width=width+100, height=height+40)
-savefig(p_imgs_mask,  dir*"/HighOrderOp_Simu_111_masked.svg",format="svg", width=width+100, height=height+40)
+p_imgs = plot_imgs(imgs, subplot_titles; title=title*" | scaled $scale", width=width, height=height)
+p_imgs_mask = plot_imgs(imgs_mask, subplot_titles; title=title*" | scaled $scale, masked", width=width, height=height)
+savefig(p_imgs,  dir*"/scale_Simu_111_scale.svg",format="svg", width=width+100, height=height+40)
+savefig(p_imgs_mask,  dir*"/scale_Simu_111_scale_mask.svg",format="svg", width=width+100, height=height+40)
