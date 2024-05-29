@@ -17,7 +17,7 @@ function brain_phantom2D_reference(
     target_resolution=(1,1))
     path = (@__DIR__) * phantom_dict[:path]
     @assert axis in ["axial", "coronal", "sagittal"] "axis must be one of the following: axial, coronal, sagittal"
-    @assert key in [:ρ, :T2, :T2s, :T1, :Δw, :raw, :binary] "key must be ρ, T2, T2s, T1, Δw, raw or binary"
+    @assert key in [:ρ, :T2, :T2s, :T1, :Δw, :raw, :headmask, :brainmask] "key must be ρ, T2, T2s, T1, Δw, raw, headmask or brainmask"
     @assert B0map in [:file, :fat, :quadratic] "B0map must be one of the following: :file, :fat, :quadratic"
     @assert 0 <= location <= 1 "location must be between 0 and 1"
 
@@ -107,8 +107,21 @@ function brain_phantom2D_reference(
         end
     elseif key == :raw
         img = class
-    elseif key == :binary
+    elseif key == :headmask
         img = (class.>0)*1 #All
+    elseif key == :brainmask
+        img = 
+        (class.==23)*1 .+ #CSF
+        (class.==46)*1 .+ #GM
+        (class.==70)*1 .+ #WM
+        (class.==93)*0 .+ #FAT1
+        (class.==116)*0 .+ #MUSCLE
+        (class.==139)*0 .+ #SKIN/MUSCLE
+        (class.==162)*0 .+ #SKULL
+        (class.==185)*0 .+ #VESSELS
+        (class.==209)*0 .+ #FAT2
+        (class.==232)*0 .+ #DURA
+        (class.==255)*0 #MARROW
     end
     M, N = size(img)
 
