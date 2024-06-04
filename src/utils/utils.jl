@@ -2,7 +2,7 @@ include("fan_mask.jl")
 include("plot_imgs.jl")
 
 export normalization, standardization
-export plot_img, plot_imgs
+export plot_img, plot_imgs, plot_imgs_subplots
 
 # Normalization
 function normalization(img::AbstractArray{T,2}) where T<:Real

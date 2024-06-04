@@ -113,3 +113,48 @@ function plot_img(
 	)
 	return KomaMRIPlots.plot_koma(p, l; config)
 end
+
+function plot_imgs_subplots(
+    imgs::Array{<:AbstractFloat,3}, 
+    rows::Int64,
+    cols::Int64; 
+    title         ="$rows x $cols subplots",
+    thememode     =:dark, 
+    width         =nothing, 
+    height        =nothing, 
+    margin_top    =40,
+    margin_bottom =0,
+    margin_left   =0,
+    margin_right  =50,
+    )
+    bgcolor, text_color, plot_bgcolor, grid_color, sep_color = HO_theme_chooser(thememode)
+    fig = make_subplots(rows=rows,cols=cols);
+    [add_trace!(fig, heatmap(z=imgs[:,:,(row-1)*cols+col], transpose=false,coloraxis="coloraxis"); row=row, col=col) for row in range(1,rows), col in range(1,cols)]
+    l = Layout(;
+        paper_bgcolor=bgcolor, plot_bgcolor="rgba(0,0,0,0)",
+        title=attr(text=title, y=1, x=0, xanchor= "left", yanchor= "top", yref="container"),
+        margin=attr(t=margin_top,l=margin_left,r=margin_right,b=margin_bottom),
+        coloraxis=attr(colorscale="Greys",xanchor="left",colorbar=attr(x=1,thickness=20)),
+        font=attr(family="Times New Roman",size=16,color=text_color),
+    )
+    if height !== nothing l.height = height + margin_top  + margin_bottom end
+    if width  !== nothing l.width  = width  + margin_left + margin_right  end
+    for row in range(1,rows)
+        for col in range(1,cols)
+            idx = (row-1)*cols+col
+            Δdomainx = 1/cols
+            spacingx = Δdomainx/100
+            Δdomainy = 1/rows
+            spacingy = Δdomainy/100
+            if idx == 1
+                push!(l.fields, Symbol("xaxis")=>attr(domain=(Δdomainx*(col-1)+spacingx, Δdomainx*col-spacingx),showticklabels=false,showgrid=false,zerolinecolor="rgba(0,0,0,0)"))
+                push!(l.fields, Symbol("yaxis")=>attr(domain=(Δdomainy*(row-1)+spacingy, Δdomainy*row-spacingy),scaleanchor="x", anchor="x", showticklabels=false,showgrid=false,zerolinecolor="rgba(0,0,0,0)"))
+            else 
+                push!(l.fields, Symbol("xaxis$idx")=>attr(domain=(Δdomainx*(col-1)+spacingx, Δdomainx*col-spacingx),showticklabels=false,showgrid=false,zerolinecolor="rgba(0,0,0,0)"))
+                push!(l.fields, Symbol("yaxis$idx")=>attr(domain=(Δdomainy*(row-1)+spacingy, Δdomainy*row-spacingy),scaleanchor="x$idx", anchor="x$idx", showticklabels=false,showgrid=false,zerolinecolor="rgba(0,0,0,0)"))
+            end
+        end
+    end
+    p = PlotlyJS.update(fig; layout=l)
+    return p
+end
