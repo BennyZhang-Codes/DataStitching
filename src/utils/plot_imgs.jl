@@ -94,6 +94,7 @@ function plot_img(
     hovermode="closest",
 	paper_bgcolor=bgcolor,
 	plot_bgcolor="rgba(0,0,0,0)",
+    font=attr(family="Times New Roman",size=16,color=text_color),
     )
     if height !== nothing
         l.height = height
