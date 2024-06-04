@@ -14,8 +14,7 @@ export get_fan_mask
 - `Nparts`: (`::Int64`) 
 
 # Keywords
-- `overlap`: (`::`) plot width
-
+- `overlap`: (`::Real`) overlapping factor 
 
 # Returns
 - `mask`: (`::Array{Float64, 3}`) mask (Nx, Ny, Nparts)
