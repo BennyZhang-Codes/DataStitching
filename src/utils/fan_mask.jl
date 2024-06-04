@@ -21,12 +21,12 @@ export get_fan_mask
 
 # Examples
 ```julia-repl
-julia> mask = fan_mask(100, 100, 6; overlap=1.5)
+julia> mask = get_fan_mask(100, 100, 6; overlap=1.5)
 julia> plot_imgs_subplots(mask, 2, 3)
 ```
 """
 function get_fan_mask(Nx::Int64, Ny::Int64, Nparts::Int64; overlap::Real=1)
-    @info "fan mask" Nx=Nx Ny=Ny Nparts=Nparts
+    @info "fan mask" Nx=Nx Ny=Ny Nparts=Nparts overlap=overlap
     m_x = (1:1:Nx) .* ones(1, Ny)
     m_y = ones(Nx) .* (1:1:Ny)'
 
@@ -39,7 +39,6 @@ function get_fan_mask(Nx::Int64, Ny::Int64, Nparts::Int64; overlap::Real=1)
     mask = zeros(Nx, Ny, Nparts)
     for i = 1:Nparts
         angle_rad = collect(-pi:2pi/Nparts:pi)[i]
-        println("angle_rad = ", angle_rad)
         m = mask[:,:,i]
         m[abs.(ϕ .- angle_rad) .>= (2pi - pi/Nparts*overlap) .|| abs.(ϕ .- angle_rad) .<= pi/Nparts*overlap] .= 1
         mask[:,:,i] = m
