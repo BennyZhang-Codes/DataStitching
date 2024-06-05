@@ -2,7 +2,7 @@ using KomaHighOrder
 
 simtype  = SimType(B0=false, T2=false, ss=5)
 mask_type= :fan
-overlap  = 0.2
+overlap  = 0
 Nparts   = 9
 Npartsx  = 3
 Npartsy  = 4

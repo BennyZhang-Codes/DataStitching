@@ -3,7 +3,7 @@ using MRIReco, MRICoilSensitivities, MRISampling
 
 simtype  = SimType(B0=false, T2=false, ss=5)
 mask_type = :fan
-overlap  = 0.2
+overlap  = 0
 Nparts   = 9
 Npartsx  = 3
 Npartsy  = 4
@@ -37,8 +37,8 @@ if mask_type == :fan
 elseif mask_type == :rect
     mask = get_rect_mask(217, 181, Npartsx, Npartsy)
 end
-c1 = KomaHighOrder.get_center_range(217, 150)
-c2 = KomaHighOrder.get_center_range(181, 150)
+c1 = KomaHighOrder.get_center_range(217, Nx)
+c2 = KomaHighOrder.get_center_range(181, Ny)
 mask = mask[c1, c2, :]
 
 sensitivity = Array{ComplexF32,4}(undef, Nx, Ny, 1, Ncoils);
