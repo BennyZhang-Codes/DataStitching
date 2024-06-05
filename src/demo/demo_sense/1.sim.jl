@@ -1,9 +1,9 @@
 using KomaHighOrder
 
 simtype  = SimType(B0=false, T2=false, ss=5)
-mask_type= :rect
-overlap  = 0
-Nparts   = 30
+mask_type= :fan
+overlap  = 0.2
+Nparts   = 9
 Npartsx  = 3
 Npartsy  = 4
 Ncoils = mask_type == :rect ? Npartsx * Npartsy : Nparts

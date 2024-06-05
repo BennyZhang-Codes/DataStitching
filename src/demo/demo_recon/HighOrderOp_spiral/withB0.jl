@@ -54,8 +54,8 @@ p_image = plot_image(img; darkmode=true, title="Sim: $(BHO.name), Δw: [-$maxOff
 ############################################################################################## 
 
 Nx, Ny = raw.params["reconSize"][1:2];
-acqData = AcquisitionData(raw);
-acqData = AcquisitionData(raw, BlochHighOrder("111"));
+acqData1 = AcquisitionData(raw);
+acqData = AcquisitionData(raw, BlochHighOrder("111"); sim_params=sim_params);
 acqData.traj[1].circular = false;
 shape = (Nx, Ny);
 
@@ -76,21 +76,22 @@ B0map = brain_phantom2D_reference(brain2D(); ss=simtype.ss, location=0.8,target_
 #######################################################################################
 # iterative SignalOp 
 #######################################################################################
-for reg in ["L2", "L1", "L21", "TV", "LLR", "Positive", "Proj", "Nuclear"]
+["L2", "L1", "L21", "TV", "LLR", "Positive", "Proj", "Nuclear"]
+for reg in ["L2", "L1", "L21", "TV", "Positive", "Proj"]
 @info "reg: $reg"
 recParams = Dict{Symbol,Any}()
 recParams[:reconSize] = (Nx, Ny)  # 150, 150
 recParams[:densityWeighting] = true
 recParams[:reco] = "standard"
-recParams[:regularization] = "L2"
+recParams[:regularization] = reg
 recParams[:λ] = 1e-2
 recParams[:iterations] = 1
-recParams[:solver] = "admm"
+recParams[:solver] = "pogm"
 
 
 
-# Op = HighOrderOp(shape, tr_nominal, tr_skope, BHO; Nblocks=9, fieldmap=B0map)
-Op = SignalOp(shape, tr_nominal, 1e-3, 1e-3; Nblocks=9, fieldmap=B0map)
+Op = HighOrderOp(shape, tr_nominal, tr_skope, BHO; Nblocks=9, fieldmap=B0map)
+# Op = SignalOp(shape, tr_nominal, 1e-3, 1e-3; Nblocks=9, fieldmap=B0map)
 recParams[:encodingOps] = reshape([Op], 1,1)
 @time rec = reconstruction(acqData, recParams);
 p_iter_SignalOp = plot_image(abs.(rec.data[:,:]); title="HighOrderOp 111 with B0map [-$maxOffresonance,$maxOffresonance] Hz", width=650, height=600)
@@ -104,11 +105,11 @@ end
 "LLR", "Nuclear"
 
 """
-admm    ["L2", "L1", "L21", "TV", "Positive", "Proj"]
-cgnr    L2
-fista   ["L2", "L1", "L21", "TV", "Positive", "Proj"]
-optista ["L2", "L1", "L21", "TV", "Positive", "Proj"] 
-pogm    ["L2", "L1", "L21", "TV", "Positive", "Proj"] 
+admm         ["L2", "L1", "L21", "TV", "Positive", "Proj"]
+cgnr         L2
+fista        ["L2", "L1", "L21", "TV", "Positive", "Proj"]
+optista      ["L2", "L1", "L21", "TV", "Positive", "Proj"] 
+pogm         ["L2", "L1", "L21", "TV", "Positive", "Proj"] 
 splitBregman ["L2", "L1", "L21", "TV", "Positive", "Proj"] 
 """
 
