@@ -34,15 +34,20 @@ function brain_phantom2D(
     location::Float64=0.5,  # relative location in the Z-axis
     B0map::Symbol=:fat,     # load B0 map
     maxOffresonance::Float64=125.,
-    mask_idx::Int64=1,      # mask index
-    Nparts::Int64=1,        # number of partitions (split in fan shape)
-    overlap::Real=1,        # overlap between fan masks
+    mask_type::Symbol=:fan,  # mask type
+    mask_idx::Int64 =1,      # mask index
+    Nparts::Int64   =1,        # number of partitions (split in fan shape)
+    Npartsx::Int64  =1,       # number of partitions in the X-axis
+    Npartsy::Int64  =1,       # number of partitions in the Y-axis
+    overlap::Real   =1,        # overlap between fan masks
     ) :: Phantom
     path = (@__DIR__) * phantom_dict[:path]
     @assert axis in ["axial", "coronal", "sagittal"] "axis must be one of the following: axial, coronal, sagittal"
     @assert B0map in [:file, :fat, :quadratic] "B0map must be one of the following: :file, :fat, :quadratic"
     @assert isfile(path*"/$(p.file)") "File $(p.file) does not exist in $(path)"
     @assert 0 <= location <= 1 "location must be between 0 and 1"
+    @assert mask_type in [:fan, :rect] "mask_type must be one of the following: :fan, :rect"
+    Nparts = mask_type == :rect ? Npartsx * Npartsy : Nparts
     @assert 1 <= mask_idx <= Nparts "mask_idx must be between 1 and Nparts"
     data = MAT.matread(path*"/$(p.file)")["data"]
     
@@ -129,20 +134,24 @@ function brain_phantom2D(
 	T1  = T1  * 1e-3
 	T2  = T2  * 1e-3
 	T2s = T2s * 1e-3
-
-    mask = get_fan_mask(M, N, Nparts; overlap=overlap)
+    if mask_type == :fan
+        mask = get_fan_mask(M, N, Nparts; overlap=overlap)
+    elseif mask_type == :rect
+        mask = get_rect_mask(M, N, Npartsx, Npartsy)
+    end
+    ρ = ρ .* mask[:,:,mask_idx]
 
     # Define and return the Phantom struct
     obj = Phantom{Float64}(
-        name = "brain2D_$(axis)_ss$(ss)_location$(location)-$(loc)_$(mask_idx)/$(Nparts)",
-		x   =   y[ρ.!=0 .&& mask[:,:,mask_idx].==1],
-		y   =   x[ρ.!=0 .&& mask[:,:,mask_idx].==1],
-		z   = 0*z[ρ.!=0 .&& mask[:,:,mask_idx].==1],
-		ρ   =   ρ[ρ.!=0 .&& mask[:,:,mask_idx].==1],
-		T1  =  T1[ρ.!=0 .&& mask[:,:,mask_idx].==1],
-		T2  =  T2[ρ.!=0 .&& mask[:,:,mask_idx].==1],
-		T2s = T2s[ρ.!=0 .&& mask[:,:,mask_idx].==1],
-		Δw  =  Δw[ρ.!=0 .&& mask[:,:,mask_idx].==1],
+        name = "brain2D_$(axis)_ss$(ss)_$(M)x$(N)_location$(location)-$(loc)_$(mask_idx)/$(Nparts)",
+		x   =   y[ρ.!=0 .&& mask[:,:,mask_idx]!==0],
+		y   =   x[ρ.!=0 .&& mask[:,:,mask_idx]!==0],
+		z   = 0*x[ρ.!=0 .&& mask[:,:,mask_idx]!==0],
+		ρ   =   ρ[ρ.!=0 .&& mask[:,:,mask_idx]!==0],
+		T1  =  T1[ρ.!=0 .&& mask[:,:,mask_idx]!==0],
+		T2  =  T2[ρ.!=0 .&& mask[:,:,mask_idx]!==0],
+		T2s = T2s[ρ.!=0 .&& mask[:,:,mask_idx]!==0],
+		Δw  =  Δw[ρ.!=0 .&& mask[:,:,mask_idx]!==0],
     )
 	return obj
 end

@@ -1,4 +1,4 @@
-export get_fan_mask
+export get_fan_mask, get_rect_mask
 
 
 
@@ -21,11 +21,11 @@ export get_fan_mask
 
 # Examples
 ```julia-repl
-julia> mask = get_fan_mask(100, 100, 6; overlap=1.5)
+julia> mask = get_fan_mask(100, 100, 6; overlap=0.2)
 julia> plot_imgs_subplots(mask, 2, 3)
 ```
 """
-function get_fan_mask(Nx::Int64, Ny::Int64, Nparts::Int64; overlap::Real=1)
+function get_fan_mask(Nx::Int64, Ny::Int64, Nparts::Int64; overlap::Real=0.5)
     @info "fan mask" Nx=Nx Ny=Ny Nparts=Nparts overlap=overlap
     m_x = (1:1:Nx) .* ones(1, Ny)
     m_y = ones(Nx) .* (1:1:Ny)'
@@ -40,10 +40,40 @@ function get_fan_mask(Nx::Int64, Ny::Int64, Nparts::Int64; overlap::Real=1)
     for i = 1:Nparts
         angle_rad = collect(-pi:2pi/Nparts:pi)[i]
         m = mask[:,:,i]
-        m[abs.(ϕ .- angle_rad) .>= (2pi - pi/Nparts*overlap) .|| abs.(ϕ .- angle_rad) .<= pi/Nparts*overlap] .= 1
+        m[abs.(ϕ .- angle_rad) .>= (2pi - pi/Nparts*(1+overlap)) .|| abs.(ϕ .- angle_rad) .<= pi/Nparts*(1+overlap)] .= 1
         mask[:,:,i] = m
     end
     return mask
     # plot_imgs_subplots(mask, 2,2)
 end
 
+function get_rect_mask(Nx::Int64, Ny::Int64, Npartsx::Int64, Npartsy::Int64)
+    @info "rectangular mask" Nx=Nx Ny=Ny Npartsx=Npartsx Npartsy=Npartsy
+
+    rangex = Int64.(round.(collect(range(0, Nx, Npartsx+1))))
+    rangey = Int64.(round.(collect(range(0, Ny, Npartsy+1))))
+    mask = zeros(Nx, Ny, Npartsx * Npartsy)
+    # [println("$(rangex[i]+1):$(rangex[i+1]), $(rangey[j]+1):$(rangey[j+1]):") for i in eachindex(rangex[1:end-1]), j in eachindex(rangey[1:end-1])]
+    for i in eachindex(rangex[1:end-1])
+        for j in eachindex(rangey[1:end-1])
+            mask[rangex[i]+1:rangex[i+1], rangey[j]+1:rangey[j+1], (i-1)*Npartsy+j] .= 1
+        end
+    end
+    return mask
+    # plot_imgs_subplots(mask, Npartsx, Npartsy)
+end
+
+# Nx = 150
+# Ny = 150
+# Npartsx = 5
+# Npartsy = 6
+# rangex = Int64.(round.(collect(range(0, Nx, Npartsx+1))))
+# rangey = Int64.(round.(collect(range(0, Ny, Npartsy+1))))
+# mask = zeros(Nx, Ny, Npartsx * Npartsy)
+# [println("$(rangex[i]+1):$(rangex[i+1]), $(rangey[j]+1):$(rangey[j+1]):") for i in eachindex(rangex[1:end-1]), j in eachindex(rangey[1:end-1])]
+# for i in eachindex(rangex[1:end-1])
+#     for j in eachindex(rangey[1:end-1])
+#         mask[rangex[i]+1:rangex[i+1], rangey[j]+1:rangey[j+1], (i-1)*Npartsy+j] .= 1
+#     end
+# end
+# plot_imgs_subplots(mask, Npartsx, Npartsy)

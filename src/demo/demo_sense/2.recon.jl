@@ -1,13 +1,23 @@
 using KomaHighOrder
 using MRIReco, MRICoilSensitivities, MRISampling
 
-Ncoils = 30
+simtype  = SimType(B0=false, T2=false, ss=5)
+mask_type = :rect
+overlap  = 0
+Nparts   = 30
+Npartsx  = 3
+Npartsy  = 4
+Ncoils = mask_type == :rect ? Npartsx * Npartsy : Nparts
 BHO_name = "000"
-hoseq = demo_hoseq()
+hoseq    = demo_hoseq()
 filename = "$(hoseq.SEQ.DEF["Name"])_$(BHO_name)_nominal_Ncoils$(Ncoils)"
+if mask_type == :fan
+    folder   = "$(mask_type)_Ncoils$(Ncoils)_overlap$(overlap)"
+elseif mask_type == :rect
+    folder   = "$(mask_type)_$(Npartsx)_$(Npartsy)"
+end
 
-folder = "Ncoils$Ncoils"
-path = "$(@__DIR__)/src/demo/demo_sense/$folder"
+path     = "$(@__DIR__)/src/demo/demo_sense/$folder"
 
 raw_file = "$(path)/$(filename).mrd"
 @assert ispath(raw_file) "the raw file does not exist: $(raw_file)"
@@ -22,19 +32,21 @@ shape = (Nx, Ny);
 # sensitivity = espirit(acqDataCart, (6,6), 30, eigThresh_1=0.02, eigThresh_2=0.98);
 
 # fan mask
-mask = get_fan_mask(Nx, Ny, Ncoils)';
-p_mask = plot_image(mask)
+if mask_type == :fan
+    mask = get_fan_mask(217, 181, Ncoils; overlap=overlap);
+elseif mask_type == :rect
+    mask = get_rect_mask(217, 181, Npartsx, Npartsy)
+end
+c1 = KomaHighOrder.get_center_range(217, 150)
+c2 = KomaHighOrder.get_center_range(181, 150)
+mask = mask[c1, c2, :]
+
 sensitivity = Array{ComplexF32,4}(undef, Nx, Ny, 1, Ncoils);
 for c = 1:Ncoils
-    sensitivity[:,:,1,c] = ((mask .== c) .* 1)
+    sensitivity[:,:,1,c] = mask[:,:,c]'
 end
 
-
-
-# s = [sensitivity[:,:,1,i] for i=1:Ncoils];
-# s = [s[1] s[2] s[3]];
-# plot_image(abs.(rotr90(s)); title="sensitivity - espirit")
-# plot_image(abs.(((mask .== 1) .* 1)'))
+p_mask = plot_imgs_subplots(mask, 3,3)
 
 @info "reference reco"
 T = Float32;
