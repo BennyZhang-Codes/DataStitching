@@ -102,8 +102,7 @@ function brain_phantom2D_reference(
             img = (class.==93)*Δw_fat .+ #FAT1 
                 (class.==209)*Δw_fat    #FAT2
         elseif B0map == :quadratic
-            img = quadraticFieldmap(target_size...,maxOffresonance)[:,:,1]
-            center_range = target_size
+            img = quadraticFieldmap(size(class)...,maxOffresonance)[:,:,1]
         end
     elseif key == :raw
         img = class
