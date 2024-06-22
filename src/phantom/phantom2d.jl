@@ -34,21 +34,21 @@ function brain_phantom2D(
     location::Float64=0.5,  # relative location in the Z-axis
     B0map::Symbol=:fat,     # load B0 map
     maxOffresonance::Float64=125.,
-    mask_type::Symbol=:fan,  # mask type
-    mask_idx::Int64 =1,      # mask index
-    Nparts::Int64   =1,        # number of partitions (split in fan shape)
-    Npartsx::Int64  =1,       # number of partitions in the X-axis
-    Npartsy::Int64  =1,       # number of partitions in the Y-axis
-    overlap::Real   =1,        # overlap between fan masks
+    coil_type::Symbol=:fan,  # coil type
+    coil_idx::Int64 =1,      # coil index
+    Nparts::Int64   =1,      # number of partitions (split in fan shape)
+    Npartsx::Int64  =1,      # number of partitions in the X-axis
+    Npartsy::Int64  =1,      # number of partitions in the Y-axis
+    overlap::Real   =1,      # overlap between fan coils
     ) :: Phantom
     path = (@__DIR__) * phantom_dict[:path]
     @assert axis in ["axial", "coronal", "sagittal"] "axis must be one of the following: axial, coronal, sagittal"
     @assert B0map in [:file, :fat, :quadratic] "B0map must be one of the following: :file, :fat, :quadratic"
     @assert isfile(path*"/$(p.file)") "File $(p.file) does not exist in $(path)"
     @assert 0 <= location <= 1 "location must be between 0 and 1"
-    @assert mask_type in [:fan, :rect] "mask_type must be one of the following: :fan, :rect"
-    Nparts = mask_type == :rect ? Npartsx * Npartsy : Nparts
-    @assert 1 <= mask_idx <= Nparts "mask_idx must be between 1 and Nparts"
+    @assert coil_type in [:fan, :rect, :birdcage] "coil_type must be one of the following: :fan, :rect, :birdcage"
+    Nparts = coil_type == :rect ? Npartsx * Npartsy : Nparts
+    @assert 1 <= coil_idx <= Nparts "coil_idx must be between 1 and Nparts"
     data = MAT.matread(path*"/$(p.file)")["data"]
     
     M, N, Z = size(data)
@@ -118,6 +118,11 @@ function brain_phantom2D(
          (class.==209)*.77 .+ #FAT2
          (class.==232)*1   .+ #DURA
          (class.==255)*.77    #MARROW
+
+    T1  = T1  * 1e-3
+    T2  = T2  * 1e-3
+    T2s = T2s * 1e-3
+
     if B0map == :file    
         fieldmap = brain_phantom2D_B0map(; axis=axis, ss=1, location=location)
         fieldmap = imresize(fieldmap, size(class))
@@ -131,27 +136,29 @@ function brain_phantom2D(
         Δw = fieldmap*2π
     end
 
-	T1  = T1  * 1e-3
-	T2  = T2  * 1e-3
-	T2s = T2s * 1e-3
-    if mask_type == :fan
-        mask = get_fan_mask(M, N, Nparts; overlap=overlap)
-    elseif mask_type == :rect
-        mask = get_rect_mask(M, N, Npartsx, Npartsy)
+
+    if coil_type == :fan
+        smap = get_fan_mask(M, N, Nparts; overlap=overlap)[:,:,coil_idx]
+    elseif coil_type == :rect
+        smap = get_rect_mask(M, N, Npartsx, Npartsy)[:,:,coil_idx]
+    elseif coil_type == :birdcage
+        smap = BirdcageSensitivity(M, N, Nparts;)[:,:,coil_idx]
     end
-    ρ = ρ .* mask[:,:,mask_idx]
 
     # Define and return the Phantom struct
     obj = Phantom{Float64}(
-        name = "brain2D_$(axis)_ss$(ss)_$(M)x$(N)_location$(location)-$(loc)_$(mask_idx)/$(Nparts)",
-		x   =   y[ρ.!=0 .&& mask[:,:,mask_idx]!==0],
-		y   =   x[ρ.!=0 .&& mask[:,:,mask_idx]!==0],
-		z   = 0*x[ρ.!=0 .&& mask[:,:,mask_idx]!==0],
-		ρ   =   ρ[ρ.!=0 .&& mask[:,:,mask_idx]!==0],
-		T1  =  T1[ρ.!=0 .&& mask[:,:,mask_idx]!==0],
-		T2  =  T2[ρ.!=0 .&& mask[:,:,mask_idx]!==0],
-		T2s = T2s[ρ.!=0 .&& mask[:,:,mask_idx]!==0],
-		Δw  =  Δw[ρ.!=0 .&& mask[:,:,mask_idx]!==0],
+        name = "brain2D_$(axis)_ss$(ss)_$(M)x$(N)_location$(location)-$(loc)_$(coil_idx)/$(Nparts)",
+		x   =    y[ρ.!=0],
+		y   =    x[ρ.!=0],
+		z   =  0*x[ρ.!=0],
+		ρ   =    ρ[ρ.!=0],
+		T1  =   T1[ρ.!=0],
+		T2  =   T2[ρ.!=0],
+		T2s =  T2s[ρ.!=0],
+		Δw  =   Δw[ρ.!=0],
+        Dλ1 = real(smap)[ρ.!=0],
+        Dλ2 = imag(smap)[ρ.!=0],
+        Dθ  = abs.(smap)[ρ.!=0],
     )
 	return obj
 end

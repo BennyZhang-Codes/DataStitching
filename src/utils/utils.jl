@@ -1,22 +1,12 @@
-include("fan_mask.jl")
+
 include("plot_imgs.jl")
+include("CoilSensitivity/Birdcage.jl")
+include("CoilSensitivity/Binary.jl")
+include("ImageProcess.jl")
 
 export normalization, standardization
 export plot_img, plot_imgs, plot_imgs_subplots
+export BirdcageSensitivity
+export get_fan_mask, get_rect_mask
 
-# Normalization
-function normalization(img::AbstractArray{T,2}) where T<:Real
-    return (img.- minimum(img))./ (maximum(img) .- minimum(img))
-end
 
-# Standardization
-function standardization(img::AbstractArray{T,2}) where T<:Real
-    return (img.- mean(img))./ std(img; corrected=false)
-end
-
-"""
-MSE
-"""
-function mymse(img::AbstractArray{T,2}, ref::AbstractArray{T,2}) where T<:Real
-    return mean((img.- ref).^2)
-end

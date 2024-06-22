@@ -37,6 +37,8 @@ function run_spin_precession!(p::Phantom{T}, hoseqd::HO_DiscreteSequence{T}, sig
     M::Mag{T}, sim_method::BlochHighOrder) where {T<:Real}
     seq = hoseqd.seqd
     #Simulation
+    #Coil sensitivity
+    smap = p.Dλ1 .+ p.Dλ2*im
     #Motion
     xt = p.x .+ p.ux(p.x, p.y, p.z, seq.t')
     yt = p.y .+ p.uy(p.x, p.y, p.z, seq.t')
@@ -69,7 +71,7 @@ function run_spin_precession!(p::Phantom{T}, hoseqd::HO_DiscreteSequence{T}, sig
     M.xy .= Mxy[:, end]
     M.z  .= M.z .* exp.(-dur ./ p.T1) .+ p.ρ .* (1 .- exp.(-dur ./ p.T1))
     #Acquired signal
-    sig .= transpose(sum(Mxy[:, findall(seq.ADC)]; dims=1)) #<--- TODO: add coil sensitivities
+    sig .= transpose(sum(Mxy[:, findall(seq.ADC)] .* smap; dims=1)) #<--- TODO: add coil sensitivities
     return nothing
 end
 
