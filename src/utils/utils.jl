@@ -1,4 +1,3 @@
-
 include("plot_imgs.jl")
 include("CoilSensitivity/Birdcage.jl")
 include("CoilSensitivity/Binary.jl")

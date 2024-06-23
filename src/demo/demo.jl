@@ -32,16 +32,20 @@ end
 include("demo_raw/generate_raw.jl")
 export generate_raw
 
-function demo_seq()
+function demo_seq(; seq::String="xw_sp2d-1mm-r1_noDUM", r::Int=1)
     path = @__DIR__
-    seq = read_seq(path*"/xw_sp2d-1mm-r1_noDUM.seq");
+    if seq == "gre"
+        seq = read_seq(path*"/files/$(seq)_R$(r).seq");
+    else
+        seq = read_seq(path*"/files/$(seq).seq");
+    end
     return seq
 end
 
 function demo_GR_skope(;key::Symbol=:Stitched)
     @assert key in [:Stitched, :Standard] "key must be :Stitched or :Standard"
     path = @__DIR__
-    grad = MAT.matread(path*"/grad_1mm.mat");
+    grad = MAT.matread(path*"/files/grad_1mm.mat");
     Δt = grad["dt"];
     skopeStitched = [zeros(9) grad["skopeStitched"]'] * 1e-3; 
     skopeStandard = [zeros(9) grad["skopeStandard"]'] * 1e-3;

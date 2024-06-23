@@ -14,6 +14,7 @@ using Reexport
 using MRIBase
 @reexport using KomaMRI
 
+using FFTW: fftshift, ifftshift, fft, ifft
 import KomaMRI.KomaMRICore: SimulationMethod, SpinStateRepresentation
 
 @reexport import MAT

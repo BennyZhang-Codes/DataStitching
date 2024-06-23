@@ -37,7 +37,7 @@ if coil_type == :fan
 elseif coil_type == :rect
     coil = get_rect_mask(217, 181, Npartsx, Npartsy)
 elseif coil_type == :birdcage
-    coil = BirdcageSensitivity(217, 181, Ncoils)
+    coil = BirdcageSensitivity(217, 181, Ncoils, relative_radius=1.5)
 end
 c1 = KomaHighOrder.get_center_range(217, Nx)
 c2 = KomaHighOrder.get_center_range(181, Ny)

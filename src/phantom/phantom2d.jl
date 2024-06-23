@@ -28,18 +28,19 @@ Creates a two-dimensional brain Phantom struct.
 ```
 """
 function brain_phantom2D(
-    p::PhantomType;         # phantom type
-    axis::String="axial",   # orientation
-    ss::Int64=4,            # undersample
-    location::Float64=0.5,  # relative location in the Z-axis
-    B0map::Symbol=:fat,     # load B0 map
+    p::PhantomType;                # phantom type
+    axis::String="axial",          # orientation
+    ss::Int64=4,                   # undersample
+    location::Float64=0.5,         # relative location in the Z-axis
+    B0map::Symbol=:fat,            # load B0 map
     maxOffresonance::Float64=125.,
-    coil_type::Symbol=:fan,  # coil type
-    coil_idx::Int64 =1,      # coil index
-    Nparts::Int64   =1,      # number of partitions (split in fan shape)
-    Npartsx::Int64  =1,      # number of partitions in the X-axis
-    Npartsy::Int64  =1,      # number of partitions in the Y-axis
-    overlap::Real   =1,      # overlap between fan coils
+    coil_type::Symbol=:fan,        # coil type
+    coil_idx::Int64 =1,            # coil index
+    Nparts::Int64   =1,            # number of partitions (split in fan shape)
+    Npartsx::Int64  =1,            # number of partitions in the X-axis
+    Npartsy::Int64  =1,            # number of partitions in the Y-axis
+    overlap::Real   =1,            # overlap between fan coils
+    relative_radius::Real=1.5,     # relative radius of the coil
     ) :: Phantom
     path = (@__DIR__) * phantom_dict[:path]
     @assert axis in ["axial", "coronal", "sagittal"] "axis must be one of the following: axial, coronal, sagittal"
@@ -142,7 +143,7 @@ function brain_phantom2D(
     elseif coil_type == :rect
         smap = get_rect_mask(M, N, Npartsx, Npartsy)[:,:,coil_idx]
     elseif coil_type == :birdcage
-        smap = BirdcageSensitivity(M, N, Nparts;)[:,:,coil_idx]
+        smap = BirdcageSensitivity(M, N, Nparts; relative_radius=Float64(relative_radius))[:,:,coil_idx]
     end
 
     # Define and return the Phantom struct
