@@ -1,9 +1,9 @@
 using KomaHighOrder
 
 simtype  = SimType(B0=false, T2=false, ss=5)
-coil_type= :birdcage
+coil_type= :real
 overlap  = 0
-Nparts   = 9; nrows=3; ncols=3;
+Nparts   = 32; nrows=4; ncols=8;
 Npartsx  = 3
 Npartsy  = 4
 Ncoils = coil_type == :rect ? Npartsx * Npartsy : Nparts
@@ -12,7 +12,7 @@ if coil_type == :fan
     folder   = "$(coil_type)_Ncoils$(Ncoils)_overlap$(overlap)"
 elseif coil_type == :rect
     folder   = "$(coil_type)_$(Npartsx)_$(Npartsy)"
-elseif coil_type == :birdcage
+else
     folder   = "$(coil_type)_Ncoils$(Ncoils)"
 end
 path     = "$(@__DIR__)/src/demo/demo_sense/$folder"
@@ -26,6 +26,7 @@ sim_params["sim_method"] = BlochHighOrder(BHO_name);
 sim_params["gpu"] = true;
 sim_params["return_type"]="mat";
 
+Nx = Ny = 150
 coil_images = Array{Float32, 3}(undef, Nx, Ny, Ncoils);
 signal = zeros(ComplexF64, sum(hoseq.SEQ.ADC.N), Ncoils);
 for coil_idx = 1:Ncoils
@@ -41,10 +42,11 @@ for coil_idx = 1:Ncoils
     p = plot_image(coil_images[:,:,coil_idx]; title="$(protocolName)", height=400, width=450)
     savefig(p,  "$(path)/$(protocolName).svg",format="svg", height=400, width=450)
 end
-
+p_sos = plot_image(abs.(sqrt.(sum(coil_images.^2; dims=3))[:,:,1]); title="$(Ncoils) coils: NUFFT recon, SOS")
+savefig(p_sos,  "$(path)/$(raw.params["protocolName"])-nufft_multi-coils_sos.svg", format="svg", height=400, width=450)
 p_coil_images = plot_imgs_subplots(abs.(coil_images), nrows, ncols; title="$(Ncoils) coils: NUFFT recon", height=400, width=450)
 savefig(p_coil_images,  "$(path)/$(raw.params["protocolName"])-nufft_multi-coils.svg", format="svg", height=400, width=450)
-
+savefig(p_coil_images,  "$(path)/$(raw.params["protocolName"])-nufft_multi-coils.svg", format="svg", height=400, width=800)
 raw = signal_to_raw_data(signal, hoseq, :nominal)
 filename = "$(hoseq.SEQ.DEF["Name"])_$(BHO_name)_nominal_Ncoils$(Ncoils)"
 raw.params["protocolName"] = filename

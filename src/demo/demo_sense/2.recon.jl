@@ -2,20 +2,18 @@ using KomaHighOrder
 using MRIReco, MRICoilSensitivities, MRISampling
 
 simtype  = SimType(B0=false, T2=false, ss=5)
-coil_type= :birdcage
+coil_type= :real
 overlap  = 0
-Nparts   = 9; nrows=3; ncols=3;
+Nparts   = 32; nrows=4; ncols=8;
 Npartsx  = 3
 Npartsy  = 4
 Ncoils = coil_type == :rect ? Npartsx * Npartsy : Nparts
 BHO_name = "000"
-hoseq    = demo_hoseq()
-filename = "$(hoseq.SEQ.DEF["Name"])_$(BHO_name)_nominal_Ncoils$(Ncoils)"
 if coil_type == :fan
     folder   = "$(coil_type)_Ncoils$(Ncoils)_overlap$(overlap)"
 elseif coil_type == :rect
     folder   = "$(coil_type)_$(Npartsx)_$(Npartsy)"
-elseif coil_type == :birdcage
+else
     folder   = "$(coil_type)_Ncoils$(Ncoils)"
 end
 
@@ -38,6 +36,8 @@ elseif coil_type == :rect
     coil = get_rect_mask(217, 181, Npartsx, Npartsy)
 elseif coil_type == :birdcage
     coil = BirdcageSensitivity(217, 181, Ncoils, relative_radius=1.5)
+elseif coil_type == :real
+    coil = RealCoilSensitivity_32cha(217, 181)
 end
 c1 = KomaHighOrder.get_center_range(217, Nx)
 c2 = KomaHighOrder.get_center_range(181, Ny)
@@ -48,7 +48,7 @@ for c = 1:Ncoils
     sensitivity[:,:,1,c] = coil[:,:,c]'
 end
 
-p_smap = plot_imgs_subplots(abs.(sensitivity[:,:,1,:]), nrows, ncols; title="$(Ncoils) coils: Coil Sensitivity", height=400, width=450)
+p_smap = plot_imgs_subplots(abs.(sensitivity[:,:,1,:]), nrows, ncols; title="$(Ncoils) coils: Coil Sensitivity")#, height=400, width=450)
 
 @info "reference reco"
 T = Float32;
@@ -70,7 +70,7 @@ img_cg = reconstruction(acqData, params).data;
 
 p_img_cg = plot_image(abs.(img_cg[:,:]), title="$(Ncoils) coils: Sense-type Recon", height=400, width=450)
 
-savefig(p_smap,  "$(path)/$(raw.params["protocolName"])-CoilSens.svg", format="svg", height=400, width=450)
+savefig(p_smap,  "$(path)/$(raw.params["protocolName"])-CoilSens.svg", format="svg", height=400, width=800)
 savefig(p_img_cg,  "$(path)/$(raw.params["protocolName"])-Recon.svg", format="svg", height=400, width=450)
 
 

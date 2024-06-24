@@ -47,8 +47,12 @@ function brain_phantom2D(
     @assert B0map in [:file, :fat, :quadratic] "B0map must be one of the following: :file, :fat, :quadratic"
     @assert isfile(path*"/$(p.file)") "File $(p.file) does not exist in $(path)"
     @assert 0 <= location <= 1 "location must be between 0 and 1"
-    @assert coil_type in [:fan, :rect, :birdcage] "coil_type must be one of the following: :fan, :rect, :birdcage"
-    Nparts = coil_type == :rect ? Npartsx * Npartsy : Nparts
+    @assert coil_type in [:fan, :rect, :birdcage, :real] "coil_type must be one of the following: :fan, :rect, :birdcage, :real"
+    if coil_type == :rect
+        Nparts = Npartsx * Npartsy
+    elseif coil_type == :real
+        Nparts = 32
+    end
     @assert 1 <= coil_idx <= Nparts "coil_idx must be between 1 and Nparts"
     data = MAT.matread(path*"/$(p.file)")["data"]
     
@@ -144,6 +148,8 @@ function brain_phantom2D(
         smap = get_rect_mask(M, N, Npartsx, Npartsy)[:,:,coil_idx]
     elseif coil_type == :birdcage
         smap = BirdcageSensitivity(M, N, Nparts; relative_radius=Float64(relative_radius))[:,:,coil_idx]
+    elseif coil_type == :real
+        smap = RealCoilSensitivity_32cha(M, N)[:,:,coil_idx]
     end
 
     # Define and return the Phantom struct
