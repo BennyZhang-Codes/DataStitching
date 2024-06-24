@@ -12,5 +12,6 @@ function RealCoilSensitivity_32cha(Nx::Int64, Ny::Int64)
     out = imresize(sensitivity, (Nx, Ny, 32))
     norm = sqrt.(sum(abs.(out) .^ 2, dims=3))
     out = out./ norm
+    out[isnan.(out)] .= 0 + 0im
     return out
 end

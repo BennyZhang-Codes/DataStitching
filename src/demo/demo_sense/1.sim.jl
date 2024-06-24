@@ -25,6 +25,7 @@ sim_params = KomaMRICore.default_sim_params();
 sim_params["sim_method"] = BlochHighOrder(BHO_name);
 sim_params["gpu"] = true;
 sim_params["return_type"]="mat";
+sim_params["Nblocks"] = 20;
 
 Nx = Ny = 150
 coil_images = Array{Float32, 3}(undef, Nx, Ny, Ncoils);
@@ -42,15 +43,17 @@ for coil_idx = 1:Ncoils
     p = plot_image(coil_images[:,:,coil_idx]; title="$(protocolName)", height=400, width=450)
     savefig(p,  "$(path)/$(protocolName).svg",format="svg", height=400, width=450)
 end
-p_sos = plot_image(abs.(sqrt.(sum(coil_images.^2; dims=3))[:,:,1]); title="$(Ncoils) coils: NUFFT recon, SOS")
-savefig(p_sos,  "$(path)/$(raw.params["protocolName"])-nufft_multi-coils_sos.svg", format="svg", height=400, width=450)
-p_coil_images = plot_imgs_subplots(abs.(coil_images), nrows, ncols; title="$(Ncoils) coils: NUFFT recon", height=400, width=450)
-savefig(p_coil_images,  "$(path)/$(raw.params["protocolName"])-nufft_multi-coils.svg", format="svg", height=400, width=450)
-savefig(p_coil_images,  "$(path)/$(raw.params["protocolName"])-nufft_multi-coils.svg", format="svg", height=400, width=800)
+
 raw = signal_to_raw_data(signal, hoseq, :nominal)
 filename = "$(hoseq.SEQ.DEF["Name"])_$(BHO_name)_nominal_Ncoils$(Ncoils)"
 raw.params["protocolName"] = filename
 mrd = ISMRMRDFile("$(path)/$(filename).mrd")
 save(mrd, raw)
 
+
+p_sos = plot_image(abs.(sqrt.(sum(coil_images.^2; dims=3))[:,:,1]); title="$(Ncoils) coils: NUFFT recon, SOS")
+savefig(p_sos,  "$(path)/$(raw.params["protocolName"])-nufft_multi-coils_sos.svg", format="svg", height=400, width=450)
+p_coil_images = plot_imgs_subplots(abs.(coil_images), nrows, ncols; title="$(Ncoils) coils: NUFFT recon", height=400, width=450)
+# savefig(p_coil_images,  "$(path)/$(raw.params["protocolName"])-nufft_multi-coils.svg", format="svg", height=400, width=450)
+savefig(p_coil_images,  "$(path)/$(raw.params["protocolName"])-nufft_multi-coils.svg", format="svg", height=400, width=800)
 
