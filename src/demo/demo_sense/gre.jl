@@ -1,7 +1,7 @@
-using KomaHighOrder, MRISampling, MRIReco
-
-R = 1
-simtype  = SimType(B0=false, T2=true, ss=3)
+using KomaHighOrder, MRISampling, MRIReco, MRICoilSensitivities
+import KomaHighOrder.MRIBase: rawdata
+R = 2
+simtype  = SimType(B0=false, T2=true, ss=5)
 coil_type= :real
 Nparts   = 32; nrows=4; ncols=8;
 Ncoils = Nparts
@@ -26,7 +26,7 @@ coil_images = Array{Float32, 3}(undef, Nx, Ny, Ncoils);
 signal = zeros(ComplexF64, sum(seq.ADC.N), Ncoils);
 for coil_idx = 1:Ncoils
     @info "Simulating coil $(coil_idx)..."
-    obj = brain_phantom2D(brain2D(); ss=simtype.ss, location=0.5, coil_type=coil_type, coil_idx=coil_idx, Nparts=Ncoils); 
+    obj = brain_phantom2D(brain2D(); ss=simtype.ss, location=0.5, coil_type=coil_type, coil_idx=coil_idx, Nparts=Ncoils, overlap=0); 
     obj.Δw .= simtype.B0 ? obj.Δw : obj.Δw * 0; # γ*1.5*(-3.45)*1e-6 * 2π
     obj.T2 .= simtype.T2 ? obj.T2 : obj.T2 * Inf; # TODO: fix the bug: gre 
 
@@ -42,60 +42,103 @@ end
 
 
 raw = signal_to_raw_data(signal, hoseq, :nominal)
-filename = "gre_R$(R)_$(BHO_name)_nominal_Ncoils$(Ncoils)"
+filename = "gre_R$(R)_Ncoils$(Ncoils)"
 raw.params["protocolName"] = filename
 mrd = ISMRMRDFile("$(path)/$(filename).mrd")
 save(mrd, raw)
-p_coil_images = plot_imgs_subplots(abs.(coil_images), nrows, ncols; title="$(Ncoils) coils: NUFFT recon", height=400, width=800)
-p_sos = plot_img(sqrt.(sum(coil_images.^2; dims=3))[:,:,1]; title="$(Ncoils) coils: NUFFT recon, SOS", height=400, width=450)
-savefig(p_sos, "$(path)/gre_R$(R)_$(BHO_name)_nominal-nufft_SOS.svg", format="svg", height=400, width=450)
-savefig(p_coil_images,  "$(path)/gre_R$(R)_$(BHO_name)_nominal-nufft_multi-coils.svg", format="svg", height=400, width=800)
+p_coil_images = plot_imgs_subplots(abs.(coil_images), nrows, ncols; title="$(Ncoils) coils: IFFT recon", height=400, width=800)
+p_sos = plot_image(sqrt.(sum(coil_images.^2; dims=3))[:,:,1]; title="$(Ncoils) coils: IFFT recon, SOS", height=400, width=450)
+savefig(p_sos        , "$(path)/$(filename)-ifft_SOS.svg"        , format="svg", height=400, width=450)
+savefig(p_coil_images, "$(path)/$(filename)-ifft.svg", format="svg", height=400, width=800)
 
 
-if coil_type == :birdcage
-    coil = BirdcageSensitivity(362, 302, Ncoils, relative_radius=1.5) # TODO: fix the bug: when encoding matrix is bigger than phantom matrix
-elseif coil_type == :real
-    coil = RealCoilSensitivity_32cha(362, 302)
-end
-c1 = KomaHighOrder.get_center_range(362, Nx)
-c2 = KomaHighOrder.get_center_range(302, Ny)
-coil = coil[c1, c2, :]
+
+raw = RawAcquisitionData(ISMRMRDFile("$(path)/gre_R1_Ncoils$(Ncoils).mrd"));
+
+r = 1
+acqData = AcquisitionData(raw); # raw = RawAcquisitionData(mrd);
+acqData = convertUndersampledData(sample_kspace(acqData, r, "regular"))
+acqData.traj[1].circular = false;
+p_traj = plot_traj2d(acqData.traj[1]; height=400, width=400)
+savefig(p_traj, "$(path)/$(filename)_R$(r)-traj.svg", format="svg", height=400, width=400)
+
+shape = (Nx, Ny);
+T = Float32;
+#############################################################################
+# recon with the coil sensitivities as the same used in the simulation
+#############################################################################
+coil = coil_type == :real ? coil = RealCoilSensitivity_32cha(217, 181) : coil = BirdcageSensitivity(217, 181, Ncoils, relative_radius=1.5);
+coil = get_center_crop(coil, Nx, Ny);
 
 sensitivity = Array{ComplexF32,4}(undef, Nx, Ny, 1, Ncoils);
 for c = 1:Ncoils
     sensitivity[:,:,1,c] = coil[:,:,c]'
 end
 
-plot_img(abs.(sqrt.(sum(sensitivity.^2, dims=4)))[:,:,1,1])
-p_smap = plot_imgs_subplots(abs.(sensitivity[:,:,1,:]), nrows, ncols; title="$(Ncoils) coils: Coil Sensitivity")
+p_smap_sos = plot_image(abs.(sqrt.(sum(sensitivity[:,:,1,:].^2; dims=3))[:,:,1]); title="$(Ncoils) coils: Coil Sensitivity (Simulation), SOS")
+p_smap = plot_imgs_subplots(abs.(sensitivity[:,:,1,:]), nrows, ncols; title="$(Ncoils) coils: Coil Sensitivity (Simulation)")
 
-
-@info "reference reco"
-acqData = AcquisitionData(raw);
-acqData = convertUndersampledData(sample_kspace(acqData, 2, "regular"))
-acqData.traj[1].circular = false;
-shape = (Nx, Ny);
-T = Float32;
 params = Dict{Symbol, Any}()
 params[:reco] = "multiCoil"
 params[:reconSize] = (Nx, Ny)
-params[:regularization] = "L1"
+params[:regularization] = "L2"
 params[:λ] = T(1.e-2)
-params[:iterations] = 20
+params[:iterations] = 50
 params[:relTol] = 0.0
-params[:solver] = "admm"
+params[:solver] = "cgnr"
 params[:toeplitz] = false
 params[:oversamplingFactor] = 1
 params[:senseMaps] = Complex{T}.(reshape(sensitivity, Nx, Ny, 1, Ncoils));
+img_recon = Array{ComplexF32,2}(undef, Nx, Ny);
+img_recon = reconstruction(acqData, params).data;
+p_img_recon = plot_image(abs.(img_recon[:,:]), title="$(Ncoils) coils: Sense recon, R = $(r), sim-sensitivity")
 
-img_cg = Array{ComplexF32,2}(undef, Nx, Ny);
+savefig(p_smap     , "$(path)/$(filename)_simSmap.svg"            , format="svg", height=400, width=800)
+savefig(p_smap_sos , "$(path)/$(filename)_simSmap_sos.svg"        , format="svg", height=400, width=450)
+savefig(p_img_recon, "$(path)/$(filename)_R$(r)-simSmap_Sense.svg", format="svg", height=400, width=450)
 
-img_cg = reconstruction(acqData, params).data;
 
-p_img_cg = plot_image(abs.(img_cg[:,:]), title="$(Ncoils) coils: Sense-type Recon")
+#############################################################################
+# recon with the coil sensitivities estimated from the raw data by espirit
+#############################################################################
+# espirit
+raw_R1 = RawAcquisitionData(ISMRMRDFile("$(path)/gre_R1_Ncoils$(Ncoils).mrd"));
+NumberOfSamples  = Int64(raw_R1.profiles[1].head.number_of_samples);
+NumberOfProfiles = Int64(length(raw_R1.profiles));
+NumberOfChannels = Ncoils;
+raw_R1.params["trajectory"] = "custom";
+kdata = rawdata(raw_R1);
+_, ktraj_adc = get_kspace(demo_seq(seq="gre", r=1));
+tr           = Trajectory(T.(ktraj_adc[:,1:2]'), NumberOfProfiles, NumberOfSamples, circular=false, cartesian=true);
+dat          = Array{Array{Complex{T},2},3}(undef,1,1,1);
+dat[1,1,1]   = reshape(kdata,:,NumberOfChannels);
+a            = AcquisitionData(tr, dat, encodingSize=(Nx,Ny));
 
-savefig(p_smap,  "$(path)/$(raw.params["protocolName"])-CoilSens.svg", format="svg", height=400, width=450)
-savefig(p_img_cg,  "$(path)/$(raw.params["protocolName"])-Recon.svg", format="svg", height=400, width=450)
+sensitivity = espirit(a, (6,6), 30, eigThresh_1=0.02, eigThresh_2=0.95);
+p_smap_espirit_sos = plot_image(abs.(sqrt.(sum(sensitivity[:,:,1,:].^2; dims=3))[:,:,1]); title="$(Ncoils) coils: Coil Sensitivity (espirit), SOS")
+p_smap_espirit = plot_imgs_subplots(abs.(sensitivity[:,:,1,:]), nrows, ncols; title="$(Ncoils) coils: Coil Sensitivity (espirit)")
+
+params = Dict{Symbol, Any}()
+params[:reco] = "multiCoil"
+params[:reconSize] = (Nx, Ny)
+params[:regularization] = "L2"
+params[:λ] = T(1.e-2)
+params[:iterations] = 50
+params[:relTol] = 0.0
+params[:solver] = "cgnr"
+params[:toeplitz] = false
+params[:oversamplingFactor] = 1
+params[:senseMaps] = Complex{T}.(reshape(sensitivity, Nx, Ny, 1, Ncoils));
+img_recon = Array{ComplexF32,2}(undef, Nx, Ny);
+img_recon = reconstruction(acqData, params).data;
+p_img_recon_espirit = plot_image(abs.(img_recon[:,:]), title="$(Ncoils) coils: Sense recon, R = $(r), espirit-sensitivity")
+
+
+savefig(p_smap_espirit     , "$(path)/$(filename)_espiritSmap.svg"            , format="svg", height=400, width=800)
+savefig(p_smap_espirit_sos , "$(path)/$(filename)_espiritSmap_sos.svg"        , format="svg", height=400, width=450)
+savefig(p_img_recon_espirit, "$(path)/$(filename)_R$(r)-espiritSmap_Sense.svg", format="svg", height=400, width=450)
+
+
 
 
 
@@ -152,49 +195,3 @@ plot_image(abs.(KomaMRI.fftc(image2d)).^0.1;)
 
 
 
-
-# different
-a1 = AcquisitionData(raw)
-a2 = convertUndersampledData(sample_kspace(a1, 2, "regular"))
-
-
-
-coil = RealCoilSensitivity_32cha(217, 181)
-
-function  get_center_crop(images::Array{T, 3}, out_x::Int64, out_y::Int64) where T <: Number
-    Nx = out_x
-    Ny = out_y
-    
-    M, N, K = size(images)
-    out = zeros(T, Nx, Ny, K)
-
-    if Nx < M && Ny < N
-        rangex = get_center_range(M, Nx)
-        rangey = get_center_range(N, Ny)
-        out = images[rangex, rangey, :]
-    elseif Nx > M && Ny > N
-        rangex = get_center_range(Nx, M)
-        rangey = get_center_range(Ny, N)
-        out[rangex, rangey, :] = images
-    elseif Nx < M && Ny > N
-        rangex = get_center_range(M, Nx)
-        rangey = get_center_range(Ny, N)
-        out[:, rangey, :] = images[rangex, :, :]
-    elseif Nx > M && Ny < N
-        rangex = get_center_range(Nx, M)
-        rangey = get_center_range(N, Ny)
-        out[rangex, :, :] = images[:, rangey, :]
-    end
-    return out
-end
-
-plot_imgs_subplots(abs.(get_center_crop(coil, 150, 150)), nrows, ncols)
-
-x = 300
-x_range = 181
-collect(KomaHighOrder.get_center_range(x, x_range))
-
-
-center = Int64(floor(x/2))
-a = center - Int64(floor(x_range/2))+1 : center + Int64(ceil(x_range/2))
-collect(a)
