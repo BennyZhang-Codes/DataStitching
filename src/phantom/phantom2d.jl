@@ -32,7 +32,8 @@ function brain_phantom2D(
     axis::String="axial",          # orientation
     ss::Int64=4,                   # undersample
     location::Float64=0.5,         # relative location in the Z-axis
-    B0map::Symbol=:fat,            # load B0 map
+    B0_type::Symbol=:fat,          # load B0 map
+    B0_file::Symbol=:B0,
     maxOffresonance::Float64=125.,
     coil_type::Symbol=:fan,        # coil type
     coil_idx::Int64 =1,            # coil index
@@ -44,7 +45,7 @@ function brain_phantom2D(
     ) :: Phantom
     path = (@__DIR__) * phantom_dict[:path]
     @assert axis in ["axial", "coronal", "sagittal"] "axis must be one of the following: axial, coronal, sagittal"
-    @assert B0map in [:file, :fat, :quadratic] "B0map must be one of the following: :file, :fat, :quadratic"
+    @assert B0_type in [:real, :fat, :quadratic] "B0_type must be one of the following: :real, :fat, :quadratic"
     @assert isfile(path*"/$(p.file)") "File $(p.file) does not exist in $(path)"
     @assert 0 <= location <= 1 "location must be between 0 and 1"
     @assert coil_type in [:fan, :rect, :birdcage, :real] "coil_type must be one of the following: :fan, :rect, :birdcage, :real"
@@ -128,15 +129,15 @@ function brain_phantom2D(
     T2  = T2  * 1e-3
     T2s = T2s * 1e-3
 
-    if B0map == :file    
-        fieldmap = brain_phantom2D_B0map(; axis=axis, ss=1, location=location)
+    if B0_type == :real    
+        fieldmap = brain_phantom2D_B0map(B0_file; axis=axis, ss=1, location=location)
         fieldmap = imresize(fieldmap, size(class))
         Δw = fieldmap*2π
-    elseif B0map == :fat
+    elseif B0_type == :fat
         Δw_fat = -220*2π
         Δw = (class.==93 )*Δw_fat .+ #FAT1
              (class.==209)*Δw_fat    #FAT2
-    elseif B0map == :quadratic
+    elseif B0_type == :quadratic
         fieldmap = quadraticFieldmap(size(class)...,maxOffresonance)[:,:,1]
         Δw = fieldmap*2π
     end
@@ -170,12 +171,13 @@ function brain_phantom2D(
 	return obj
 end
   
-function brain_phantom2D_B0map(; axis="axial", ss=1, location=0.5)
+function brain_phantom2D_B0map(B0_file::Symbol; axis="axial", ss=1, location=0.5)
     path = (@__DIR__) * phantom_dict[:path]
+    @assert B0_file in [:B0, :B0_medianfiltered_r4] "B0_file must be one of the following: :B0, :B0_medianfiltered_r4"
     @assert axis in ["axial", "coronal", "sagittal"] "axis must be one of the following: axial, coronal, sagittal"
-    @assert isfile(path*"/$(phantom_dict[:brain2d_B0])") "file is not found in $(path)"
+    @assert isfile(path*"/$(phantom_dict[B0_file])") "file is not found in $(path)"
     @assert 0 <= location <= 1 "location must be between 0 and 1"
-    B0data = MAT.matread(path*"/$(phantom_dict[:brain2d_B0])")["data"];
+    B0data = MAT.matread(path*"/$(phantom_dict[B0_file])")["data"];
 
     M, N, Z = size(B0data)
     if axis == "axial"

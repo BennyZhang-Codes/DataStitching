@@ -18,14 +18,14 @@ Nx = Ny = 150;
 # 1. hoseq
 
 # 2. phantom
-obj = brain_phantom2D(brain2D(); ss=simtype.ss, location=0.8, B0map=:file); info(obj)
+obj = brain_phantom2D(brain2D(); ss=simtype.ss, location=0.8, B0_type=:real, B0_file=:B0_medianfiltered_r4); info(obj)
 obj.Δw .= simtype.B0 ? obj.Δw : obj.Δw * 0; # γ*1.5*(-3.45)*1e-6 * 2π
 obj.T2 .= simtype.T2 ? obj.T2 : obj.T2 * Inf;   # cancel T2 relaxiation
 
 p_Δw = plot_phantom_map(obj, :Δw; darkmode=true)
 # savefig(p_Δw, dir*"/quadraticB0map_$(maxOffresonance)_objΔw.svg", width=500,height=500,format="svg")
 ref = brain_phantom2D_reference(brain2D(); ss=simtype.ss, location=0.8,target_fov=(150, 150), target_resolution=(1,1),
-                                   B0map=:file,key=:Δw); 
+                                B0_type=:real, B0_file=:B0_medianfiltered_r4, key=:Δw); 
 p_Δw_ref = plot_image(ref; title="B0map, [$(minimum(ref)),$(maximum(ref))] Hz", darkmode=true, zmin=minimum(ref))
 savefig(p_Δw_ref, dir*"/realB0map_B0map.svg", width=550,height=500,format="svg")
 

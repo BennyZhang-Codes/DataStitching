@@ -11,11 +11,12 @@ Base.show(io::IO, s::PhantomType) = begin
 end
 
 phantom_dict = Dict{Symbol, String}(
-    :path        => "/mat",
-    :brain2d     => "brain3D_0.2.mat",
-    :brain2d_B0  => "brain3D_B0map_1.0.mat",
-    :brain3d_171 => "(171, 191)_brain3D_(400, 362, 434)_(0.025, 0.5, 0.5).mat",
-    :brain3d_285 => "(285, 305)_brain3D_(400, 362, 434)_(0.025, 0.5, 0.5).mat",
+    :path                      => "/mat",
+    :brain2d                   => "brain3D_0.2.mat",
+    :B0                        => "brain3D_B0map_1.0.mat",
+    :B0_medianfiltered_r4      => "brain3D_B0map_1.0_median_filter_r4.mat",
+    :brain3d_171               => "(171, 191)_brain3D_(400, 362, 434)_(0.025, 0.5, 0.5).mat",
+    :brain3d_285               => "(285, 305)_brain3D_(400, 362, 434)_(0.025, 0.5, 0.5).mat",
 )
 
 

@@ -6,14 +6,15 @@ function brain_phantom2D_reference(
     ss::Int64=3, 
     location::Float64=0.8, 
     key::Symbol=:ρ, 
-    B0map::Symbol=:fat,     # load B0 map
+    B0_type::Symbol=:fat,          # load B0 map
+    B0_file::Symbol=:B0,
     maxOffresonance::Float64=125., # max off-resonance
     target_fov=(150, 150), 
     target_resolution=(1,1))
     path = (@__DIR__) * phantom_dict[:path]
     @assert axis in ["axial", "coronal", "sagittal"] "axis must be one of the following: axial, coronal, sagittal"
     @assert key in [:ρ, :T2, :T2s, :T1, :Δw, :raw, :headmask, :brainmask] "key must be ρ, T2, T2s, T1, Δw, raw, headmask or brainmask"
-    @assert B0map in [:file, :fat, :quadratic] "B0map must be one of the following: :file, :fat, :quadratic"
+    @assert B0_type in [:real, :fat, :quadratic] "B0_type must be one of the following: :real, :fat, :quadratic"
     @assert 0 <= location <= 1 "location must be between 0 and 1"
 
     @assert isfile(path*"/$(p.file)") "the phantom file does not exist: $(path*"/$(p.file)")"
@@ -89,14 +90,14 @@ function brain_phantom2D_reference(
             (class.==255)*500 #MARROW
         img = img .* 1e-3  # s
     elseif key == :Δw
-        if B0map == :file
-            B0map = brain_phantom2D_B0map(; axis=axis, ss=1, location=location)
+        if B0_type == :real
+            B0map = brain_phantom2D_B0map(B0_file; axis=axis, ss=1, location=location)
             img = imresize(B0map, size(class))
-        elseif B0map == :fat
+        elseif B0_type == :fat
             Δw_fat = γ * 1.5 * (-3.45) * 1e-6  # Hz
             img = (class.==93)*Δw_fat .+ #FAT1 
                 (class.==209)*Δw_fat    #FAT2
-        elseif B0map == :quadratic
+        elseif B0_type == :quadratic
             img = quadraticFieldmap(size(class)...,maxOffresonance)[:,:,1]
         end
     elseif key == :raw
