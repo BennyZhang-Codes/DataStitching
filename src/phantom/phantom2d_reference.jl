@@ -1,9 +1,4 @@
 
-function get_center_range(x::Int64, x_range::Int64)
-    center = Int64(floor(x/2))
-    return center - Int64(ceil(x_range/2))+1 : center + 1 + Int64(ceil(x_range/2))-1
-end
-
 
 function brain_phantom2D_reference(
     p::PhantomType; 
