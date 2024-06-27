@@ -34,10 +34,11 @@ export generate_raw
 
 function demo_seq(; seq::String="xw_sp2d-1mm-r1_noDUM", r::Int=1)
     path = @__DIR__
-    if seq == "gre"
-        seq = read_seq(path*"/files/$(seq)_R$(r).seq");
-    else
+
+    if seq == "xw_sp2d-1mm-r1_noDUM"
         seq = read_seq(path*"/files/$(seq).seq");
+    else
+        seq = read_seq(path*"/files/$(seq)_R$(r).seq");
     end
     return seq
 end

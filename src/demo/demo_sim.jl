@@ -3,12 +3,15 @@
 ################################
 
 # 1. hoseq
-hoseq = demo_hoseq();
+seq = demo_seq(seq="spiral", r=1)
+hoseq = HO_Sequence(seq)
+plot_kspace(seq)
 # plot_hoseqd(hoseq);
 
 # 2. phantom
-obj = brain_phantom2D(brain2D(); ss=10, location=0.8, coil_type=:birdcage, Nparts=5); info(obj)
+obj = brain_phantom2D(brain2D(); ss=5, location=0.8, coil_type=:fan, Nparts=1); info(obj)
 obj.Δw .= obj.Δw * 0; # γ*1.5*(-3.45)*1e-6 * 2π  cancel Δw
+obj.T2 .= obj.T2 * Inf;   # cancel T2 relaxiation
 plot_phantom_map(obj, :Dθ; darkmode=true)
 
 # ref = brain_phantom2D_reference(brain2D(); B0map=:quadratic,key=:Δw, maxOffresonance=maxOffresonance); 
