@@ -1,85 +1,34 @@
-export demo, demo_seq, demo_GR_skope, demo_raw, demo_hoseq, demo_sim
-include("raw/generate_raw.jl")
+include("SimType.jl")
+export SimType
+
+include("rawdata/generate_raw.jl")
 export generate_raw
+
+include("load_file.jl")
+export load_raw, load_seq, load_dfc
+
+export demo, demo_hoseq, demo_sim
 
 function demo() ::Nothing
     @info "demos:"
-    @info "    1. seq => demo_seq()"
-    @info "    2. GR_skope => demo_GR_skope()"
-    @info "    3. hoseq => demo_hoseq()"
-    @info "    4. raw (mrd)  => demo_raw(\"000\")"
+    @info "    1. seq => load_seq(; seq=\"spiral\", r=2)"
+    @info "    2. raw (mrd)  => load_raw(BlochHighOrder(\"000\"); simtype=SimType(\"B0wo_T2w_ss3\"))"
+    @info "    3. dfc_grad => load_dfc(; seq=\"spiral\", r=2)"
+    @info "    4. hoseq => demo_hoseq()"
     @info "    5. sim (mat)  => raw, image = demo_sim()"
-end
-
-Base.@kwdef struct SimType
-    B0::Bool = true
-    T2::Bool = true
-    ss::Int64 = 3
-    name::String = "B0$(B0 ? "w" : "wo")_T2$(T2 ? "w" : "wo")_ss$(ss)"
-end
-export SimType
-Base.show(io::IO, b::SimType) = begin
-	print(io, "SimType[[$(b.name)] B0=$(b.B0) | T2=$(b.T2) | ss=$(b.ss) ]")
-end
-
-function SimType(name::String)
-    @assert length(split(name,"_")) == 3 "Invalid name for SimType. Valid name like: B0wo_T2w_ss3"
-    B0, T2, ss = split(name,"_")
-    @assert !isnothing(findfirst("B0", B0)) && !isnothing(findfirst("T2", T2)) && !isnothing(findfirst("ss", ss)) "Invalid name for SimType. Valid name like: B0wo_T2w_ss3"
-    B0, T2, ss = split(B0, "B0")[2], split(T2, "T2")[2], split(ss, "ss")[2]
-    B0, T2, ss = B0 == "w", T2 == "w", parse(Int, ss)
-    return SimType(B0=B0, T2=T2, ss=ss)
-end
-
-function demo_seq(; seq::String="xw_sp2d-1mm-r1_noDUM", r::Int=1)
-    path = @__DIR__
-
-    if seq == "xw_sp2d-1mm-r1_noDUM"
-        seq = read_seq(path*"/files/$(seq).seq");
-    else
-        seq = read_seq(path*"/files/$(seq)_R$(r).seq");
-    end
-    return seq
-end
-
-function demo_GR_skope(;key::Symbol=:Stitched)
-    @assert key in [:Stitched, :Standard] "key must be :Stitched or :Standard"
-    path = @__DIR__
-    grad = MAT.matread(path*"/files/grad_1mm.mat");
-    Δt = grad["dt"];
-    skopeStitched = [zeros(9) grad["skopeStitched"]'] * 1e-3; 
-    skopeStandard = [zeros(9) grad["skopeStandard"]'] * 1e-3;
-    t = Δt * ones(88100);
-    if key == :Stitched
-        GR_skope = reshape([KomaMRIBase.Grad(skopeStitched[idx,:], t, 0, 0, 0) for idx=1:9], :, 1);
-    elseif key == :Standard
-        GR_skope = reshape([KomaMRIBase.Grad(skopeStandard[idx,:], t, 0, 0, 0) for idx=1:9], :, 1);
-    end
-    return GR_skope
 end
 
 
 function demo_hoseq(;skope::Bool=true, skope_method::Symbol=:Stitched) ::HO_Sequence
-    seq = demo_seq(); # skope sequence
+    seq = load_seq(); # skope sequence
     seq.GR[1,:] = -seq.GR[1,:]; # reverse the sign of the gradient (axis x)
     hoseq = HO_Sequence(seq); # hoseq
     if skope
-        GR_skope = demo_GR_skope(;key=skope_method);
+        GR_skope = load_dfc(;dfc_method=skope_method);
         hoseq.GR_skope[2:4, :] = hoseq.SEQ.GR;
         hoseq.GR_skope[:,8] = GR_skope;
     end
     return hoseq
-end
-
-function demo_raw(BHO::BlochHighOrder; simtype::SimType=SimType("B0wo_T2w_ss3")) ::RawAcquisitionData
-    folder = simtype.name
-    @assert ispath("$(@__DIR__)/raw/$(folder)") "folder not exist: $(folder)"
-    @info "demo_raw" sim_method=BHO.name mrd_file="$(@__DIR__)/raw/$(folder)/xw_sp2d-1mm-r1_$(BHO.name).mrd"
-
-    raw_file = "$(@__DIR__)/raw/$(folder)/xw_sp2d-1mm-r1_$(BHO.name).mrd"
-    @assert ispath(raw_file) "the raw file does not exist: $(raw_file)"
-    raw = RawAcquisitionData(ISMRMRDFile(raw_file));
-    return raw
 end
 
 
