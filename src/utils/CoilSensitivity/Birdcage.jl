@@ -11,7 +11,11 @@ julia> smap = BirdcageSensitivity(300, 300, 32, 1.5)
 julia> plot_imgs_subplots(abs.(smap), 4, 8)
 ```
 """
-function BirdcageSensitivity(Nx::Int64, Ny::Int64, ncoils::Int64; relative_radius::Float64=1.5)
+function BirdcageSensitivity(Nx::Int64, Ny::Int64, ncoils::Int64; relative_radius::Float64=1.5, verbose::Bool=false)
+    if verbose
+        @info Nx=Nx Ny=Ny Npartsx=ncoils
+    end
+
     out = zeros(ComplexF64, Nx, Ny, ncoils)
     for c=0:ncoils-1
         coilx = relative_radius*cos(c*(2*pi/ncoils))

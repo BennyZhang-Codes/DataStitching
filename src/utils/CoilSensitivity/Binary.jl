@@ -23,8 +23,10 @@ julia> mask = get_fan_mask(100, 100, 6; overlap=0.2)
 julia> plot_imgs_subplots(mask, 2, 3)
 ```
 """
-function get_fan_mask(Nx::Int64, Ny::Int64, Nparts::Int64; overlap::Real=0.5)
-    @info "fan mask" Nx=Nx Ny=Ny Nparts=Nparts overlap=overlap
+function get_fan_mask(Nx::Int64, Ny::Int64, Nparts::Int64; overlap::Real=0.5, verbose::Bool=false)
+    if verbose
+        @info "fan-shaped binary sensitivity" Nx=Nx Ny=Ny Nparts=Nparts overlap=overlap
+    end
     m_x = (1:1:Nx) .* ones(1, Ny)
     m_y = ones(Nx) .* (1:1:Ny)'
 
@@ -45,8 +47,10 @@ function get_fan_mask(Nx::Int64, Ny::Int64, Nparts::Int64; overlap::Real=0.5)
     # plot_imgs_subplots(mask, 2,2)
 end
 
-function get_rect_mask(Nx::Int64, Ny::Int64, Npartsx::Int64, Npartsy::Int64)
-    @info "rectangular mask" Nx=Nx Ny=Ny Npartsx=Npartsx Npartsy=Npartsy
+function get_rect_mask(Nx::Int64, Ny::Int64, Npartsx::Int64, Npartsy::Int64, verbose::Bool=false)
+    if verbose
+        @info "rectangular binary sensitivity" Nx=Nx Ny=Ny Npartsx=Npartsx Npartsy=Npartsy
+    end
 
     rangex = Int64.(round.(collect(range(0, Nx, Npartsx+1))))
     rangey = Int64.(round.(collect(range(0, Ny, Npartsy+1))))
