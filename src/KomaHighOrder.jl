@@ -22,8 +22,7 @@ import Functors: @functor
 
 include("utils/utils.jl")
 
-include("datatypes/Sequence.jl")
-include("datatypes/DiscreteSequence.jl") # include HO_Sequence
+include("datatypes/datatypes.jl")
 include("phantom/phantom.jl")
 
 
@@ -37,8 +36,7 @@ include("reconstruction/recon.jl")
 
 include("demo/demo.jl")
 
-export HO_DiscreteSequence
-export HO_Sequence
+
 export simulate
 # export signal_to_raw_data
 
