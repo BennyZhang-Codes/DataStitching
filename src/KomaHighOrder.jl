@@ -7,6 +7,7 @@ using CUDA, Interpolations, PlotlyJS, Statistics
 import ImageTransformations: imresize
 import MRISimulation: quadraticFieldmap
 
+using Parameters
 using ThreadsX
 # Printing
 using ProgressMeter
