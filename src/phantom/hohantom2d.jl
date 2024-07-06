@@ -9,9 +9,9 @@ function brain_hophantom2D(
     B0_file::Symbol=:B0,           # determines the *.mat file of the B0 map
     maxOffresonance::Float64=125., # for quadraticFieldmap
 
-    csmtype::Symbol=:fan,          # coil type
+    csmtype::Symbol =:fan,         # coil type
     nCoil::Int64    =1,            # number of partitions (split in fan shape)
-    overlap::Real   =1,            # overlap between fan coils, for csm_Fan_binary
+    overlap::Real   =0,            # overlap between fan coils, for csm_Fan_binary
     relative_radius::Real=1.5,     # relative radius of the coil, for csm_Birdcage
     ) :: HO_Phantom
     @assert B0_type in [:real, :fat, :quadratic] "B0_type must be one of the following: :real, :fat, :quadratic"

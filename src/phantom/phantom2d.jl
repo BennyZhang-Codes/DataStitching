@@ -31,10 +31,10 @@ function brain_phantom2D(
     B0_file::Symbol=:B0,
     maxOffresonance::Float64=125.,
 
-    csmtype::Symbol=:fan,          # coil type
+    csmtype::Symbol =:fan,         # coil type
     coil_idx::Int64 =1,            # coil index
-    nCoil::Int64   =1,             # number of Coils
-    overlap::Real   =1,            # overlap between fan coils, for csm_Fan_binary
+    nCoil::Int64    =1,            # number of Coils
+    overlap::Real   =0,            # overlap between fan coils, for csm_Fan_binary
     relative_radius::Real=1.5,     # relative radius of the coil, for csm_Birdcage
     ) :: Phantom
     @assert B0_type in [:real, :fat, :quadratic] "B0_type must be one of the following: :real, :fat, :quadratic"

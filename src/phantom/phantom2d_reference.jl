@@ -12,7 +12,6 @@ function brain_phantom2D_reference(
     target_fov=(150, 150), 
     target_resolution=(1,1))
 
-    @assert axis in ["axial", "coronal", "sagittal"] "axis must be one of the following: axial, coronal, sagittal"
     @assert key in [:ρ, :T2, :T2s, :T1, :Δw, :raw, :headmask, :brainmask] "key must be ρ, T2, T2s, T1, Δw, raw, headmask or brainmask"
     @assert B0_type in [:real, :fat, :quadratic] "B0_type must be one of the following: :real, :fat, :quadratic"
     @assert 0 <= location <= 1 "location must be between 0 and 1"
@@ -23,71 +22,17 @@ function brain_phantom2D_reference(
     center_range = (Int64(ceil(fov_x / (Δx * ss))), Int64(ceil(fov_y / (Δy * ss)))) 
     target_size = (Int64(ceil(fov_x / res_x)), Int64(ceil(fov_y / res_y)))
 
-    data = MAT.matread(objbrain.matpath)["data"]
+    class = load_phantom_mat(objbrain; axis=axis, ss=ss, location=location)
+    T1, T2, T2s, ρ = SpinProperty_1p5T(class)
 
-    M, N, Z = size(data)
-    if axis == "axial"
-        z = Int32(ceil(Z*location))
-        class = data[1:ss:end,1:ss:end, z]
-    elseif axis == "coronal"
-        m = Int32(ceil(M*location))
-        class = data[m, 1:ss:end,1:ss:end]   
-    elseif axis == "sagittal"
-        n = Int32(ceil(N*location))
-        class = data[1:ss:end, n,1:ss:end]
-    end
     if key == :ρ
-        img = (class.==23)*1 .+ #CSF
-            (class.==46)*.86 .+ #GM
-            (class.==70)*.77 .+ #WM
-            (class.==93)*1 .+ #FAT1
-            (class.==116)*1 .+ #MUSCLE
-            (class.==139)*.7 .+ #SKIN/MUSCLE
-            (class.==162)*0 .+ #SKULL
-            (class.==185)*0 .+ #VESSELS
-            (class.==209)*.77 .+ #FAT2
-            (class.==232)*1 .+ #DURA
-            (class.==255)*.77 #MARROW
+        img = ρ
     elseif key == :T2
-        img = (class.==23)*329 .+ #CSF
-            (class.==46)*83 .+ #GM
-            (class.==70)*70 .+ #WM
-            (class.==93)*70 .+ #FAT1
-            (class.==116)*47 .+ #MUSCLE
-            (class.==139)*329 .+ #SKIN/MUSCLE
-            (class.==162)*0 .+ #SKULL
-            (class.==185)*0 .+ #VESSELS
-            (class.==209)*70 .+ #FAT2
-            (class.==232)*329 .+ #DURA
-            (class.==255)*70 #MARROW
-        img = img .* 1e-3  # s
+        img = T2
     elseif key == :T2s
-        img = (class.==23)*58 .+ #CSF
-            (class.==46)*69 .+ #GM
-            (class.==70)*61 .+ #WM
-            (class.==93)*58 .+ #FAT1
-            (class.==116)*30 .+ #MUSCLE
-            (class.==139)*58 .+ #SKIN/MUSCLE
-            (class.==162)*0 .+ #SKULL
-            (class.==185)*0 .+ #VESSELS
-            (class.==209)*61 .+ #FAT2
-            (class.==232)*58 .+ #DURA
-            (class.==255)*61 .+#MARROW
-            (class.==255)*70 #MARROW
-        img = img .* 1e-3  # s
+        img = T2s
     elseif key == :T1
-        img = (class.==23)*2569 .+ #CSF
-            (class.==46)*833 .+ #GM
-            (class.==70)*500 .+ #WM
-            (class.==93)*350 .+ #FAT1
-            (class.==116)*900 .+ #MUSCLE
-            (class.==139)*569 .+ #SKIN/MUSCLE
-            (class.==162)*0 .+ #SKULL
-            (class.==185)*0 .+ #VESSELS
-            (class.==209)*500 .+ #FAT2
-            (class.==232)*2569 .+ #DURA
-            (class.==255)*500 #MARROW
-        img = img .* 1e-3  # s
+        img = T1
     elseif key == :Δw
         if B0_type == :real
             B0map = load_B0map(B0_file; axis=axis, ss=1, location=location)
