@@ -1,6 +1,6 @@
 
 
-output_Ndim(sim_method::BlochHighOrder) =  output_Ndim(Bloch())#time-points x coils
+# output_Ndim(sim_method::BlochHighOrder) =  output_Ndim(Bloch())#time-points x coils
 
 function sim_output_dim(obj::HO_Phantom{T}, seq::Sequence, sys::Scanner, sim_method::BlochHighOrder) where {T<:Real}
     _, nCoil = size(obj.csm)
@@ -17,7 +17,7 @@ function run_spin_precession!(p::HO_Phantom{T}, hoseqd::HO_DiscreteSequence{T}, 
     seq = hoseqd.seqd
     #Simulation
     #Coil sensitivity
-    smap = p.csm
+    csm = p.csm  # nSpin x nCoil
     #Motion
     xt = p.x .+ p.ux(p.x, p.y, p.z, seq.t')
     yt = p.y .+ p.uy(p.x, p.y, p.z, seq.t')
@@ -50,7 +50,8 @@ function run_spin_precession!(p::HO_Phantom{T}, hoseqd::HO_DiscreteSequence{T}, 
     M.xy .= Mxy[:, end]
     M.z  .= M.z .* exp.(-dur ./ p.T1) .+ p.ρ .* (1 .- exp.(-dur ./ p.T1))
     #Acquired signal
-    sig .= transpose(sum(Mxy[:, findall(seq.ADC)] .* smap; dims=1)) #<--- TODO: add coil sensitivities
+    # sig .= transpose(sum(Mxy[:, findall(seq.ADC)] .* csm; dims=1)) #<--- TODO: add coil sensitivities
+    sig .= transpose(Mxy[:, findall(seq.ADC)]) * csm  # (nADC x nSpin) * (nSpin x nCoil)
     return nothing
 end
 
