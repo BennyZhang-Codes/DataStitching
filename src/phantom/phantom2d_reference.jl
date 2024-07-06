@@ -1,7 +1,7 @@
 
 
 function brain_phantom2D_reference(
-    p::PhantomType; 
+    objbrain::BrainPhantom; 
     axis="axial", 
     ss::Int64=3, 
     location::Float64=0.8, 
@@ -11,20 +11,19 @@ function brain_phantom2D_reference(
     maxOffresonance::Float64=125., # max off-resonance
     target_fov=(150, 150), 
     target_resolution=(1,1))
-    path = (@__DIR__) * phantom_dict[:path]
+
     @assert axis in ["axial", "coronal", "sagittal"] "axis must be one of the following: axial, coronal, sagittal"
     @assert key in [:ρ, :T2, :T2s, :T1, :Δw, :raw, :headmask, :brainmask] "key must be ρ, T2, T2s, T1, Δw, raw, headmask or brainmask"
     @assert B0_type in [:real, :fat, :quadratic] "B0_type must be one of the following: :real, :fat, :quadratic"
     @assert 0 <= location <= 1 "location must be between 0 and 1"
 
-    @assert isfile(path*"/$(p.file)") "the phantom file does not exist: $(path*"/$(p.file)")"
     Δx = Δy = 0.2   # resolution of phantom: phantom_dict[:brain2d]
     fov_x, fov_y = target_fov
     res_x, res_y = target_resolution
     center_range = (Int64(ceil(fov_x / (Δx * ss))), Int64(ceil(fov_y / (Δy * ss)))) 
     target_size = (Int64(ceil(fov_x / res_x)), Int64(ceil(fov_y / res_y)))
 
-    data = MAT.matread(path*"/$(p.file)")["data"]
+    data = MAT.matread(objbrain.matpath)["data"]
 
     M, N, Z = size(data)
     if axis == "axial"

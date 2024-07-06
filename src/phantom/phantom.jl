@@ -1,4 +1,7 @@
-abstract type PhantomType end
+# definition of the abstract PhantomType and BrainPhantom struct
+include("PhantomType.jl")
+export BrainPhantom
+
 
 function info(s::Phantom)
 	print("Phantom[name = $(s.name) | spins = $(length(s.x)) | x = $(minimum(s.x)*1e2):$(maximum(s.x)*1e2) cm | y = $(minimum(s.y)*1e2):$(maximum(s.y)*1e2) cm | z = $(minimum(s.z)*1e2):$(maximum(s.z)*1e2) cm ]")

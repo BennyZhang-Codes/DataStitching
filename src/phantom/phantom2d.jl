@@ -1,12 +1,6 @@
 import KomaMRI.KomaMRIBase: brain_phantom2D
 # import Base.show
 
-Base.@kwdef mutable struct brain2D <: PhantomType 
-    name::String = "0.2 mm isotropic brain phantom"
-    file::String = "brain3D_0.2.mat"
-end
-export brain2D
-
 """
     obj = brain_phantom2D(p::PhantomType; axis="axial", ss=4, location=0.5, loadB0map=true, mask_idx=1, Nparts=1)
 Creates a two-dimensional brain Phantom struct.
@@ -28,7 +22,7 @@ Creates a two-dimensional brain Phantom struct.
 ```
 """
 function brain_phantom2D(
-    p::PhantomType;                # phantom type
+    objbrain::BrainPhantom;        # PhantomType
     axis::String="axial",          # orientation
     ss::Int64=4,                   # undersample
     location::Float64=0.5,         # relative location in the Z-axis
@@ -43,10 +37,8 @@ function brain_phantom2D(
     overlap::Real   =1,            # overlap between fan coils
     relative_radius::Real=1.5,     # relative radius of the coil
     ) :: Phantom
-    path = (@__DIR__) * phantom_dict[:path]
     @assert axis in ["axial", "coronal", "sagittal"] "axis must be one of the following: axial, coronal, sagittal"
     @assert B0_type in [:real, :fat, :quadratic] "B0_type must be one of the following: :real, :fat, :quadratic"
-    @assert isfile(path*"/$(p.file)") "File $(p.file) does not exist in $(path)"
     @assert 0 <= location <= 1 "location must be between 0 and 1"
     @assert coil_type in [:fan, :rect, :birdcage, :real] "coil_type must be one of the following: :fan, :rect, :birdcage, :real"
     if coil_type == :rect
@@ -55,7 +47,7 @@ function brain_phantom2D(
         Nparts = 32
     end
     @assert 1 <= coil_idx <= Nparts "coil_idx must be between 1 and Nparts"
-    data = MAT.matread(path*"/$(p.file)")["data"]
+    data = MAT.matread(objbrain.matpath)["data"]
     
     M, N, Z = size(data)
     if axis == "axial"
@@ -172,12 +164,16 @@ function brain_phantom2D(
 end
   
 function brain_phantom2D_B0map(B0_file::Symbol; axis="axial", ss=1, location=0.5)
-    path = (@__DIR__) * phantom_dict[:path]
     @assert B0_file in [:B0, :B0_medianfiltered_r4] "B0_file must be one of the following: :B0, :B0_medianfiltered_r4"
     @assert axis in ["axial", "coronal", "sagittal"] "axis must be one of the following: axial, coronal, sagittal"
-    @assert isfile(path*"/$(phantom_dict[B0_file])") "file is not found in $(path)"
     @assert 0 <= location <= 1 "location must be between 0 and 1"
-    B0data = MAT.matread(path*"/$(phantom_dict[B0_file])")["data"];
+    if B0_file == :B0_medianfiltered_r4
+        obj = BrainPhantom("brain3D_B0_medianfiltered_r4"; x=1, y=1, z=1)
+    elseif B0_file == :B0
+        obj = BrainPhantom("brain3D_B0"; x=1, y=1, z=1)
+    end
+
+    B0data = MAT.matread(obj.matpath)["data"];
 
     M, N, Z = size(B0data)
     if axis == "axial"
