@@ -34,7 +34,7 @@ end
 
 function demo_sim(;
     hoseq = demo_hoseq(),
-    obj = brain_phantom2D(brain2D(); ss=3, location=0.8),
+    obj = brain_phantom2D(BrainPhantom(); ss=3, location=0.8),
     sim_params=Dict{String,Any}(),
     sim_method::BlochHighOrder=BlochHighOrder("000"))
     plot_hoseqd(hoseq)

@@ -14,7 +14,7 @@ function generate_raw(simtype::SimType)
     hoseq = demo_hoseq()
 
     # phantom
-    obj = brain_phantom2D(brain2D(); ss=simtype.ss, location=0.8); info(obj);
+    obj = brain_phantom2D(BrainPhantom(); ss=simtype.ss, location=0.8); info(obj);
     obj.Δw .= simtype.B0 ? obj.Δw : obj.Δw * 0; # γ*1.5*(-3.45)*1e-6 * 2π
     obj.T2 .= simtype.T2 ? obj.T2 : obj.T2 * Inf; 
 
