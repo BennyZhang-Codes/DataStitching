@@ -8,6 +8,8 @@ abstract type PhantomType end
 
 The BrainPhantom. It contains parameters for selecting the Brain3D phantoms.
 
+default: `brain3D_0.2_0.2_0.2.mat`.
+
 # Arguments
 - `prefix::String`: prefix of the Brain3D phantom.
 - `x::Float64`:     x-voxelsize of the phantom.
@@ -16,8 +18,8 @@ The BrainPhantom. It contains parameters for selecting the Brain3D phantoms.
 - `name::String`:   name of the phantom, constructed from prefix, x, y, and z.
 - `file::String`:   file name of the phantom, constructed from name.
 - `matpath::String`: path of the phantom file `("*.mat")`.
-# Example
-- `objb`: (`::BrainPhantom`) BrainPhantom struct。
+# output
+- `objb`: (`::BrainPhantom`) BrainPhantom struct.
 """
 Base.@kwdef mutable struct BrainPhantom <: PhantomType 
     prefix::String = "brain3D"

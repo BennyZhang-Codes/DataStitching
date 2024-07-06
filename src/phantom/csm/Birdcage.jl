@@ -1,5 +1,5 @@
 """
-    BirdcageSensitivity(N::Int64, ncoils::Int64, relative_radius::Float64)
+    csm_Birdcage(N::Int64, ncoils::Int64, relative_radius::Float64)
 
 Computes the sensitivity maps for each coils that are arranged
 in a birdcage manner.
@@ -7,11 +7,11 @@ in a birdcage manner.
    A complex array of size (Nx, Ny, ncoils) containing the sensitivity maps.
 # Examples
 ```julia-repl
-julia> smap = BirdcageSensitivity(300, 300, 32, 1.5)
+julia> smap = csm_Birdcage(300, 300, 32, 1.5)
 julia> plot_imgs_subplots(abs.(smap), 4, 8)
 ```
 """
-function BirdcageSensitivity(Nx::Int64, Ny::Int64, ncoils::Int64; relative_radius::Float64=1.5, verbose::Bool=false)
+function csm_Birdcage(Nx::Int64, Ny::Int64, ncoils::Int64; relative_radius::Float64=1.5, verbose::Bool=false)
     if verbose
         @info Nx=Nx Ny=Ny Npartsx=ncoils
     end

@@ -122,7 +122,7 @@ function brain_phantom2D(
     T2s = T2s * 1e-3
 
     if B0_type == :real    
-        fieldmap = brain_phantom2D_B0map(B0_file; axis=axis, ss=1, location=location)
+        fieldmap = load_B0map(B0_file; axis=axis, ss=1, location=location)
         fieldmap = imresize(fieldmap, size(class))
         Δw = fieldmap*2π
     elseif B0_type == :fat
@@ -163,7 +163,7 @@ function brain_phantom2D(
 	return obj
 end
   
-function brain_phantom2D_B0map(B0_file::Symbol; axis="axial", ss=1, location=0.5)
+function load_B0map(B0_file::Symbol; axis="axial", ss=1, location=0.5)
     @assert B0_file in [:B0, :B0_medianfiltered_r4] "B0_file must be one of the following: :B0, :B0_medianfiltered_r4"
     @assert axis in ["axial", "coronal", "sagittal"] "axis must be one of the following: axial, coronal, sagittal"
     @assert 0 <= location <= 1 "location must be between 0 and 1"

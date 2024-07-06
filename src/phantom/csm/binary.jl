@@ -1,10 +1,10 @@
 
 
 """
-    mask = get_fan_mask(Nx::Int64, Ny::Int64, Nparts::Int64; overlap::Real=1)
+    mask = csm_Fan_binary(Nx::Int64, Ny::Int64, Nparts::Int64; overlap::Real=1)
 
 # Description
-    get fan-shaped mask with arbitrary overlap.
+    get fan-shaped csm with arbitrary overlap.
 
 # Arguments
 - `Nx`: (`::Int64`) 
@@ -19,11 +19,11 @@
 
 # Examples
 ```julia-repl
-julia> mask = get_fan_mask(100, 100, 6; overlap=0.2)
+julia> mask = csm_Fan_binary(100, 100, 6; overlap=0.2)
 julia> plot_imgs_subplots(mask, 2, 3)
 ```
 """
-function get_fan_mask(Nx::Int64, Ny::Int64, Nparts::Int64; overlap::Real=0.5, verbose::Bool=false)
+function csm_Fan_binary(Nx::Int64, Ny::Int64, Nparts::Int64; overlap::Real=0.5, verbose::Bool=false)
     if verbose
         @info "fan-shaped binary sensitivity" Nx=Nx Ny=Ny Nparts=Nparts overlap=overlap
     end
@@ -47,7 +47,7 @@ function get_fan_mask(Nx::Int64, Ny::Int64, Nparts::Int64; overlap::Real=0.5, ve
     # plot_imgs_subplots(mask, 2,2)
 end
 
-function get_rect_mask(Nx::Int64, Ny::Int64, Npartsx::Int64, Npartsy::Int64, verbose::Bool=false)
+function csm_Rect_binary(Nx::Int64, Ny::Int64, Npartsx::Int64, Npartsy::Int64, verbose::Bool=false)
     if verbose
         @info "rectangular binary sensitivity" Nx=Nx Ny=Ny Npartsx=Npartsx Npartsy=Npartsy
     end

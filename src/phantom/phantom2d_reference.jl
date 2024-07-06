@@ -90,7 +90,7 @@ function brain_phantom2D_reference(
         img = img .* 1e-3  # s
     elseif key == :Δw
         if B0_type == :real
-            B0map = brain_phantom2D_B0map(B0_file; axis=axis, ss=1, location=location)
+            B0map = load_B0map(B0_file; axis=axis, ss=1, location=location)
             img = imresize(B0map, size(class))
         elseif B0_type == :fat
             Δw_fat = γ * 1.5 * (-3.45) * 1e-6  # Hz
