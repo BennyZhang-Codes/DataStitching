@@ -6,6 +6,7 @@ include("SpinProperty.jl")
 export SpinProperty_1p5T
 
 include("hohantom2d.jl")
+export brain_hophantom2D
 
 # include the Coil-Sensitivity Map (CSM) module
 include("csm/csm.jl")
@@ -19,6 +20,7 @@ include("phantom2d.jl")
 include("phantom2d_reference.jl")
 include("phantom3d.jl")
 
+export load_phantom_mat
 export brain_phantom2D_reference
 
 # function to print the information of a Phantom object

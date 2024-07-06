@@ -10,6 +10,7 @@ export plot_seqd, plot_hoseqd
 export plot_grads_cumtrapz
 export plot_traj2d
 export plot_img, plot_imgs, plot_imgs_subplots
+export plot_phantom_map_csm
 
 function HO_theme_chooser(mode::Symbol)
     @assert mode in [:light, :light_fontblack, :dark, :white] "the mode must be :light, :light_fontblack, :dark, or :white"
