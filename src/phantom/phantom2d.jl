@@ -37,7 +37,7 @@ function brain_phantom2D(
     overlap::Real   =1,            # overlap between fan coils
     relative_radius::Real=1.5,     # relative radius of the coil
     ) :: Phantom
-    @assert axis in ["axial", "coronal", "sagittal"] "axis must be one of the following: axial, coronal, sagittal"
+    
     @assert B0_type in [:real, :fat, :quadratic] "B0_type must be one of the following: :real, :fat, :quadratic"
     @assert 0 <= location <= 1 "location must be between 0 and 1"
     @assert coil_type in [:fan, :rect, :birdcage, :real] "coil_type must be one of the following: :fan, :rect, :birdcage, :real"
@@ -47,20 +47,8 @@ function brain_phantom2D(
         Nparts = 32
     end
     @assert 1 <= coil_idx <= Nparts "coil_idx must be between 1 and Nparts"
-    data = MAT.matread(objbrain.matpath)["data"]
-    
-    M, N, Z = size(data)
-    if axis == "axial"
-        loc   = Int32(ceil(Z*location))
-        class = data[1:ss:end,1:ss:end, loc]
-    elseif axis == "coronal"
-        loc   = Int32(ceil(M*location))
-        class = data[loc, 1:ss:end,1:ss:end]   
-    elseif axis == "sagittal"
-        loc   = Int32(ceil(N*location))
-        class = data[1:ss:end, loc,1:ss:end]
-    end
 
+    class = load_phantom_mat(objbrain; axis=axis, ss=ss, location=location)
     # Define spin position vectors
     Δx = .2e-3*ss
     M, N = size(class)
@@ -71,55 +59,7 @@ function brain_phantom2D(
     x, y = x .+ y'*0, x*0 .+ y' #grid points
 
     # Define spin property vectors
-    T2 = (class.==23 )*329 .+ #CSF
-         (class.==46 )*83  .+ #GM
-         (class.==70 )*70  .+ #WM
-         (class.==93 )*70  .+ #FAT1
-         (class.==116)*47  .+ #MUSCLE
-         (class.==139)*329 .+ #SKIN/MUSCLE
-         (class.==162)*0   .+ #SKULL
-         (class.==185)*0   .+ #VESSELS
-         (class.==209)*70  .+ #FAT2
-         (class.==232)*329 .+ #DURA
-         (class.==255)*70     #MARROW
-    T2s =(class.==23 )*58  .+ #CSF
-         (class.==46 )*69  .+ #GM
-         (class.==70 )*61  .+ #WM
-         (class.==93 )*58  .+ #FAT1
-         (class.==116)*30  .+ #MUSCLE
-         (class.==139)*58  .+ #SKIN/MUSCLE
-         (class.==162)*0   .+ #SKULL
-         (class.==185)*0   .+ #VESSELS
-         (class.==209)*61  .+ #FAT2
-         (class.==232)*58  .+ #DURA
-         (class.==255)*61  .+ #MARROW
-         (class.==255)*70     #MARROW
-    T1 = (class.==23 )*2569 .+ #CSF
-         (class.==46 )*833 .+ #GM
-         (class.==70 )*500 .+ #WM
-         (class.==93 )*350 .+ #FAT1
-         (class.==116)*900 .+ #MUSCLE
-         (class.==139)*569 .+ #SKIN/MUSCLE
-         (class.==162)*0   .+ #SKULL
-         (class.==185)*0   .+ #VESSELS
-         (class.==209)*500 .+ #FAT2
-         (class.==232)*2569 .+ #DURA
-         (class.==255)*500    #MARROW
-    ρ =  (class.==23 )*1   .+ #CSF
-         (class.==46 )*.86 .+ #GM
-         (class.==70 )*.77 .+ #WM
-         (class.==93 )*1   .+ #FAT1
-         (class.==116)*1   .+ #MUSCLE
-         (class.==139)*.7  .+ #SKIN/MUSCLE
-         (class.==162)*0   .+ #SKULL
-         (class.==185)*0   .+ #VESSELS
-         (class.==209)*.77 .+ #FAT2
-         (class.==232)*1   .+ #DURA
-         (class.==255)*.77    #MARROW
-
-    T1  = T1  * 1e-3
-    T2  = T2  * 1e-3
-    T2s = T2s * 1e-3
+    T1, T2, T2s, ρ = SpinProperty_1p5T(class)
 
     if B0_type == :real    
         fieldmap = load_B0map(B0_file; axis=axis, ss=1, location=location)
@@ -138,7 +78,7 @@ function brain_phantom2D(
     if coil_type == :fan
         smap = csm_Fan_binary(M, N, Nparts; overlap=overlap)[:,:,coil_idx]
     elseif coil_type == :rect
-        smap = csm_Rect_binary(M, N, Npartsx, Npartsy)[:,:,coil_idx]
+        smap = csm_Rect_binary(M, N, Nparts)[:,:,coil_idx]
     elseif coil_type == :birdcage
         smap = csm_Birdcage_binary(M, N, Nparts; relative_radius=Float64(relative_radius))[:,:,coil_idx]
     elseif coil_type == :real
@@ -164,3 +104,24 @@ function brain_phantom2D(
 end
   
 
+function load_phantom_mat(
+    objbrain::BrainPhantom;        # PhantomType
+    axis::String="axial",          # orientation
+    ss::Int64=4,                   # undersample
+    location::Float64=0.5,         # relative location in the slice direction
+)
+    @assert axis in ["axial", "coronal", "sagittal"] "axis must be one of the following: axial, coronal, sagittal"
+    data = MAT.matread(objbrain.matpath)["data"]
+    M, N, Z = size(data)
+    if axis == "axial"
+        loc   = Int32(ceil(Z*location))
+        class = data[1:ss:end,1:ss:end, loc]
+    elseif axis == "coronal"
+        loc   = Int32(ceil(M*location))
+        class = data[loc, 1:ss:end,1:ss:end]   
+    elseif axis == "sagittal"
+        loc   = Int32(ceil(N*location))
+        class = data[1:ss:end, loc,1:ss:end]
+    end
+    return class
+end

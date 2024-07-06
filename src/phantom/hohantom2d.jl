@@ -13,7 +13,7 @@ function brain_hophantom2D(
     nCoil::Int64   =1,            # number of partitions (split in fan shape)
     # overlap::Real   =1,            # overlap between fan coils
     # relative_radius::Real=1.5,     # relative radius of the coil
-    ) :: Phantom
+    ) :: HO_Phantom
     @assert axis in ["axial", "coronal", "sagittal"] "axis must be one of the following: axial, coronal, sagittal"
     @assert B0_type in [:real, :fat, :quadratic] "B0_type must be one of the following: :real, :fat, :quadratic"
     @assert 0 <= location <= 1 "location must be between 0 and 1"
@@ -106,6 +106,7 @@ function brain_hophantom2D(
     end
 
     csm = load_csm(csmtype, M, N, nCoil)
+    _,_,nCoil = size(csm)
 
     # Define and return the Phantom struct
     obj = HO_Phantom{Float64}(
@@ -119,7 +120,6 @@ function brain_hophantom2D(
 		T2s =  T2s[ρ.!=0],
 		Δw  =   Δw[ρ.!=0],
         csm =  csm[ρ.!=0,:],
-        nCoil = nCoil
     )
 	return obj
 end

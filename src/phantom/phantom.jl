@@ -2,6 +2,9 @@
 include("PhantomType.jl")
 export BrainPhantom
 
+include("SpinProperty.jl")
+export SpinProperty_1p5T
+
 include("hohantom2d.jl")
 
 # include the Coil-Sensitivity Map (CSM) module

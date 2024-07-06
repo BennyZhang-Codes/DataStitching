@@ -55,8 +55,7 @@ julia> obj.ρ
 	uy::Function = (x,y,z,t)->0
 	uz::Function = (x,y,z,t)->0
     #Coil-Sensitivity
-    nCoil::Int64
-    csm::AbstractArray{Complex{T}, 2} = zeros(size(x), nCoil)
+    csm::AbstractArray{Complex{T}, 2} = zeros(size(x), 1)
 end
 
 """Size and length of a phantom"""
