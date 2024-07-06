@@ -22,23 +22,13 @@ import KomaMRI.KomaMRICore: SimulationMethod, SpinStateRepresentation
 import Functors: @functor
 
 include("utils/utils.jl")
-
 include("datatypes/datatypes.jl")
 include("phantom/phantom.jl")
-
-
 include("simulation/simulation.jl")
 include("plot/plot.jl")
-
-
 include("mrd/mrd.jl")
-
 include("reconstruction/recon.jl")
-
 include("demo/demo.jl")
-
-export simulate
-# export signal_to_raw_data
 
 #Package version, KomaMRI.__VERSION__
 using Pkg

@@ -1,5 +1,5 @@
 """
-    obj = HO_Phantom(name, x, y, z, ρ, T1, T2, T2s, Δw, Dλ1, Dλ2, Dθ, ux, uy, uz, smap)
+    obj = HO_Phantom(name, x, y, z, ρ, T1, T2, T2s, Δw, Dλ1, Dλ2, Dθ, ux, uy, uz, csm)
 
 The HO_Phantom struct. Most of its field names are vectors, with each element associated with
 a property value representing a spin. This struct serves as an input for the simulation.
@@ -21,7 +21,7 @@ a property value representing a spin. This struct serves as an input for the sim
 - `uy`: (`::Function`) displacement field in the y-axis
 - `uz`: (`::Function`) displacement field in the z-axis
 - `nCoil`: (`::Int64`) number of coils in the phantom
-- `smap`: (`::AbstractArray{Complex{T}, 2}`) sensitivity map of the phantom
+- `csm`: (`::AbstractArray{Complex{T}, 2}`) Coil-Sensitivity Map (CSM) matrix
 
 # Returns
 - `obj`: (`::HO_Phantom`) HO_Phantom struct
@@ -56,7 +56,7 @@ julia> obj.ρ
 	uz::Function = (x,y,z,t)->0
     #Coil-Sensitivity
     nCoil::Int64
-    smap::AbstractArray{Complex{T}, 2} = zeros(size(x), nCoil)
+    csm::AbstractArray{Complex{T}, 2} = zeros(size(x), nCoil)
 end
 
 """Size and length of a phantom"""
@@ -81,7 +81,7 @@ Base.isapprox(obj1::HO_Phantom, obj2::HO_Phantom)  = begin
     obj1.Dλ1   ≈ obj2.Dλ1  &&
     obj1.Dλ2   ≈ obj2.Dλ2  &&
     obj1.Dθ    ≈ obj2.Dθ   &&
-	obj1.smap  ≈ obj2.smap 
+	obj1.csm  ≈ obj2.csm 
 end
 
 """
@@ -105,7 +105,7 @@ Base.getindex(obj::HO_Phantom, p::AbstractRange) = begin
 			ux=obj.ux,
 			uy=obj.uy,
 			uz=obj.uz,
-			smap=obj.smap[p,:]
+			csm=obj.csm[p,:]
 			)
 end
 
@@ -128,7 +128,7 @@ Base.view(obj::HO_Phantom, p::AbstractRange) = begin
 			ux=obj.ux,
 			uy=obj.uy,
 			uz=obj.uz,
-			smap=obj.smap[p,:]
+			csm=obj.csm[p,:]
 			)
 end
 
@@ -151,7 +151,7 @@ end
 		ux=s1.ux,
 		uy=s1.uy,
 		uz=s1.uz,
-		smap=[s1.smap;s2.smap]
+		csm=[s1.csm;s2.csm]
 	)
 end
 
@@ -174,7 +174,7 @@ end
 		ux=obj.ux,
 		uy=obj.uy,
 		uz=obj.uz,
-		smap=obj.smap
+		csm=obj.csm
 	)
 end
 
