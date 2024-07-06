@@ -1,26 +1,26 @@
 """
-    csm_Birdcage(N::Int64, ncoils::Int64, relative_radius::Float64)
+    csm_Birdcage(N::Int64, nCoil::Int64, relative_radius::Float64)
 
 Computes the sensitivity maps for each coils that are arranged
 in a birdcage manner.
 # out
-   A complex array of size (Nx, Ny, ncoils) containing the sensitivity maps.
+   A complex array of size (Nx, Ny, nCoil) containing the sensitivity maps.
 # Examples
 ```julia-repl
 julia> smap = csm_Birdcage(300, 300, 32, 1.5)
 julia> plot_imgs_subplots(abs.(smap), 4, 8)
 ```
 """
-function csm_Birdcage(Nx::Int64, Ny::Int64, ncoils::Int64; relative_radius::Float64=1.5, verbose::Bool=false)
+function csm_Birdcage(Nx::Int64, Ny::Int64, nCoil::Int64; relative_radius::Float64=1.5, verbose::Bool=false)
     if verbose
-        @info Nx=Nx Ny=Ny Npartsx=ncoils
+        @info Nx=Nx Ny=Ny Npartsx=nCoil
     end
 
-    out = zeros(ComplexF64, Nx, Ny, ncoils)
-    for c=0:ncoils-1
-        coilx = relative_radius*cos(c*(2*pi/ncoils))
-        coily = relative_radius*sin(c*(2*pi/ncoils))
-        coil_phase = -c*(2*pi/ncoils)
+    out = zeros(ComplexF64, Nx, Ny, nCoil)
+    for c=0:nCoil-1
+        coilx = relative_radius*cos(c*(2*pi/nCoil))
+        coily = relative_radius*sin(c*(2*pi/nCoil))
+        coil_phase = -c*(2*pi/nCoil)
 
         for y=0:Ny-1
         y_co = (y - (Ny/2))/(Ny/2) - coily
@@ -46,7 +46,7 @@ end
 # __all__ = ["birdcage_maps"]
 
 
-# function birdcage_maps(Nx::Int64, Ny::Int64, ncoils::Int64, relative_radius::Float64)
+# function birdcage_maps(Nx::Int64, Ny::Int64, nCoil::Int64, relative_radius::Float64)
 #     """Simulates birdcage coil sensitivies.
 
 #     Args:

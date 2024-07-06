@@ -1,3 +1,7 @@
+# definition of the abstract PhantomType and BrainPhantom struct
+include("PhantomType.jl")
+export BrainPhantom
+
 include("hohantom2d.jl")
 
 # include the Coil-Sensitivity Map (CSM) module
@@ -5,9 +9,7 @@ include("csm/csm.jl")
 
 include("B0map/B0map.jl")
 
-# definition of the abstract PhantomType and BrainPhantom struct
-include("PhantomType.jl")
-export BrainPhantom
+
 
 # functions to generate different types of phantoms
 include("phantom2d.jl")

@@ -2,7 +2,7 @@
 function brain_hophantom2D(
     objbrain::BrainPhantom;        # PhantomType
     axis::String="axial",          # orientation
-    ss::Int64=4,                   # undersample
+    ss::Int64=5,                   # undersample
     location::Float64=0.5,         # relative location in the Z-axis
 
     B0_type::Symbol=:fat,          # load B0 map
@@ -10,7 +10,7 @@ function brain_hophantom2D(
     maxOffresonance::Float64=125.,
 
     csmtype::Symbol=:fan,          # coil type
-    nCoils::Int64   =1,            # number of partitions (split in fan shape)
+    nCoil::Int64   =1,            # number of partitions (split in fan shape)
     # overlap::Real   =1,            # overlap between fan coils
     # relative_radius::Real=1.5,     # relative radius of the coil
     ) :: Phantom
@@ -105,11 +105,11 @@ function brain_hophantom2D(
         Δw = fieldmap*2π
     end
 
-    csm = load_csm(csmtype, M, N, nCoils)
+    csm = load_csm(csmtype, M, N, nCoil)
 
     # Define and return the Phantom struct
     obj = HO_Phantom{Float64}(
-        name = "brain2D_$(axis)_ss$(ss)_$(M)x$(N)_location$(location)-$(loc)_Cha$(nCoils)",
+        name = "brain2D_$(axis)_ss$(ss)_$(M)x$(N)_location$(location)-$(loc)_Cha$(nCoil)",
 		x   =    y[ρ.!=0],
 		y   =    x[ρ.!=0],
 		z   =  0*x[ρ.!=0],
@@ -119,6 +119,7 @@ function brain_hophantom2D(
 		T2s =  T2s[ρ.!=0],
 		Δw  =   Δw[ρ.!=0],
         csm =  csm[ρ.!=0,:],
+        nCoil = nCoil
     )
 	return obj
 end

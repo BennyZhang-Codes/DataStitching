@@ -1,7 +1,7 @@
 
 
 """
-    mask = csm_Fan_binary(Nx::Int64, Ny::Int64, nCoils::Int64; overlap::Real=1)
+    mask = csm_Fan_binary(Nx::Int64, Ny::Int64, nCoil::Int64; overlap::Real=1)
 
 # Description
     get fan-shaped csm with arbitrary overlap.
@@ -9,13 +9,13 @@
 # Arguments
 - `Nx`: (`::Int64`) 
 - `Ny`: (`::Int64`) 
-- `nCoils`: (`::Int64`) 
+- `nCoil`: (`::Int64`) 
 
 # Keywords
 - `overlap`: (`::Real`) overlapping factor 
 
 # Returns
-- `mask`: (`::Array{Float64, 3}`) mask (Nx, Ny, nCoils)
+- `mask`: (`::Array{Float64, 3}`) mask (Nx, Ny, nCoil)
 
 # Examples
 ```julia-repl
@@ -23,9 +23,9 @@ julia> mask = csm_Fan_binary(100, 100, 6; overlap=0.2)
 julia> plot_imgs_subplots(mask, 2, 3)
 ```
 """
-function csm_Fan_binary(Nx::Int64, Ny::Int64, nCoils::Int64; overlap::Real=0.5, verbose::Bool=false)
+function csm_Fan_binary(Nx::Int64, Ny::Int64, nCoil::Int64; overlap::Real=0.5, verbose::Bool=false)
     if verbose
-        @info "fan-shaped binary sensitivity" Nx=Nx Ny=Ny nCoils=nCoils overlap=overlap
+        @info "fan-shaped binary sensitivity" Nx=Nx Ny=Ny nCoil=nCoil overlap=overlap
     end
     m_x = (1:1:Nx) .* ones(1, Ny)
     m_y = ones(Nx) .* (1:1:Ny)'
@@ -36,19 +36,19 @@ function csm_Fan_binary(Nx::Int64, Ny::Int64, nCoils::Int64; overlap::Real=0.5, 
     ϕ = reshape(angle.(Δx .+ Δy*im), (Nx, Ny))     # split cartesien grids by angle ϕ
     # plot_image(ϕ; zmin=-pi)
 
-    mask = zeros(Nx, Ny, nCoils)
-    for i = 1:nCoils
-        angle_rad = collect(-pi:2pi/nCoils:pi)[i]
+    mask = zeros(Nx, Ny, nCoil)
+    for i = 1:nCoil
+        angle_rad = collect(-pi:2pi/nCoil:pi)[i]
         m = mask[:,:,i]
-        m[abs.(ϕ .- angle_rad) .>= (2pi - pi/nCoils*(1+overlap)) .|| abs.(ϕ .- angle_rad) .<= pi/nCoils*(1+overlap)] .= 1
+        m[abs.(ϕ .- angle_rad) .>= (2pi - pi/nCoil*(1+overlap)) .|| abs.(ϕ .- angle_rad) .<= pi/nCoil*(1+overlap)] .= 1
         mask[:,:,i] = m
     end
     return mask
     # plot_imgs_subplots(mask, 2,2)
 end
 
-function csm_Rect_binary(Nx::Int64, Ny::Int64, nCoils::Int64; verbose::Bool=false)
-    Npartsx, Npartsy = get_factors(nCoils)
+function csm_Rect_binary(Nx::Int64, Ny::Int64, nCoil::Int64; verbose::Bool=false)
+    Npartsx, Npartsy = get_factors(nCoil)
     if verbose
         @info "rectangular binary sensitivity" Nx=Nx Ny=Ny Npartsx=Npartsx Npartsy=Npartsy
     end
