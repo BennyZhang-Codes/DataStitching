@@ -1,23 +1,28 @@
+include("hohantom2d.jl")
+
 # include the Coil-Sensitivity Map (CSM) module
 include("csm/csm.jl")
+
+include("B0map/B0map.jl")
 
 # definition of the abstract PhantomType and BrainPhantom struct
 include("PhantomType.jl")
 export BrainPhantom
+
+# functions to generate different types of phantoms
+include("phantom2d.jl")
+include("phantom2d_reference.jl")
+include("phantom3d.jl")
+
+export brain_phantom2D_reference
 
 # function to print the information of a Phantom object
 function info(s::Phantom)
 	print("Phantom[name = $(s.name) | spins = $(length(s.x)) | x = $(minimum(s.x)*1e2):$(maximum(s.x)*1e2) cm | y = $(minimum(s.y)*1e2):$(maximum(s.y)*1e2) cm | z = $(minimum(s.z)*1e2):$(maximum(s.z)*1e2) cm ]")
     print("\n")
 end
-
 export info
 
-include("phantom2d.jl")
-include("phantom2d_reference.jl")
-include("phantom3d.jl")
-
-export brain_phantom2D_reference
 
 
 ##########
