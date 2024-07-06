@@ -1,4 +1,4 @@
-import KomaMRI.KomaMRICore: run_spin_precession!, run_spin_excitation!
+
 
 """
     run_spin_precession(obj, hoseqd, Xt, sig)

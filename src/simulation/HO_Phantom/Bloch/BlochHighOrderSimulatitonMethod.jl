@@ -1,11 +1,10 @@
-import KomaMRI.KomaMRICore: run_spin_precession!, run_spin_excitation!
-import KomaMRI.KomaMRICore: output_Ndim, initialize_spins_state, Bloch, sim_output_dim
 
 
-# output_Ndim(sim_method::BlochHighOrder) =  output_Ndim(Bloch())#time-points x coils
+output_Ndim(sim_method::BlochHighOrder) =  output_Ndim(Bloch())#time-points x coils
 
 function sim_output_dim(obj::HO_Phantom{T}, seq::Sequence, sys::Scanner, sim_method::BlochHighOrder) where {T<:Real}
-    return sim_output_dim(obj, seq, sys, Bloch()) 
+    _, nCoil = size(obj.csm)
+    return (sum(seq.ADC.N), nCoil) #Nt x Ncoils, This should consider the coil info from sys
 end
 
 """Magnetization initialization for Bloch simulation method."""

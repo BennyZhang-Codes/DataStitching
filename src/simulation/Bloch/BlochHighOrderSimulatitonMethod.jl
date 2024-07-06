@@ -1,6 +1,3 @@
-import KomaMRI.KomaMRICore: run_spin_precession!, run_spin_excitation!
-import KomaMRI.KomaMRICore: output_Ndim, initialize_spins_state, Bloch, sim_output_dim
-
 Base.@kwdef struct BlochHighOrder <: SimulationMethod 
     ho0::Bool = true
     ho1::Bool = true

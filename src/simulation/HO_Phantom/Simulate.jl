@@ -1,4 +1,4 @@
-import KomaMRI.KomaMRICore: simulate
+
 """
     out = simulate(obj::HO_Phantom, hoseq::HO_Sequence, sys::Scanner; sim_params, w)
 

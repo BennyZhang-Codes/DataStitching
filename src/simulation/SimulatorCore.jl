@@ -1,5 +1,3 @@
-import KomaMRI.KomaMRICore: run_spin_excitation_parallel!, run_spin_precession_parallel!, run_sim_time_iter!
-
 
 """
     sig, Xt = run_spin_precession_parallel(obj, hoseqd, M; Nthreads)
