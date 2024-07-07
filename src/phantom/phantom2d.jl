@@ -27,7 +27,7 @@ function brain_phantom2D(
     ss::Int64=5,                   # undersample
     location::Float64=0.5,         # relative location in the Z-axis
 
-    B0_type::Symbol=:fat,          # load B0 map
+    B0type::Symbol=:fat,           # load B0 map
     B0_file::Symbol=:B0,
     maxOffresonance::Float64=125.,
 
@@ -37,7 +37,7 @@ function brain_phantom2D(
     overlap::Real   =0,            # overlap between fan coils, for csm_Fan_binary
     relative_radius::Real=1.5,     # relative radius of the coil, for csm_Birdcage
     ) :: Phantom
-    @assert B0_type in [:real, :fat, :quadratic] "B0_type must be one of the following: :real, :fat, :quadratic"
+    @assert B0type in [:real, :fat, :quadratic] "B0_type must be one of the following: :real, :fat, :quadratic"
     @assert 1 <= coil_idx <= nCoil "coil_idx must be between 1 and $(nCoil)"
 
     class = load_phantom_mat(objbrain; axis=axis, ss=ss, location=location)
@@ -54,15 +54,15 @@ function brain_phantom2D(
     T1, T2, T2s, ρ = SpinProperty_1p5T(class)
 
     # Define B0map vectors
-    if B0_type == :real    
+    if B0type == :real    
         fieldmap = load_B0map(B0_file; axis=axis, ss=1, location=location)
         fieldmap = imresize(fieldmap, size(class))
         Δw = fieldmap*2π
-    elseif B0_type == :fat
+    elseif B0type == :fat
         Δw_fat = -220*2π
         Δw = (class.==93 )*Δw_fat .+ #FAT1
              (class.==209)*Δw_fat    #FAT2
-    elseif B0_type == :quadratic
+    elseif B0type == :quadratic
         fieldmap = quadraticFieldmap(size(class)...,maxOffresonance)[:,:,1]
         Δw = fieldmap*2π
     end
