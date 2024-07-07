@@ -109,11 +109,14 @@ Displays information about the Sequence struct `s` in the julia REPL.
 # Returns
 - `str` (`::String`) output string message
 """
-Base.show(io::IO, s::HO_Sequence) = begin
-	show(io, s.SEQ)
-	name = ["h$(i)" for i in 0:8]
-	for i in 1:9
-		print(io, "\n$(name[i]): $(s.GR_skope[i, :])")
+Base.show(io::IO, hs::HO_Sequence) = begin
+	s = hs.SEQ
+	compact = get(io, :compact, false)
+	if !compact
+		nGRs = sum(is_Gx_on.(s)) + sum(is_Gy_on.(s)) + sum(is_Gz_on.(s))
+		print(io, "HO_Sequence[ τ = $(round(dur(s)*1e3;digits=3)) ms | blocks: $(length(s)) | ADC: $(sum(is_ADC_on.(s))) | GR: $nGRs | RF: $(sum(is_RF_on.(s))) | DEF: $(length(s.DEF)) ]")
+	else
+		print(io, "HO_Sequence[τ = $(round(dur(s)*1e3;digits=3)) ms]")
 	end
 end
 
