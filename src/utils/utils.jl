@@ -12,7 +12,7 @@ export get_center_range, get_center_crop
 - `num::Int64`: The number whose factors are to be found.
 
 # Returns
-- `Tuple{Int64,Int64}`: A tuple containing the two factors of the number.
+- `Tuple{Int64,Int64}`: (a, b), a < b. A tuple containing the two factors of the number.
 """
 function get_factors(num::Int64)::Tuple{Int64,Int64}
     num_sqrt = Int64(ceil(sqrt(num)))
@@ -26,6 +26,7 @@ function get_factors(num::Int64)::Tuple{Int64,Int64}
             break
         end
     end
+    factor_a, factor_b = sort([factor_a, factor_b])
     return factor_a, factor_b
 end
 
