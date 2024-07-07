@@ -32,15 +32,15 @@ function demo_hoseq(;skope::Bool=true, skope_method::Symbol=:Stitched) ::HO_Sequ
 end
 
 
-function demo_sim(;
-    hoseq = demo_hoseq(),
-    obj = brain_phantom2D(BrainPhantom(); ss=3, location=0.8),
-    sim_params=Dict{String,Any}(),
-    sim_method::BlochHighOrder=BlochHighOrder("000"))
-    plot_hoseqd(hoseq)
+function demo_sim()
+    hoseq = demo_hoseq()
+    
+    sim_params=Dict{String,Any}()
+    sim_method::BlochHighOrder=BlochHighOrder("000")
+    # plot_hoseqd(hoseq)
 
-    # phantom
-    info(obj)
+    # HO_Phantom
+    obj = brain_hophantom2D(BrainPhantom(); ss=5, location=0.8, nCoil=9)
     obj.Δw .= obj.Δw * 0; # γ*1.5*(-3.45)*1e-6 * 2π
 
     # scanner & sim_params

@@ -33,7 +33,7 @@ julia> obj = HO_Phantom(x=[0.0])
 julia> obj.ρ
 ```
 """
- @with_kw mutable struct HO_Phantom{T<:Real}
+Base.@kwdef mutable struct HO_Phantom{T<:Real}
     name::String = "spins"
 	x::AbstractVector{T}
 	y::AbstractVector{T} = zeros(size(x))
@@ -56,6 +56,15 @@ julia> obj.ρ
 	uz::Function = (x,y,z,t)->0
     #Coil-Sensitivity
     csm::AbstractArray{Complex{T}, 2} = zeros(size(x), 1)
+end
+
+@functor HO_Phantom
+Base.show(io::IO, s::HO_Phantom) = begin
+	nSpin, nCoil = size(s.csm)
+	x_min, x_max = round(minimum(s.x)*1e2, digits=2), round(maximum(s.x)*1e2, digits=2)
+	y_min, y_max = round(minimum(s.y)*1e2, digits=2), round(maximum(s.y)*1e2, digits=2)
+	z_min, z_max = round(minimum(s.z)*1e2, digits=2), round(maximum(s.z)*1e2, digits=2)
+	print(io, "HO_Phantom[$(s.name) | nCoil=$(nCoil) | nSpin=$(nSpin) | x=$(x_min):$(x_max) cm | y=$(y_min):$(y_max) cm | z=$(z_min):$(z_max) cm ]")
 end
 
 """Size and length of a phantom"""
