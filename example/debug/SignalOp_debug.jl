@@ -14,11 +14,11 @@ t_adc = KomaMRIBase.get_adc_sampling_times(hoseq.SEQ);
 # times = t_adc .- minimum(t_adc)
 times = KomaMRIBase.get_adc_sampling_times(hoseq.SEQ);
 
-T2map = brain_phantom2D_reference(brain2D(); ss=3, location=0.8, key=:T2, target_fov=(150, 150), target_resolution=(1,1));
+T2map = brain_phantom2D_reference(BrainPhantom(); ss=3, location=0.8, key=:T2, target_fov=(150, 150), target_resolution=(1,1));
 plot_image(T2map; title="T2map", width=650, height=600)
 T2map = (T2map.<=46*1e-3) .* Inf .+ T2map;
 plot_image(exp.(-0.10 ./ T2map))
-B0map = brain_phantom2D_reference(brain2D(); ss=3, location=0.8, key=:Δw_fat, target_fov=(150, 150), target_resolution=(0.2,0.2));
+B0map = brain_phantom2D_reference(BrainPhantom(); ss=3, location=0.8, key=:Δw_fat, target_fov=(150, 150), target_resolution=(0.2,0.2));
 
 tr = Trajectory(K_nominal_adc'[1:3,:], acqData.traj[1].numProfiles, acqData.traj[1].numSamplingPerProfile; circular=false, times=times);
 

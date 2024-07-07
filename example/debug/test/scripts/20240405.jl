@@ -4,7 +4,7 @@ hoseq = demo_hoseq()
 plot_hoseqd(hoseq)
 
 # phantom
-obj = brain_phantom2D(brain2D(); ss=3, location=0.8); info(obj);
+obj = brain_phantom2D(BrainPhantom(); ss=3, location=0.8); info(obj);
 obj.Δw .= obj.Δw * 0; # γ*1.5*(-3.45)*1e-6 * 2π
 
 

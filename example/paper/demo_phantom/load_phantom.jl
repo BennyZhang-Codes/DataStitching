@@ -1,4 +1,4 @@
-b2d = brain2D()
+b2d = BrainPhantom()
 b3d_171 = brain3D(file = phantom_dict[:brain3d_171])
 b3d_285 = brain3D(file = phantom_dict[:brain3d_285])
 

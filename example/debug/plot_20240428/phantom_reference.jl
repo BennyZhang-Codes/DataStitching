@@ -6,13 +6,13 @@ folder = "woT2B0"   #  "woT2B0", "woB0_wT2"
 dir = "$(@__DIR__)/src/demo/demo_recon/HighOrderOp_spiral/results/$folder"
 out = "$(@__DIR__)/debug_recon/plot_20240428/$folder"; if ispath(out) == false mkdir(out) end
 
-mask = brain_phantom2D_reference(brain2D(); ss=3, location=0.8, key=:binary, target_fov=(150, 150), target_resolution=(1,1));
+mask = brain_phantom2D_reference(BrainPhantom(); ss=3, location=0.8, key=:binary, target_fov=(150, 150), target_resolution=(1,1));
 p_ref_mask = plot_img(mask; title="PhantomReference[ $(size(mask)) | 1mm | binarymask ]", thememode=:light_fontblack, width=500, height=450)
 savefig(p_ref_mask,  out*"/PhantomReference_ss3_location0.8_binary.svg", width=500, height=450,format="svg")
 
-ρ = brain_phantom2D_reference(brain2D(); ss=3, location=0.8, key=:ρ, target_fov=(150, 150), target_resolution=(1,1));
+ρ = brain_phantom2D_reference(BrainPhantom(); ss=3, location=0.8, key=:ρ, target_fov=(150, 150), target_resolution=(1,1));
 if folder == "woB0_wT2"
-    T2map = brain_phantom2D_reference(brain2D(); ss=3, location=0.8, key=:T2, target_fov=(150, 150), target_resolution=(1,1)); # plot_image(T2map; title="T2map", width=650, height=600)
+    T2map = brain_phantom2D_reference(BrainPhantom(); ss=3, location=0.8, key=:T2, target_fov=(150, 150), target_resolution=(1,1)); # plot_image(T2map; title="T2map", width=650, height=600)
     T2map = (T2map.<=46*1e-3) .* Inf .+ T2map; R2map = 1 ./ T2map;
     ρ = normalization(ρ .* exp.(-0.0149415 .* R2map))
     p_ref = plot_img(ρ; title="PhantomReference[ $(size(ρ)) | 1mm | ρ ] withT2", thememode=:light_fontblack)

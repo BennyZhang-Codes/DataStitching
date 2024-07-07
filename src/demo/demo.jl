@@ -53,6 +53,6 @@ function demo_sim()
     # simulate
     signal = simulate(obj, hoseq, sys; sim_params);
     raw = signal_to_raw_data(signal, hoseq, :nominal)
-    image = reconstruct_2d_image(raw)
+    image = recon_2d(raw)
     return raw, image 
 end

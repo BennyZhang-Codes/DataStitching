@@ -7,17 +7,17 @@ skope_method = "Stitched"   # :Stitched or :Standard
 dir = "$(@__DIR__)/src/demo/demo_recon/HighOrderOp_spiral/results_$skope_method/$(simtype.name)"; if ispath(dir) == false mkdir(dir) end
 
 
-headmask  = brain_phantom2D_reference(brain2D(); ss=simtype.ss, location=0.8, key=:headmask , target_fov=(150, 150), target_resolution=(1,1));
-brainmask = brain_phantom2D_reference(brain2D(); ss=simtype.ss, location=0.8, key=:brainmask, target_fov=(150, 150), target_resolution=(1,1));
+headmask  = brain_phantom2D_reference(BrainPhantom(); ss=simtype.ss, location=0.8, key=:headmask , target_fov=(150, 150), target_resolution=(1,1));
+brainmask = brain_phantom2D_reference(BrainPhantom(); ss=simtype.ss, location=0.8, key=:brainmask, target_fov=(150, 150), target_resolution=(1,1));
 # brainmask = dilate(brainmask; r=5)
 p_ref_headmask  = plot_image(headmask ; title="PhantomReference[ $(size(headmask)) | 1mm | headmask ]");
 p_ref_brainmask = plot_image(brainmask; title="PhantomReference[ $(size(brainmask)) | 1mm | brainmask ]");
 savefig(p_ref_headmask ,  dir*"/PhantomReference_ss$(simtype.ss)_location0.8_headmask.svg" , width=500, height=450,format="svg");
 savefig(p_ref_brainmask,  dir*"/PhantomReference_ss$(simtype.ss)_location0.8_brainmask.svg", width=500, height=450,format="svg");
 
-ρ = brain_phantom2D_reference(brain2D(); ss=simtype.ss, location=0.8, key=:ρ, target_fov=(150, 150), target_resolution=(1,1));
+ρ = brain_phantom2D_reference(BrainPhantom(); ss=simtype.ss, location=0.8, key=:ρ, target_fov=(150, 150), target_resolution=(1,1));
 if simtype.T2 == true
-    T2map = brain_phantom2D_reference(brain2D(); ss=simtype.ss, location=0.8, key=:T2, target_fov=(150, 150), target_resolution=(1,1)); # plot_image(T2map; title="T2map", width=650, height=600)
+    T2map = brain_phantom2D_reference(BrainPhantom(); ss=simtype.ss, location=0.8, key=:T2, target_fov=(150, 150), target_resolution=(1,1)); # plot_image(T2map; title="T2map", width=650, height=600)
     T2map = (T2map.<=46*1e-3) .* Inf .+ T2map; R2map = 1 ./ T2map;
     ρ = normalization(ρ .* exp.(-0.0149415 .* R2map))
     p_ref = plot_image(ρ; title="PhantomReference[ $(size(ρ)) | 1mm | ρ ] withT2")

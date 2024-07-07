@@ -34,7 +34,7 @@ raw = simulate(obj, hoseq, sys; sim_params);
 # save(mrd, raw)
 
 # plot_signal(raw)
-img = reconstruct_2d_image(raw)
+img = recon_2d(raw)
 p = plot_image(img; title="$(sim_params["sim_method"])", height=600, width=750)
 
 plot_phantom_map(obj, :Δw; darkmode=true, width=500, height=500)

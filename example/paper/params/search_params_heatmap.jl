@@ -26,7 +26,7 @@ _, K_nominal_adc, _, K_skope_adc = get_kspace(hoseq; Δt=1)
 
 tr_skope = Trajectory(K_skope_adc'[:,:], acqData.traj[1].numProfiles, acqData.traj[1].numSamplingPerProfile, circular=false);
 tr_nominal = Trajectory(K_nominal_adc'[1:3,:], acqData.traj[1].numProfiles, acqData.traj[1].numSamplingPerProfile, circular=false);
-ρ = brain_phantom2D_reference(brain2D(); ss=simtype.ss, location=0.8, key=:ρ, target_fov=(150, 150), target_resolution=(1,1));
+ρ = brain_phantom2D_reference(BrainPhantom(); ss=simtype.ss, location=0.8, key=:ρ, target_fov=(150, 150), target_resolution=(1,1));
 dir = "$(@__DIR__)/params_search"; if ispath(dir) == false mkdir(dir) end
 ["admm", "cgnr", "fista", "optista", "pogm", "splitBregman"]
 for solver in ["pogm",]
@@ -77,7 +77,7 @@ for solver in ["pogm",]
 end
 
 
-# ρ = brain_phantom2D_reference(brain2D(); ss=simtype.ss, location=0.8, key=:ρ, target_fov=(150, 150), target_resolution=(1,1));
+# ρ = brain_phantom2D_reference(BrainPhantom(); ss=simtype.ss, location=0.8, key=:ρ, target_fov=(150, 150), target_resolution=(1,1));
 # p_ref = plot_image(ρ; title="PhantomReference[ $(size(ρ)) | 1mm | ρ ]")
 
 # println("MSE: ", mse(normalization(img), ρ))

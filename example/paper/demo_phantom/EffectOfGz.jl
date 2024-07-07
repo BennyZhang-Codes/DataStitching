@@ -26,7 +26,7 @@ hoseq = HO_Sequence(seq);
 signal = simulate(obj, hoseq, sys; sim_params);
 raw_withoutGz = signal_to_raw_data(signal, hoseq, :nominal);
 
-plot_image(reconstruct_2d_image(raw_withoutGz); title="$(sim_params["sim_method"]) withoutGz Nominal", height=700, width=750)
+plot_image(recon_2d(raw_withoutGz); title="$(sim_params["sim_method"]) withoutGz Nominal", height=700, width=750)
 protocolName = "$(hoseq.SEQ.DEF["Name"])_$(BHO_name)_nominal"
 raw_withoutGz.params["protocolName"] = protocolName
 mrd = ISMRMRDFile(path*"/src/demo/demo_phantom/rawdata/$(protocolName)_brain3d_285_withoutGz.mrd")
@@ -47,7 +47,7 @@ plot_seq(hoseq;darkmode=true)
 signal = simulate(obj, hoseq, sys; sim_params);
 raw_withGz = signal_to_raw_data(signal, hoseq, :nominal);
 
-plot_image(reconstruct_2d_image(raw_withGz); title="$(sim_params["sim_method"]) withGz Nominal", height=700, width=750)
+plot_image(recon_2d(raw_withGz); title="$(sim_params["sim_method"]) withGz Nominal", height=700, width=750)
 protocolName = "$(hoseq.SEQ.DEF["Name"])_$(BHO_name)_nominal"
 raw_withGz.params["protocolName"] = protocolName
 mrd = ISMRMRDFile(path*"/src/demo/demo_phantom/rawdata/$(protocolName)_brain3d_285_withGz.mrd")
@@ -61,8 +61,8 @@ raw_withGz = RawAcquisitionData(ISMRMRDFile(path*"/src/demo/demo_phantom/rawdata
 raw_withoutGz = RawAcquisitionData(ISMRMRDFile(path*"/src/demo/demo_phantom/rawdata/xw_sp2d-1mm-r1_000_nominal_brain3d_285_withoutGz.mrd"))
 
 
-img_withGz = reconstruct_2d_image(raw_withGz)
-img_withoutGz = reconstruct_2d_image(raw_withoutGz)
+img_withGz = recon_2d(raw_withGz)
+img_withoutGz = recon_2d(raw_withoutGz)
 img_error = img_withGz - img_withoutGz;
 
 

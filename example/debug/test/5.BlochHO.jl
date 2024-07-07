@@ -1,7 +1,7 @@
 using KomaHighOrder, PlotlyJS
 
 hoseq = demo_hoseq()
-p = brain_phantom2D(brain2D(), ss=10, coil_type=:fan, Nparts=3, overlap=0)
+p = brain_phantom2D(BrainPhantom(), ss=10, csmtype=:fan, nCoil=3, overlap=0)
 sys = Scanner()
 sim_params = KomaMRICore.default_sim_params()
 

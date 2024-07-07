@@ -34,7 +34,7 @@ for coil_idx = 1:nCoil
     # simulate
     signal[:, coil_idx] = simulate(obj, hoseq, sys; sim_params);
     protocolName = "$(hoseq.SEQ.DEF["Name"])_$(BHO_name)_nominal_$(nCoil)-$(coil_idx)"
-    coil_images[:,:,coil_idx] = reconstruct_2d_image(signal_to_raw_data(signal[:, coil_idx:coil_idx], hoseq, :nominal));
+    coil_images[:,:,coil_idx] = recon_2d(signal_to_raw_data(signal[:, coil_idx:coil_idx], hoseq, :nominal));
 
     p = plot_image(coil_images[:,:,coil_idx]; title="$(protocolName)", height=400, width=450)
     savefig(p,  "$(path)/$(protocolName).svg",format="svg", height=400, width=450)

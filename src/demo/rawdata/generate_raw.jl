@@ -37,7 +37,7 @@ function generate_raw(simtype::SimType)
         
         protocolName = "$(hoseq.SEQ.DEF["Name"])_$(BHO_name)"
 
-        p = plot_image(reconstruct_2d_image(raw); title="$(sim_params["sim_method"])", height=700, width=750)
+        p = plot_image(recon_2d(raw); title="$(sim_params["sim_method"])", height=700, width=750)
         savefig(p,  "$(path)/$(protocolName).svg",format="svg", height=700, width=750)
         raw.params["protocolName"] = protocolName
         mrd = ISMRMRDFile("$(path)/$(protocolName).mrd")

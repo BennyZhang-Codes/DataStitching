@@ -34,10 +34,10 @@ export info
 
 
 ##########
-# obj = brain_phantom2D(brain2D(); ss=3, location=0.8, B0map=:quadratic, maxOffresonance=10.); info(obj); plot_phantom_map(obj, :Δw)
-# ref = brain_phantom2D_reference(brain2D();B0map=:quadratic,key=:Δw, maxOffresonance=10.); plot_image(ref,zmin=-10)
+# obj = brain_phantom2D(BrainPhantom(); ss=3, location=0.8, B0map=:quadratic, maxOffresonance=10.); info(obj); plot_phantom_map(obj, :Δw)
+# ref = brain_phantom2D_reference(BrainPhantom();B0map=:quadratic,key=:Δw, maxOffresonance=10.); plot_image(ref,zmin=-10)
 
-# B0map = brain_phantom2D_reference(brain2D(); ss=3, location=0.8,target_fov=(150, 150), target_resolution=(1,1),
+# B0map = brain_phantom2D_reference(BrainPhantom(); ss=3, location=0.8,target_fov=(150, 150), target_resolution=(1,1),
 #                                            B0map=:quadratic,key=:Δw, maxOffresonance=5.);
 # Nx = Ny = 150
 # Δx = Δy = 1e-3 # m
