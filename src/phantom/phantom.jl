@@ -25,7 +25,12 @@ export brain_phantom2D_reference
 
 # function to print the information of a Phantom object
 function info(s::Phantom)
-	print("Phantom[name = $(s.name) | spins = $(length(s.x)) | x = $(minimum(s.x)*1e2):$(maximum(s.x)*1e2) cm | y = $(minimum(s.y)*1e2):$(maximum(s.y)*1e2) cm | z = $(minimum(s.z)*1e2):$(maximum(s.z)*1e2) cm ]")
+	print("Phantom[$(s.name) | nSpin=$(length(s.x)) | x=$(minimum(s.x)*1e2):$(maximum(s.x)*1e2) cm | y=$(minimum(s.y)*1e2):$(maximum(s.y)*1e2) cm | z=$(minimum(s.z)*1e2):$(maximum(s.z)*1e2) cm ]")
+    print("\n")
+end
+function info(s::HO_Phantom)
+    nSpin, nCoil = size(s.csm)
+	print("HO_Phantom[$(s.name) | nCoil=$(nCoil) | nSpin=$(nSpin) | x=$(minimum(s.x)*1e2):$(maximum(s.x)*1e2) cm | y=$(minimum(s.y)*1e2):$(maximum(s.y)*1e2) cm | z=$(minimum(s.z)*1e2):$(maximum(s.z)*1e2) cm ]")
     print("\n")
 end
 export info

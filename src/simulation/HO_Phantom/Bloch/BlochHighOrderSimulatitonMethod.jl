@@ -9,7 +9,11 @@ end
 
 """Magnetization initialization for Bloch simulation method."""
 function initialize_spins_state(obj::HO_Phantom{T}, sim_method::BlochHighOrder) where {T<:Real}
-    return initialize_spins_state(obj, Bloch())
+    Nspins = length(obj)
+    Mxy = zeros(T, Nspins)
+    Mz = obj.ρ
+    Xt = Mag{T}(Mxy, Mz)
+    return Xt, obj
 end
 
 function run_spin_precession!(p::HO_Phantom{T}, hoseqd::HO_DiscreteSequence{T}, sig::AbstractArray{Complex{T}},
