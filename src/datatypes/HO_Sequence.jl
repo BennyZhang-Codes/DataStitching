@@ -1,5 +1,5 @@
 import KomaMRI.KomaMRIBase: get_samples, get_theo_Gi, get_grads, get_kspace, get_theo_t, get_theo_A
-
+import KomaMRI.KomaMRIBase: is_Gx_on, is_Gy_on, is_Gz_on, is_ADC_on, is_RF_on
 """
     hoseq = HO_Sequence()
     hoseq = HO_Sequence(GR_skope::Array{Grad,2})
