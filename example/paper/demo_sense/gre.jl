@@ -33,7 +33,7 @@ filename = "gre_R$(R)_nCoil$(nCoil)"
 raw.params["protocolName"] = filename
 mrd = ISMRMRDFile("$(path)/$(filename).mrd")
 save(mrd, raw)
-images = reconstruct_2d_image_multi_coil(raw, Nx=Nx, Ny=Ny);
+images = recon_2d(raw, Nx=Nx, Ny=Ny);
 
 p_images = plot_imgs_subplots(abs.(images), nrows, ncols; title="$(nCoil) coils: IFFT recon", height=400, width=800)
 p_sos    = plot_image(sqrt.(sum(images.^2; dims=3))[:,:,1]; title="$(nCoil) coils: IFFT recon, SOS", height=400, width=450)

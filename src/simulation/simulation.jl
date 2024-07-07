@@ -6,9 +6,5 @@ import KomaMRI.KomaMRICore: run_spin_excitation_parallel!, run_spin_precession_p
 import KomaMRI.KomaMRICore: run_spin_precession!, run_spin_excitation!
 import KomaMRI.KomaMRICore: simulate
 
-include("Simulate.jl")
-include("SimulatorCore.jl")
-include("Bloch/BlochSimulatitonMethod.jl")
-include("Bloch/BlochHighOrderSimulatitonMethod.jl")
-
+include("Phantom/simulation.jl")
 include("HO_Phantom/simulation.jl")
