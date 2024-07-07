@@ -2,6 +2,9 @@ using KomaHighOrder
 using MRIReco, MRICoilSensitivities, MRISimulation
 using PlotlyJS, MAT, ImageQualityIndexes, ImageDistances
 using ProgressMeter
+
+
+import ImageTransformations: imresize
 ############################################################################################## 
 # Setup
 ############################################################################################## 
@@ -9,7 +12,7 @@ simtype = SimType(B0=true, T2=false, ss=5)
 BHO = BlochHighOrder("111")
 
 dir = "$(@__DIR__)/B0"; if ispath(dir) == false mkpath(dir) end
-maxOffresonance = 100.
+maxOffresonance = 200.
 TE = 0.0149415; # s
 Nx = Ny = 150;
 
@@ -98,9 +101,15 @@ recParams[:λ] = 1e-2
 recParams[:iterations] = 20
 recParams[:solver] = "cgnr"
 
+B01 = quadraticFieldmap(217, 181, maxOffresonance)[:,:,1];
+imresize(B01, (218, 182))
+c1 = KomaHighOrder.get_center_range(218, Nx);
+c2 = KomaHighOrder.get_center_range(182, Ny);
+B0map = B01[c1, c2]';
+plot_image(B0map, darkmode=true, zmin=-maxOffresonance)
 
 
-Op = HighOrderOp(shape, tr_nominal, tr_skope, BHO; Nblocks=9, fieldmap=Matrix(B0map*0.95))
+Op = HighOrderOp(shape, tr_nominal, tr_skope, BHO; Nblocks=9, fieldmap=Matrix(B0map*1))
 # Op = SignalOp(shape, tr_nominal, 1e-3, 1e-3; Nblocks=9, fieldmap=B0map)
 recParams[:encodingOps] = reshape([Op], 1,1)
 @time rec = reconstruction(acqData, recParams);

@@ -46,7 +46,9 @@ function HighOrderOp(
     use_gpu::Bool=true, 
     verbose::Bool=false, 
     Δx::Float64=1e-3, 
-    Δy::Float64=1e-3) where D
+    Δy::Float64=1e-3,
+    grid::Int64=1,
+    ) where D
 
     nodes_measured = Float64.(kspaceNodes(tr_measured))
     nodes_nominal = Float64.(kspaceNodes(tr_nominal))
@@ -71,7 +73,12 @@ function HighOrderOp(
     Nx, Ny = shape
     x, y = 1:Nx, 1:Ny
     x, y, z = vec(x .+ y'*0.0), vec(x*0.0 .+ y'), vec(x*0.0 .+ y'*0.0) #grid points
-    x, y = x .- Nx/2 .- 1, y .- Ny/2 .- 1
+    if grid == 1
+        x, y = x .- Nx/2 .- 1, y .- Ny/2 .- 1
+    elseif grid == 2
+        x, y = x .- (Nx+1)/2, y .- (Ny+1)/2
+    end
+    print(x)
     x, y = x * Δx, y * Δy 
 
 
