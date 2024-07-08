@@ -12,3 +12,10 @@ x, y = x * Δx, y * Δy
 
 a = [1 2 3;4 5 6;7 8 9]
 a[get_center_range(3, 2), get_center_range(3, 2)]
+
+
+
+M = N = 150
+x = -(M-1)/2:1:(M-1)/2
+
+collect(x)[75:76]

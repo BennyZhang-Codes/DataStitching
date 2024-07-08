@@ -13,16 +13,16 @@ function brain_phantom2D_reference(
     target_resolution=(1,1))
 
     @assert key in [:ρ, :T2, :T2s, :T1, :Δw, :raw, :headmask, :brainmask] "key must be ρ, T2, T2s, T1, Δw, raw, headmask or brainmask"
-    @assert B0type in [:real, :fat, :quadratic] "B0_type must be one of the following: :real, :fat, :quadratic"
+    @assert B0type in [:real, :fat, :quadratic] "B0type must be one of the following: :real, :fat, :quadratic"
     @assert 0 <= location <= 1 "location must be between 0 and 1"
 
-    Δx = Δy = 0.2   # resolution of phantom: phantom_dict[:brain2d]
+    Δx = Δy = objbrain.x
     fov_x, fov_y = target_fov
     res_x, res_y = target_resolution
     center_range = (Int64(ceil(fov_x / (Δx * ss))), Int64(ceil(fov_y / (Δy * ss)))) 
     target_size = (Int64(ceil(fov_x / res_x)), Int64(ceil(fov_y / res_y)))
 
-    class = load_phantom_mat(objbrain; axis=axis, ss=ss, location=location)
+    class, loc = load_phantom_mat(objbrain; axis=axis, ss=ss, location=location)
     T1, T2, T2s, ρ = SpinProperty_1p5T(class)
 
     if key == :ρ

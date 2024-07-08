@@ -2,7 +2,7 @@ import KomaMRI.KomaMRIBase: brain_phantom2D
 # import Base.show
 
 """
-    obj = brain_phantom2D(p::BrainPhantom; axis="axial", ss=5, location=0.5, B0_type=:fat, B0_file=:B0, maxOffresonance=125., csmtype=:fan, coil_idx=1, nCoil=1, overlap=1, relative_radius=1.5)
+    obj = brain_phantom2D(p::BrainPhantom; axis="axial", ss=5, location=0.5, B0type=:fat, B0_file=:B0, maxOffresonance=125., csmtype=:fan, coil_idx=1, nCoil=1, overlap=1, relative_radius=1.5)
 Creates a two-dimensional brain Phantom struct.
 
 # References
@@ -37,17 +37,17 @@ function brain_phantom2D(
     overlap::Real   =0,            # overlap between fan coils, for csm_Fan_binary
     relative_radius::Real=1.5,     # relative radius of the coil, for csm_Birdcage
     ) :: Phantom
-    @assert B0type in [:real, :fat, :quadratic] "B0_type must be one of the following: :real, :fat, :quadratic"
+    @assert B0type in [:real, :fat, :quadratic] "B0type must be one of the following: :real, :fat, :quadratic"
     @assert 1 <= coil_idx <= nCoil "coil_idx must be between 1 and $(nCoil)"
 
-    class = load_phantom_mat(objbrain; axis=axis, ss=ss, location=location)
+    class, loc = load_phantom_mat(objbrain; axis=axis, ss=ss, location=location)
     # Define spin position vectors
-    Δx = .2e-3*ss
+    Δx = Δy = objbrain.x*1e-3*ss
     M, N = size(class)
     FOVx = (M-1)*Δx #[m]
-    FOVy = (N-1)*Δx #[m]
+    FOVy = (N-1)*Δy #[m]
     x = -FOVx/2:Δx:FOVx/2 #spin coordinates
-    y = -FOVy/2:Δx:FOVy/2 #spin coordinates
+    y = -FOVy/2:Δy:FOVy/2 #spin coordinates
     x, y = x .+ y'*0, x*0 .+ y' #grid points
 
     # Define spin property vectors
@@ -74,7 +74,7 @@ function brain_phantom2D(
 
     # Define and return the Phantom struct
     obj = Phantom{Float64}(
-        name = "brain2D_$(axis)_ss$(ss)_$(M)x$(N)_location$(location)_$(coil_idx)/$(nCoil)",
+        name = "brain2D_$(axis)_ss$(ss)_$(M)x$(N)_loc$(location)-$(loc)_$(coil_idx)/$(nCoil)",
 		x   =    y[ρ.!=0],
 		y   =    x[ρ.!=0],
 		z   =  0*x[ρ.!=0],
@@ -111,5 +111,5 @@ function load_phantom_mat(
         loc   = Int32(ceil(N*location))
         class = data[1:ss:end, loc,1:ss:end]
     end
-    return class
+    return class, loc
 end
