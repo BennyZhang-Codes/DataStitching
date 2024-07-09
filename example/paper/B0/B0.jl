@@ -15,13 +15,15 @@ dir = "$(@__DIR__)/B0"; if ispath(dir) == false mkpath(dir) end
 maxOffresonance = 300.
 TE = 0.0149415; # s
 Nx = Ny = 150;
-
+key = :fatsat  # :fatsatw, :fatsatwo
 
 ############################################################################################## 
 # Simu
 ############################################################################################## 
 # 1. hoseq
-hoseq = demo_hoseq();# plot_hoseqd(hoseq);
+hoseq_base = demo_hoseq();# plot_hoseqd(hoseq);
+hoseq_dict = Dict(:fatsatw =>hoseq_base, :fatsatwo=>hoseq_base[4:end])
+
 # 2. phantom
 obj = brain_phantom2D(BrainPhantom(); ss=simtype.ss, location=0.8, B0type=:quadratic, maxOffresonance=maxOffresonance); info(obj)
 obj.Δw .= simtype.B0 ? obj.Δw : obj.Δw * 0; # γ*1.5*(-3.45)*1e-6 * 2π

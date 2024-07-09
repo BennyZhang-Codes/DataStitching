@@ -17,44 +17,46 @@ hoseq_dict = Dict(
     :fatsat_excit=>hoseq_base[3:5],
     :excit       =>hoseq_base[4:5],
     )
-# for maxOffresonance in [0., 300.]
-for key in keys(hoseq_dict)
-    prefix = BHO.Δw_precession ? "dB0precessionOn" : "dB0precessionOff"
-    prefix = BHO.Δw_excitation ? "$(prefix)_dB0excitOn" : "$(prefix)_dB0excitOff"
-    prefix = "$(prefix)_dB0max$(maxOffresonance)_$(String(key))"
-    ############################################################################################## 
-    # Simu
-    ############################################################################################## 
-    # 1. hoseq
+for maxOffresonance in [0.,100., 200., 300., 400., 1000., 1500.]
+# for key in keys(hoseq_dict)
+#     prefix = BHO.Δw_precession ? "dB0precessionOn" : "dB0precessionOff"
+#     prefix = BHO.Δw_excitation ? "$(prefix)_dB0excitOn" : "$(prefix)_dB0excitOff"
+#     prefix = "$(prefix)_dB0max$(maxOffresonance)_$(String(key))"
+#     ############################################################################################## 
+#     # Simu
+#     ############################################################################################## 
+#     # 1. hoseq
 
-    hoseq = hoseq_dict[key]
-    p_hoseq = plot_seq(hoseq)
+#     hoseq = hoseq_dict[key]
+#     p_hoseq = plot_seq(hoseq)
 
-    # 2. phantom
-    obj = brain_hophantom2D(BrainPhantom(prefix="brain3D724", x=0.2, y=0.2, z=0.2); ss=simtype.ss, location=0.8, B0type=:quadratic, maxOffresonance=maxOffresonance)
-    obj.Δw .= simtype.B0 ? obj.Δw : obj.Δw * 0; # γ*1.5*(-3.45)*1e-6 * 2π
-    obj.T2 .= simtype.T2 ? obj.T2 : obj.T2 * Inf;   # cancel T2 relaxiation
-    # 3. scanner & sim_params
-    sys = Scanner();
-    sim_params = KomaMRICore.default_sim_params()
-    sim_params["sim_method"] = BHO;
-    sim_params["gpu"] = true;
-    sim_params["return_type"]="state";
-    sim_params["precision"] = "f64"
-    sim_params["Nblocks"] = 1
-    # 4. simulate
-    state = simulate(obj, hoseq, sys; sim_params);
-    p_xy_mag = plot_mag(obj, state, :xy_mag; darkmode=true, view_2d=true)
-    p_xy_pha = plot_mag(obj, state, :xy_pha; darkmode=true, view_2d=true)
-    p_z      = plot_mag(obj, state, :z     ; darkmode=true, view_2d=true)
+#     # 2. phantom
+#     obj = brain_hophantom2D(BrainPhantom(prefix="brain3D724", x=0.2, y=0.2, z=0.2); ss=simtype.ss, location=0.8, B0type=:quadratic, maxOffresonance=maxOffresonance)
+#     obj.Δw .= simtype.B0 ? obj.Δw : obj.Δw * 0; # γ*1.5*(-3.45)*1e-6 * 2π
+#     obj.T2 .= simtype.T2 ? obj.T2 : obj.T2 * Inf;   # cancel T2 relaxiation
+#     # 3. scanner & sim_params
+#     sys = Scanner();
+#     sim_params = KomaMRICore.default_sim_params()
+#     sim_params["sim_method"] = BHO;
+#     sim_params["gpu"] = true;
+#     sim_params["return_type"]="state";
+#     sim_params["precision"] = "f64"
+#     sim_params["Nblocks"] = 1
+#     # 4. simulate
+#     state = simulate(obj, hoseq, sys; sim_params);
+#     p_xy_mag = plot_mag(obj, state, :xy_mag; title="$(prefix): Mxy_mag", darkmode=true, view_2d=true)
+#     p_xy_pha = plot_mag(obj, state, :xy_pha; title="$(prefix): Mxy_pha", darkmode=true, view_2d=true)
+#     p_z      = plot_mag(obj, state, :z     ; title="$(prefix): Mz"     , darkmode=true, view_2d=true)
 
-    savefig(p_hoseq , "$(dir)/$(prefix)_hoseq.svg" , width=500,height=500,format="svg")
-    savefig(p_xy_mag, "$(dir)/$(prefix)_xy_mag.svg", width=500,height=500,format="svg")
-    savefig(p_xy_pha, "$(dir)/$(prefix)_xy_pha.svg", width=500,height=500,format="svg")
-    savefig(p_z     , "$(dir)/$(prefix)_z.svg"     , width=500,height=500,format="svg")
+#     savefig(p_hoseq , "$(dir)/$(prefix)_hoseq.png" , width=500,height=500,format="png")
+#     savefig(p_xy_mag, "$(dir)/$(prefix)_xy_mag.png", width=500,height=500,format="png")
+#     savefig(p_xy_pha, "$(dir)/$(prefix)_xy_pha.png", width=500,height=500,format="png")
+#     savefig(p_z     , "$(dir)/$(prefix)_z.png"     , width=500,height=500,format="png")
+# end
+B0map = brain_phantom2D_reference(BrainPhantom(); ss=simtype.ss, location=0.8,target_fov=(150, 150), target_resolution=(1,1),
+                                    B0type=:quadratic,key=:Δw, maxOffresonance=maxOffresonance)
+p_B0map = plot_img(B0map; title="quadraticB0map, [-$maxOffresonance,$maxOffresonance] Hz")
+savefig(p_B0map, "$(dir)/B0map_$(maxOffresonance).png", width=500,height=500,format="png")
 end
 
 
-# B0map = brain_phantom2D_reference(BrainPhantom(); ss=simtype.ss, location=0.8,target_fov=(150, 150), target_resolution=(1,1),
-#                                     B0type=:quadratic,key=:Δw, maxOffresonance=maxOffresonance)
-# p_ref_B0map = plot_image(B0map; title="quadraticB0map, [-$maxOffresonance,$maxOffresonance] Hz", zmin=-maxOffresonance)

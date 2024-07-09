@@ -9,6 +9,8 @@ function plot_mag(
 	title="",
 	height=nothing,
 	width=nothing,
+	zmin=nothing,
+	zmax=nothing,
 	darkmode=false,
 	view_2d=false,
 	colorbar=true
@@ -28,8 +30,8 @@ function plot_mag(
         spinstate = mag.z
     end
 
-	cmin_key = minimum(spinstate)
-	cmax_key = maximum(spinstate)
+	cmin_key = isnothing(zmin) ? minimum(spinstate) : zmin
+	cmax_key = isnothing(zmax) ? maximum(spinstate) : zmax
 	unit=""
 	colormap="Greys"
 
