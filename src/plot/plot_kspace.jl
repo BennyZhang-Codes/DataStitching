@@ -1,6 +1,3 @@
-import KomaMRI.KomaMRIPlots: plot_kspace, interp_map, theme_chooser, plot_koma
-
-
 
 """
     p = plot_kspace(seq::Sequence; width=nothing, height=nothing, thememode=:dark)

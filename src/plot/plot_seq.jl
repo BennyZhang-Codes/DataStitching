@@ -1,4 +1,4 @@
-import KomaMRI.KomaMRIPlots: plot_seq
+
 
 """
     p = plot_seq(hoseq::HO_Sequence; kwargs...)

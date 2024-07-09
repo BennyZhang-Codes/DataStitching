@@ -1,4 +1,4 @@
-import KomaMRI.KomaMRIPlots: theme_chooser
+
 
 function plot_traj2d(
 	traj::Trajectory;

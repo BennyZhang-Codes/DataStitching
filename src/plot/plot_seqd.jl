@@ -1,4 +1,4 @@
-import KomaMRI.KomaMRIPlots: plot_seqd
+
 
 function plot_seqd(
         hoseq::HO_Sequence, hoseqd::HO_DiscreteSequence; 

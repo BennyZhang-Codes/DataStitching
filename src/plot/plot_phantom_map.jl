@@ -1,4 +1,4 @@
-import KomaMRI.KomaMRIPlots: plot_phantom_map, interp_map, theme_chooser, plot_koma
+
 """
     p = plot_phantom_map(obj::HO_Phantom, key::Symbol; kwargs...)
 

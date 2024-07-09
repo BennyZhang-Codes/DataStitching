@@ -73,7 +73,7 @@ function run_spin_excitation!(p::HO_Phantom{T}, hoseqd::HO_DiscreteSequence{T}, 
         yt = p.y .+ p.uy(p.x, p.y, p.z, s.t)
         zt = p.z .+ p.uz(p.x, p.y, p.z, s.t)
         #Effective field
-        ΔBz = p.Δw ./ T(2π * γ) .- s.Δf ./ T(γ) # ΔB_0 = (B_0 - ω_rf/γ), Need to add a component here to model scanner's dB0(xt,yt,zt)
+        ΔBz = p.Δw ./ T(2π * γ).*0 .- s.Δf ./ T(γ) # ΔB_0 = (B_0 - ω_rf/γ), Need to add a component here to model scanner's dB0(xt,yt,zt)
         Bz = (s.Gx .* xt .+ s.Gy .* yt .+ s.Gz .* zt) .+ ΔBz
         B = sqrt.(abs.(s.B1) .^ 2 .+ abs.(Bz) .^ 2)
         B[B .== 0] .= eps(T)

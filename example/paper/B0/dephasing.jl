@@ -3,19 +3,15 @@ using MRIReco, MRICoilSensitivities, MRISimulation
 using PlotlyJS, MAT, ImageQualityIndexes, ImageDistances
 using ProgressMeter
 
-
 import ImageTransformations: imresize
 ############################################################################################## 
 # Setup
 ############################################################################################## 
 simtype = SimType(B0=true, T2=false, ss=5)
 BHO = BlochHighOrder("000")
-
 dir = "$(@__DIR__)/B0"; if ispath(dir) == false mkpath(dir) end
-maxOffresonance = 100.
+maxOffresonance = 300.
 TE = 0.0149415; # s
-
-
 
 ############################################################################################## 
 # Simu
@@ -31,7 +27,7 @@ sys = Scanner();
 sim_params = KomaMRICore.default_sim_params()
 sim_params["sim_method"] = BHO;
 sim_params["gpu"] = true;
-sim_params["return_type"]="mat";
+sim_params["return_type"]="state";
 sim_params["precision"] = "f64"
 sim_params["Nblocks"] = 1000
 # 4. simulate
@@ -45,8 +41,9 @@ plot_signal(raw)
 ############################################################################################## 
 # Recon
 ############################################################################################## 
-
-Nx, Ny = raw.params["reconSize"][1:2];
+# Nx, Ny = raw.params["reconSize"][1:2];
+Nx = Ny = 150;
+shape = (Nx, Ny);
 acqData = AcquisitionData(raw, BlochHighOrder("111"); sim_params=sim_params);
 acqData.traj[1].circular = false;
 
@@ -54,23 +51,6 @@ _, K_nominal_adc, _, K_skope_adc = get_kspace(hoseq; Δt=1);
 times = KomaMRIBase.get_adc_sampling_times(hoseq.SEQ);
 tr_skope = Trajectory(K_skope_adc'[:,:], acqData.traj[1].numProfiles, acqData.traj[1].numSamplingPerProfile; circular=false, times=times);
 tr_nominal = Trajectory(K_nominal_adc'[1:3,:], acqData.traj[1].numProfiles, acqData.traj[1].numSamplingPerProfile; circular=false, times=times);
-
-#######################################################################################
-# iterative SignalOp 
-#######################################################################################
-Nx = Ny = 150;
-shape = (Nx, Ny);
-
-reg = "L2" # ["L2", "L1", "L21", "TV", "LLR", "Positive", "Proj", "Nuclear"]
-@info "reg: $reg"
-recParams = Dict{Symbol,Any}()
-recParams[:reconSize] = (Nx, Ny)  # 150, 150
-recParams[:densityWeighting] = true
-recParams[:reco] = "standard"
-recParams[:regularization] = reg
-recParams[:λ] = 1e-9
-recParams[:iterations] = 5
-recParams[:solver] = "cgnr"
 
 
 # B0map = brain_phantom2D_reference(BrainPhantom(); ss=simtype.ss, location=0.8,target_fov=(150, 150), target_resolution=(1,1),
@@ -84,6 +64,19 @@ B0map = B01[c1, c2]';
 
 p_ref_B0map = plot_image(B0map; title="quadraticB0map, [-$maxOffresonance,$maxOffresonance] Hz", zmin=-maxOffresonance)
 
+#######################################################################################
+# iterative HighOrderOp
+#######################################################################################
+recParams = Dict{Symbol,Any}()
+recParams[:reconSize] = (Nx, Ny)  # 150, 150
+recParams[:densityWeighting] = true
+recParams[:reco] = "standard"
+recParams[:regularization] = "L2" # ["L2", "L1", "L21", "TV", "LLR", "Positive", "Proj", "Nuclear"]
+recParams[:λ] = 1e-9
+recParams[:iterations] = 5
+recParams[:solver] = "cgnr"
+# recParams = merge(defaultRecoParams(), recParams)
+
 # tr_skope.times = tr_nominal.times .+ 12000e-3
 Op = HighOrderOp(shape, tr_nominal, tr_skope, BHO; Nblocks=9, fieldmap=Matrix(B0map*1), grid=1)
 # Op = SignalOp(shape, tr_nominal, 1e-3, 1e-3; Nblocks=9, fieldmap=B0map)
@@ -92,39 +85,29 @@ recParams[:encodingOps] = reshape([Op], 1,1)
 p_iter_SignalOp = plot_image(abs.(rec.data[:,:]); title="HighOrderOp 111 with B0map [-$maxOffresonance,$maxOffresonance] Hz", width=650, height=600)
 # savefig(p_iter_SignalOp, dir*"/quadraticB0map_$(maxOffresonance)_reconHighOrderOp111.svg", width=550,height=500,format="svg")
 
-
 #######################################################################################
 # standard FieldmapNFFTOp
 #######################################################################################
-Nx = Ny = 150;
-shape = (Nx, Ny);
-
 nSample, nCoil = size(acqData.kdata[1])
 dt = 1e-6
 tAQ = (nSample-1) * dt
 acqData.traj[1].AQ=tAQ # important for B0 correction
-acqData.traj[1].TE= TE
+acqData.traj[1].TE= TE   # 0.0149415
 acqData.traj[1].times = TE .+ collect(0:dt:tAQ)
 
-reg = "L2" # ["L2", "L1", "L21", "TV", "LLR", "Positive", "Proj", "Nuclear"]
-@info "reg: $reg"
 recParams = Dict{Symbol,Any}()
 recParams[:reconSize] = (Nx, Ny)  # 150, 150
 # recParams[:densityWeighting] = true
 recParams[:reco] = "standard"
-recParams[:method] = "nfft"
+# recParams[:method] = "nfft"
 recParams = merge(defaultRecoParams(), recParams)
-B01 = quadraticFieldmap(217, 181, maxOffresonance)[:,:,1];
-c1 = get_center_range(217, Nx);
-c2 = get_center_range(181, Ny);
-B0map = B01[c1, c2]';
 
-# recParams[:regularization] = reg
-# recParams[:λ] = 1e-9
-# recParams[:iterations] = 5
-# recParams[:solver] = "cgnr"
+recParams[:regularization] = "L2" # ["L2", "L1", "L21", "TV", "LLR", "Positive", "Proj", "Nuclear"]
+recParams[:λ] = 1e-2
+recParams[:iterations] = 50
+recParams[:solver] = "cgnr"
 
-# recParams[:correctionMap] = 1im*B0map*2π
+recParams[:correctionMap] = 1im*B0map*2π;
 @time rec = reconstruction(acqData, recParams);
 p_iter_SignalOp = plot_image(abs.(rec.data[:,:]); title="HighOrderOp 111 with B0map [-$maxOffresonance,$maxOffresonance] Hz", width=650, height=600)
 # savefig(p_iter_SignalOp, dir*"/quadraticB0map_$(maxOffresonance)_reconHighOrderOp111.svg", width=550,height=500,format="svg")
