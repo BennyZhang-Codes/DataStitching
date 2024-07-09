@@ -7,9 +7,9 @@ using ProgressMeter
 # Setup
 ############################################################################################## 
 simtype = SimType(B0=true, T2=false, ss=5)
-BHO = BlochHighOrder("000", true, false)
+BHO = BlochHighOrder("000", true, true)
 dir = "$(@__DIR__)/B0/results/spinstate"; if ispath(dir) == false mkpath(dir) end
-maxOffresonance = 0.
+maxOffresonance = 300.
 hoseq_base = demo_hoseq();# plot_hoseqd(hoseq);
 key = :fatsat
 hoseq_dict = Dict(
@@ -17,11 +17,11 @@ hoseq_dict = Dict(
     :fatsat_excit=>hoseq_base[3:5],
     :excit       =>hoseq_base[4:5],
     )
-
-# for key in keys(hoseq_dict)
-    prefix = "dB0precessionOff_dB0max$(maxOffresonance)"
-    prefix = BHO.Δw_excitation ? "$(prefix)_dB0excitOn_$(String(key))" : "$(prefix)_dB0excitOff_$(String(key))"
-
+# for maxOffresonance in [0., 300.]
+for key in keys(hoseq_dict)
+    prefix = BHO.Δw_precession ? "dB0precessionOn" : "dB0precessionOff"
+    prefix = BHO.Δw_excitation ? "$(prefix)_dB0excitOn" : "$(prefix)_dB0excitOff"
+    prefix = "$(prefix)_dB0max$(maxOffresonance)_$(String(key))"
     ############################################################################################## 
     # Simu
     ############################################################################################## 
@@ -52,4 +52,9 @@ hoseq_dict = Dict(
     savefig(p_xy_mag, "$(dir)/$(prefix)_xy_mag.svg", width=500,height=500,format="svg")
     savefig(p_xy_pha, "$(dir)/$(prefix)_xy_pha.svg", width=500,height=500,format="svg")
     savefig(p_z     , "$(dir)/$(prefix)_z.svg"     , width=500,height=500,format="svg")
-# end
+end
+
+
+# B0map = brain_phantom2D_reference(BrainPhantom(); ss=simtype.ss, location=0.8,target_fov=(150, 150), target_resolution=(1,1),
+#                                     B0type=:quadratic,key=:Δw, maxOffresonance=maxOffresonance)
+# p_ref_B0map = plot_image(B0map; title="quadraticB0map, [-$maxOffresonance,$maxOffresonance] Hz", zmin=-maxOffresonance)

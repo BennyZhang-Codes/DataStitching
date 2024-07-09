@@ -6,7 +6,8 @@ function plot_mag(
     mag::Mag,
 	key::Symbol;
 	t0=0,
-	height=600,
+	title="",
+	height=nothing,
 	width=nothing,
 	darkmode=false,
 	view_2d=false,
@@ -34,9 +35,14 @@ function plot_mag(
 
 	x0 = -maximum(abs.([ph.x ph.y ph.z]))*1e2
     xf =  maximum(abs.([ph.x ph.y ph.z]))*1e2
+
+	if isempty(title)
+		title = ph.name*": "*string(key)
+	end
+
 	#Layout
 	bgcolor, text_color, plot_bgcolor, grid_color, sep_color = theme_chooser(darkmode)
-	l = Layout(;title=ph.name*": "*string(key),
+	l = Layout(;title=title,
 		xaxis_title="x",
 		yaxis_title="y",
 		plot_bgcolor=plot_bgcolor,
