@@ -9,6 +9,7 @@ revision 1
 [DEFINITIONS]
 ADCDuration 0.07044 
 AdcRasterTime 1e-07 
+B0 6.89 
 BlockDurationRaster 1e-05 
 Developer Jinyuan Zhang 
 FOV 0.15 0.15 0.002 
@@ -16,9 +17,11 @@ GradientRasterTime 1e-05
 MaxAdcSegmentLength 500 
 MaxGrad 22 
 MaxSlew 140 
-Name spiral_fov150_150_R1.seq 
+Name spiral_fov150_150_R2 
 RadiofrequencyRasterTime 1e-06 
 TotalDuration 0.10265 
+sat_freq -1012.05281 
+sat_ppm -3.45 
 
 # Format of blocks:
 # NUM DUR RF  GX  GY  GZ  ADC  EXT
@@ -21370,4 +21373,4 @@ num_samples 2
 # It can be reproduced/verified with md5sum if the file trimmed to the position right above [SIGNATURE]
 # The new line character preceding [SIGNATURE] BELONGS to the signature (and needs to be sripped away for recalculating/verification)
 Type md5
-Hash b1f33ce4cdf913c949ef87843fe4e6b2
+Hash 24672dbff41d6c5f57c46b7bc18c8236
