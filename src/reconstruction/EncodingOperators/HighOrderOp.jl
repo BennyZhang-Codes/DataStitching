@@ -94,7 +94,7 @@ function HighOrderOp(
 end
 
 function prod_HighOrderOp(
-    xm::Vector{T}, 
+    xm::AbstractVector{T}, 
     x::Vector{Float64}, 
     y::Vector{Float64}, 
     z::Vector{Float64}, 
@@ -107,7 +107,7 @@ function prod_HighOrderOp(
     parts::Vector{UnitRange{Int64}}=[1:size(nodes_measured,2)], 
     use_gpu::Bool=false, 
     verbose::Bool=false) where T<:Union{Real,Complex}
-    
+    xm = Vector(xm)
     if verbose
         @info "HighOrderOp prod Nblocks=$Nblocks, use_gpu=$use_gpu"
     end
@@ -149,7 +149,7 @@ function prod_HighOrderOp(
 end
 
 function ctprod_HighOrderOp(
-    xm::Vector{T}, 
+    xm::AbstractVector{T}, 
     x::Vector{Float64}, 
     y::Vector{Float64}, 
     z::Vector{Float64},
@@ -163,6 +163,7 @@ function ctprod_HighOrderOp(
     use_gpu::Bool=false, 
     verbose::Bool=false) where T<:Union{Real,Complex}
 
+    xm = Vector(xm)
     if verbose
         @info "HighOrderOp ctprod Nblocks=$Nblocks, use_gpu=$use_gpu"
     end
