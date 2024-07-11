@@ -9,14 +9,14 @@ import ImageTransformations: imresize
 ############################################################################################## 
 simtype = SimType(B0=true, T2=false, ss=5)
 BHO = BlochHighOrder("111", true, true)
-key = :fatsatwo  # :fatsatw, :fatsatwo
+key = :fatsatw  # :fatsatw, :fatsatwo
 
-dir = "$(@__DIR__)/B0/results/B0_quadratic/$(String(key))400Hz"; if ispath(dir) == false mkpath(dir) end
+dir = "$(@__DIR__)/B0/results/B0_quadratic/$(String(key))_admm_L1_0.001_50"; if ispath(dir) == false mkpath(dir) end
 maxOffresonance = 400.
 Nx = Ny = 150;
 
 
-# for maxOffresonance in [100., 200., 300., 400.]
+for maxOffresonance in [100., 200., 300., 400.]
 ############################################################################################## 
 # Simu
 ############################################################################################## 
@@ -77,17 +77,17 @@ recParams = Dict{Symbol,Any}(); #recParams = merge(defaultRecoParams(), recParam
 recParams[:reconSize] = (Nx, Ny)  # 150, 150
 recParams[:densityWeighting] = true
 recParams[:reco] = "standard"
-recParams[:regularization] = "L2"  # ["L2", "L1", "L21", "TV", "LLR", "Positive", "Proj", "Nuclear"]
-recParams[:λ] = 1e-2
-recParams[:iterations] = 20
-recParams[:solver] = "cgnr"
+recParams[:regularization] = "L1"  # ["L2", "L1", "L21", "TV", "LLR", "Positive", "Proj", "Nuclear"]
+recParams[:λ] = 1e-3
+recParams[:iterations] = 50
+recParams[:solver] = "admm"
 
 Op = HighOrderOp((Nx, Ny), tr_nominal, tr_skope, BHO; Nblocks=9, fieldmap=Matrix(B0map), grid=1)
 recParams[:encodingOps] = reshape([Op], 1,1)
 @time rec = reconstruction(acqData, recParams);
 p_iter_SignalOp = plot_image(abs.(rec.data[:,:]); title="HighOrderOp 111 with B0map [-$maxOffresonance,$maxOffresonance] Hz", width=650, height=600)
 savefig(p_iter_SignalOp, dir*"/quadraticB0map_$(maxOffresonance)_reconHighOrderOp111.svg", width=550,height=500,format="svg")
-# end
+end
 
 
 
