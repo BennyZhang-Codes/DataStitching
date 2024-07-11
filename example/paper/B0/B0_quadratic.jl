@@ -36,7 +36,7 @@ obj.T2 .= simtype.T2 ? obj.T2 : obj.T2 * Inf;   # cancel T2 relaxiation
 B01 = quadraticFieldmap(217, 181, maxOffresonance)[:,:,1];
 c1 = KomaHighOrder.get_center_range(217, Nx);
 c2 = KomaHighOrder.get_center_range(181, Ny);
-B0map1 = B01[c1, c2]';
+B0map = B01[c1, c2]';
 # B0map2 = brain_phantom2D_reference(BrainPhantom(prefix="brain3D724", x=0.2, y=0.2, z=0.2); ss=simtype.ss, location=0.8, target_fov=(150, 150), target_resolution=(1,1),
 #                                    B0type=:quadratic,key=:Δw, maxOffresonance=maxOffresonance); 
 # plot_image(B0map, darkmode=true, zmin=-maxOffresonance)
@@ -77,10 +77,10 @@ recParams = Dict{Symbol,Any}(); #recParams = merge(defaultRecoParams(), recParam
 recParams[:reconSize] = (Nx, Ny)  # 150, 150
 recParams[:densityWeighting] = true
 recParams[:reco] = "standard"
-recParams[:regularization] = "L1"  # ["L2", "L1", "L21", "TV", "LLR", "Positive", "Proj", "Nuclear"]
+recParams[:regularization] = "L2"  # ["L2", "L1", "L21", "TV", "LLR", "Positive", "Proj", "Nuclear"]
 recParams[:λ] = 1e-2
 recParams[:iterations] = 20
-recParams[:solver] = "optista"
+recParams[:solver] = "cgnr"
 
 Op = HighOrderOp((Nx, Ny), tr_nominal, tr_skope, BHO; Nblocks=9, fieldmap=Matrix(B0map), grid=1)
 recParams[:encodingOps] = reshape([Op], 1,1)

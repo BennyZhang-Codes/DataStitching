@@ -1,8 +1,8 @@
 using KomaHighOrder, MRISampling, MRIReco, MRICoilSensitivities, MRISimulation
 import KomaHighOrder.MRIBase: rawdata
-R = 2
+R = 1
 BHO      = BlochHighOrder("000", true, true)
-simtype  = SimType(B0=true, T2=false, ss=5)
+simtype  = SimType(B0=true, T2=false, ss=1)
 ph       = BrainPhantom(prefix="brain3D724", x=0.2, y=0.2, z=0.2)
 maxdB0   = 100.
 csmtype  = :real_32cha
@@ -14,7 +14,7 @@ path     = "$(@__DIR__)/B0_DFC_sense/$folder"; if ispath(path) == false mkpath(p
 seq = load_seq(seqname="spiral", r=R)[2:end]
 hoseq = HO_Sequence(seq)
 Nx = Ny = 150
-plot_seq(hoseq)
+# plot_seq(hoseq)
 sys = Scanner();
 sim_params = KomaMRICore.default_sim_params(); 
 sim_params["sim_method"] = BHO;
@@ -35,6 +35,7 @@ mrd = ISMRMRDFile("$(path)/$(filename).mrd")
 save(mrd, raw)
 images = recon_2d(raw, Nx=Nx, Ny=Ny);
 
+# plot_signal(raw)
 p_images = plot_imgs_subplots(abs.(images), nrows, ncols; title="$(nCoil) coils: NUFFT recon", height=400, width=800)
 p_sos = plot_image(sqrt.(sum(images.^2; dims=3))[:,:,1]; title="$(nCoil) coils: NUFFT recon, SOS", height=400, width=450)
 savefig(p_sos   , "$(path)/$(filename)-nufft_SOS.svg", format="svg", height=400, width=450)
@@ -85,7 +86,7 @@ params[:reco] = "multiCoil"
 params[:reconSize] = (Nx, Ny)
 params[:regularization] = "L2"
 params[:λ] = T(1.e-2)
-params[:iterations] = 2
+params[:iterations] = 20
 params[:relTol] = 0.0
 params[:solver] = "cgnr"
 params[:toeplitz] = false
@@ -93,19 +94,19 @@ params[:oversamplingFactor] = 1
 params[:senseMaps] = Complex{T}.(reshape(sensitivity, Nx, Ny, 1, nCoil));
 
 
-# numContr, numChan = MRIReco.numContrasts(acqData), MRIReco.numChannels(acqData);
-# reconSize, weights, L_inv, sparseTrafo, reg, normalize, encOps, solvername, senseMaps = MRIReco.setupIterativeReco(acqData, params);
-# senseMapsUnCorr = decorrelateSenseMaps(L_inv, senseMaps, numChan);
-# # ft = SignalOp((N, N), tr; Nblocks=3, use_gpu=true)
-# ft = HighOrderOp((Nx, Ny), tr_nominal, tr_skope, BHO; Nblocks=9, fieldmap=Matrix(B0map), grid=1);
-# smaps = senseMaps[:,:,1,:]
-# S = SensitivityOp(reshape(ComplexF64.(smaps),:,numChan),1)
-# Op = DiagOp(ft, numChan) ∘ S 
-# params[:encodingOps] = reshape([Op], 1,1)
+numContr, numChan = MRIReco.numContrasts(acqData), MRIReco.numChannels(acqData);
+reconSize, weights, L_inv, sparseTrafo, reg, normalize, encOps, solvername, senseMaps = MRIReco.setupIterativeReco(acqData, params);
+senseMapsUnCorr = decorrelateSenseMaps(L_inv, senseMaps, numChan);
+# ft = SignalOp((N, N), tr; Nblocks=3, use_gpu=true)
+ft = HighOrderOp((Nx, Ny), tr_nominal, tr_skope, BHO; Nblocks=9, fieldmap=Matrix(B0map), grid=1);
+smaps = senseMaps[:,:,1,:]
+S = SensitivityOp(reshape(ComplexF64.(smaps),:,numChan),1)
+Op = DiagOp(ft, numChan) ∘ S 
+params[:encodingOps] = reshape([Op], 1,1)
 
 
 img_recon = Array{ComplexF32,2}(undef, Nx, Ny);
-img_recon = reconstruction(acqData, params).data;
+@time img_recon = reconstruction(acqData, params).data;
 p_img_recon = plot_image(abs.(img_recon[:,:]), title="$(nCoil) coils: Sense recon, R = $(R), sim-sensitivity")
 
 savefig(p_smap_mag , "$(path)/$(filename)_simSmap_mag.svg"  , format="svg", height=400, width=800)
