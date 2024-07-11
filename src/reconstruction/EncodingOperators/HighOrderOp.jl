@@ -78,7 +78,7 @@ function HighOrderOp(
     elseif grid == 2
         x, y = x .- (Nx+1)/2, y .- (Ny+1)/2
     end
-    print(x)
+    # print(x)
     x, y = x * Δx, y * Δy 
 
 

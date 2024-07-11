@@ -11,7 +11,7 @@ simtype = SimType(B0=true, T2=false, ss=5)
 BHO = BlochHighOrder("111", true, true)
 key = :fatsatwo  # :fatsatw, :fatsatwo
 
-dir = "$(@__DIR__)/B0/results/B0_quadratic/$(String(key))_400Hz_CompareSolvers"; if ispath(dir) == false mkpath(dir) end
+dir = "$(@__DIR__)/B0/results/B0_quadratic/$(String(key))_400Hz_CompareSolvers/admm"; if ispath(dir) == false mkpath(dir) end
 maxOffresonance = 400.
 Nx = Ny = 150;
 
@@ -77,26 +77,28 @@ tr_nominal = Trajectory(K_nominal_adc'[1:3,:], acqData.traj[1].numProfiles, acqD
 ["admm", "cgnr", "fista", "optista", "pogm", "splitBregman"]
 ["L2", "L1", "L21", "TV", "Positive", "Proj"]
 [1, 0.5, 0.1, 5.e-2, 1.e-2, 5.e-3, 1.e-3, 1.e-4, 1.e-5, 1.e-7, 1.e-9]
-for solver in ["admm", "cgnr", "fista", "optista", "pogm"]
-    regularizations = solver == "cgnr" ? ["L2"] : ["L2", "L1", "L21", "TV", "Positive", "Proj"]
-    for reg in regularizations
 
+for solver in ["admm"]
+    dir = "$(@__DIR__)/B0/results/B0_quadratic/$(String(key))_400Hz_CompareSolvers/$(solver)_L1_1e-3"; if ispath(dir) == false mkpath(dir) end
+for iter in [10, 20, 30, 40, 50, 60, 70, 80]
+for λ in [1e-3]
+    regularizations = solver == "cgnr" ? ["L2"] : ["L1"]
+    for reg in regularizations
         recParams = Dict{Symbol,Any}(); #recParams = merge(defaultRecoParams(), recParams)
         recParams[:reconSize] = (Nx, Ny)  # 150, 150
         recParams[:densityWeighting] = true
         recParams[:reco] = "standard"
         recParams[:regularization] = reg  # ["L2", "L1", "L21", "TV", "LLR", "Positive", "Proj", "Nuclear"]
-        recParams[:λ] = 1e-2
-        recParams[:iterations] = 20
+        recParams[:λ] = λ
+        recParams[:iterations] = iter
         recParams[:solver] = solver
 
         Op = HighOrderOp((Nx, Ny), tr_nominal, tr_skope, BHO; Nblocks=9, fieldmap=Matrix(B0map), grid=1)
         recParams[:encodingOps] = reshape([Op], 1,1)
         @time rec = reconstruction(acqData, recParams);
-        p_iter_SignalOp = plot_image(abs.(rec.data[:,:]); title="HighOrderOp 111, $(-maxOffresonance) Hz, $(solver), $(reg)", width=650, height=600)
-        savefig(p_iter_SignalOp, dir*"/quadraticB0map_$(maxOffresonance)_reconHighOrderOp111_$(solver)_$(reg).svg", width=550,height=500,format="svg")
-
+        p_iter_SignalOp = plot_image(abs.(rec.data[:,:]); title="HighOrderOp 111, $(-maxOffresonance) Hz, iter $(iter), λ $(λ), $(solver), $(reg)", width=650, height=600)
+        savefig(p_iter_SignalOp, dir*"/quadraticB0map_$(maxOffresonance)_reconHighOrderOp111_iter$(iter)_lambda$(λ)_$(solver)_$(reg).svg", width=550,height=500,format="svg")
     end
 end
-
-
+end
+end

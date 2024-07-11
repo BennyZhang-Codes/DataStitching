@@ -1,10 +1,10 @@
 using KomaHighOrder, MRISampling, MRIReco, MRICoilSensitivities, MRISimulation
 import KomaHighOrder.MRIBase: rawdata
-R = 1
+R = 2
 BHO      = BlochHighOrder("000", true, true)
 simtype  = SimType(B0=true, T2=false, ss=1)
 ph       = BrainPhantom(prefix="brain3D724", x=0.2, y=0.2, z=0.2)
-maxdB0   = 100.
+maxdB0   = 400.
 csmtype  = :real_32cha
 nCoil    = 32; nrows=4; ncols=8;
 
