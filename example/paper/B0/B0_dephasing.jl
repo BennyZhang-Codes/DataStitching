@@ -118,5 +118,5 @@ recParams[:correctionMap] = 1im*B0map*2π;
 @time rec = reconstruction(acqData, recParams);
 p_iter_SignalOp = plot_image(abs.(rec.data[:,:]); title="FieldmapNFFTOp, $(-maxOffresonance) Hz, $(solver)_$(reg)_iter$(iter)_λ$(λ)", width=650, height=600)
 savefig(p_iter_SignalOp, dir*"/quadraticB0map_$(maxOffresonance)_reconFieldmapNFFTOp$(BHO.name)_$(solver)_$(reg)_iter$(iter)_λ$(λ).svg", width=550,height=500,format="svg")
-end
+
 
