@@ -3,9 +3,11 @@ module KomaHighOrder
 
 import Base.*, Base.+, Base.-, Base./, Base.vcat, Base.size, Base.abs, Base.getproperty, Base.copy, Base.show
 # IMPORT PACKAGES
-using CUDA, Interpolations, PlotlyJS, Statistics
+using CUDA, Interpolations, Statistics
 import ImageTransformations: imresize
 import MRISimulation: quadraticFieldmap
+
+using PyPlot, PlotlyJS  # 
 
 using Parameters
 using ThreadsX
