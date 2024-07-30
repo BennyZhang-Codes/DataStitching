@@ -27,7 +27,7 @@ julia> fig.savefig("123.png",bbox_inches="tight", pad_inches=0, transparent=true
 ```
 """
 function plt_image(
-    img::Array{<:Real, 2};
+    img::AbstractArray{<:Real, 2};
     title              = ""       ,
     width              = 5        ,
     height             = 5        ,
@@ -74,7 +74,7 @@ julia> fig = plt_images(imgs)
 julia> fig.savefig("123.png",bbox_inches="tight", pad_inches=0, transparent=true)
 """
 function plt_images(
-    imgs::Array{<:Real, 3};
+    imgs::AbstractArray{<:Real, 3};
     title              = ""       ,
     width              = 5        ,
     height             = 5        ,
