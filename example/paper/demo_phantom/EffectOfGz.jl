@@ -38,8 +38,8 @@ save(mrd, raw_withoutGz)
 # with h3
 ########################################################################################################################
 seq = demo_seq()
-GR_skope = demo_GR_skope();
-seq.GR[3,8] = GR_skope[4,1]
+GR_dfc = demo_GR_dfc();
+seq.GR[3,8] = GR_dfc[4,1]
 hoseq = HO_Sequence(seq);
 plot_seq(hoseq;darkmode=true)
 

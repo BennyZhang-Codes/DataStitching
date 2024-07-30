@@ -7,10 +7,10 @@ skopeStandard = [zeros(9) grad["skopeStandard"]'] * 1e-3  # mT
  
 # t = range(0, 88.1*1e-3; length=88101)
 t = Δt * ones(88100)
-GR_skope = reshape([KomaMRIBase.Grad(skopeStitched[idx,:], t, 0, 0, 0) for idx=1:9], :, 1)
+GR_dfc = reshape([KomaMRIBase.Grad(skopeStitched[idx,:], t, 0, 0, 0) for idx=1:9], :, 1)
 
 hoseq = HO_Sequence(seq)
-hoseq.GR_skope[:,8] = GR_skope
+hoseq.GR_dfc[:,8] = GR_dfc
 # hoseqd = discretize(hoseq)
 
 obj = brain_phantom2D(brain3D_02(),0.8;ss=10)

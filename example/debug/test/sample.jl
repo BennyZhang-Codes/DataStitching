@@ -12,12 +12,12 @@ skopeStitched = [zeros(9) grad["skopeStitched"]'] * 1e-3;
 skopeStandard = [zeros(9) grad["skopeStandard"]'] * 1e-3;
 
 t = Δt * ones(88100);
-GR_skope = reshape([KomaMRIBase.Grad(skopeStitched[idx,:], t, 0, 0, 0) for idx=1:9], :, 1);
+GR_dfc = reshape([KomaMRIBase.Grad(skopeStitched[idx,:], t, 0, 0, 0) for idx=1:9], :, 1);
 
 # hoseq
 seq.GR[1,:] = -seq.GR[1,:];
 hoseq = HO_Sequence(seq);
-hoseq.GR_skope[:,8] = GR_skope;
+hoseq.GR_dfc[:,8] = GR_dfc;
 
 obj = brain_phantom2D(brain3D_02(); ss=10, location=0.8); info(obj);
 obj.Δw .= 0;

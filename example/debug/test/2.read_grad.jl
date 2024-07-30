@@ -7,12 +7,12 @@ skopeStandard = [zeros(9) grad["skopeStandard"]'] * 1e-3  # mT
  
 # t = range(0, 88.1*1e-3; length=88101)
 t = Δt * ones(88100)
-GR_skope = reshape([KomaMRIBase.Grad(skopeStitched[idx,:], t, 0, 0, 0) for idx=1:9], :, 1)
+GR_dfc = reshape([KomaMRIBase.Grad(skopeStitched[idx,:], t, 0, 0, 0) for idx=1:9], :, 1)
 
-# hoseq = HO_Sequence(seq[8], GR_skope, maximum(GR_skope.dur))
+# hoseq = HO_Sequence(seq[8], GR_dfc, maximum(GR_dfc.dur))
 # hoseqd = HO_discretize(hoseq)
 hoseq = HO_Sequence(seq)
-hoseq.GR_skope[:,8] = GR_skope
+hoseq.GR_dfc[:,8] = GR_dfc
 HO_plot_hoseqd(hoseq)
 HO_plot_seq(hoseq)
 
