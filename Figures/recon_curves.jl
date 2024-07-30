@@ -55,38 +55,43 @@ tr_nominal          = Trajectory(   K_nominal_adc'[1:3,:], acqData.traj[1].numPr
 tr_dfc_stitched     = Trajectory(K_dfc_adc_stitched'[:,:], acqData.traj[1].numProfiles, acqData.traj[1].numSamplingPerProfile; circular=false, times=times);
 tr_dfc_standard     = Trajectory(K_dfc_adc_standard'[:,:], acqData.traj[1].numProfiles, acqData.traj[1].numSamplingPerProfile; circular=false, times=times);
 
+
+# 4. include both ΔB₀ and all order terms of stitched DFC, with BlochHighOrder("111")
+Op4 = HighOrderOp((Nx, Ny), tr_nominal, tr_dfc_stitched , BlochHighOrder("111"); Nblocks=9, fieldmap=Matrix(B0map), grid=1);
+
 recParams = Dict{Symbol,Any}(); #recParams = merge(defaultRecoParams(), recParams)
 recParams[:reconSize] = (Nx, Ny)  # 150, 150
 recParams[:densityWeighting] = true
 recParams[:reco] = "standard"
-recParams[:regularization] = "L2"  # ["L2", "L1", "L21", "TV", "LLR", "Positive", "Proj", "Nuclear"]
-recParams[:λ] = 1e-2
-recParams[:iterations] = 30
-recParams[:solver] = "cgnr"
-recParams[:solverInfo] = SolverInfo(vec(ComplexF32.(x_ref)), store_solutions=true)
+recParams[:regularization] = "L1"  # ["L2", "L1", "L21", "TV", "LLR", "Positive", "Proj", "Nuclear"]
+recParams[:λ] = 1e-3
+recParams[:iterations] = 100
+recParams[:solver] = "admm"
+recParams[:solverInfo] = SolverInfo(ComplexF64, store_solutions=false);
 
-imgs = Array{Float32,3}(undef, 5, Nx, Ny);
-# 1. ideally, with BlochHighOrder("000"), we use nominal trajectory and a null B0map
-Op1 = HighOrderOp((Nx, Ny), tr_nominal, tr_dfc_stitched , BlochHighOrder("000"); Nblocks=9, fieldmap=Matrix(B0map).*0, grid=1);
-# 2. include ΔB₀, with BlochHighOrder("000"), we use nominal trajectory
-Op2 = HighOrderOp((Nx, Ny), tr_nominal, tr_dfc_stitched , BlochHighOrder("000"); Nblocks=9, fieldmap=Matrix(B0map), grid=1);
-# 3. include both ΔB₀ and 0th/1st order terms of stitched DFC, with BlochHighOrder("110")
-Op3 = HighOrderOp((Nx, Ny), tr_nominal, tr_dfc_stitched , BlochHighOrder("110"); Nblocks=9, fieldmap=Matrix(B0map), grid=1);
-# 4. include both ΔB₀ and all order terms of stitched DFC, with BlochHighOrder("111")
-Op4 = HighOrderOp((Nx, Ny), tr_nominal, tr_dfc_stitched , BlochHighOrder("111"); Nblocks=9, fieldmap=Matrix(B0map), grid=1);
-# 5. include both ΔB₀ and all order terms of standard DFC, with BlochHighOrder("111")
-Op5 = HighOrderOp((Nx, Ny), tr_nominal, tr_dfc_standard , BlochHighOrder("111"); Nblocks=9, fieldmap=Matrix(B0map), grid=1);
-Ops = [Op1, Op2, Op3, Op4, Op5];
-titles = ["HighOrderOp, stitched: 000, without ΔB₀",
-          "HighOrderOp, stitched: 000, with ΔB₀",
-          "HighOrderOp, stitched: 110 with ΔB₀",
-          "HighOrderOp, stitched: 111 with ΔB₀",
-          "HighOrderOp, standard: 111 with ΔB₀"]
-for idx in eachindex(Ops)
-    recParams[:encodingOps] = reshape([Ops[idx]], 1,1);
-    @time rec = abs.(reconstruction(acqData, recParams).data[:,:]);
-    imgs[idx, :, :] = rotl90(rec);
-    plt_image(rotl90(rec); title=titles[idx])
+recParams[:encodingOps] = reshape([Op4], 1,1);
+@time rec = abs.(reconstruction(acqData, recParams).data[:,:]);
+plt_image(rotl90(rec); title="HighOrderOp, stitched: 111 with ΔB₀")
+
+
+solverinfo = recParams[:solverInfo];
+x_iter = Array{Float64,3}(undef, length(solverinfo.x_iter), 150, 150);
+mse_values = Vector{Float32}(undef, length(solverinfo.x_iter));
+
+for idx in eachindex(solverinfo.x_iter)
+    x_iter[idx, :, :] = rotl90(imag.(reshape(solverinfo.x_iter[idx], 150, 150)));
+    mse_values[idx] = rmse(x_iter[idx, :, :], x_ref)
 end
 
-MAT.matwrite(dir*"/recon_fully_sampled_cgnr_50_L2_1e-2.mat", Dict("imgs"=>imgs))
+# plt_images(x_iter, width=17, height=3)
+
+fig, axs = plt.subplots(1,3, figsize=(15,5))
+curves = [solverinfo.convMeas, mse_values, solverinfo.nrmse]
+labels = ["convMeas", "RMSE", "NRMSE"]
+for i in 1:3
+    axs[i].plot(curves[i], label=labels[i])
+    axs[i].set_xlabel("Iteration")
+    axs[i].set_ylabel(labels[i])
+    axs[i].legend()
+end
+fig.tight_layout()
