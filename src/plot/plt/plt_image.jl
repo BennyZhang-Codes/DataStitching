@@ -90,7 +90,9 @@ function plt_images(
     vmin, vmax = quantile(reshape(imgs, :), vminp/100), quantile(reshape(imgs, :), vmaxp/100)
 
     fig, axs = plt.subplots(nrows=nRow, ncols=nCol, figsize=(width, height), facecolor=color_facecoler)
-	fig.suptitle(title, fontsize=fontsize_title)
+	axs = reshape(axs, nRow, nCol) # to keep axs as a 2D array
+    
+    fig.suptitle(title, fontsize=fontsize_title)
     for frame = 1:nFrame
         row, col = Int(ceil(frame/nCol)), (frame-1)%nCol + 1
         ax = axs[row, col]
