@@ -19,14 +19,14 @@ function demo() ::Nothing
 end
 
 
-function demo_hoseq(;skope::Bool=true, skope_method::Symbol=:Stitched) ::HO_Sequence
-    seq = load_seq(); # skope sequence
+function demo_hoseq(;dfc::Bool=true, dfc_method::Symbol=:Stitched) ::HO_Sequence
+    seq = load_seq(); # dfc sequence
     seq.GR[1,:] = -seq.GR[1,:]; # reverse the sign of the gradient (axis x)
     hoseq = HO_Sequence(seq); # hoseq
-    if skope
-        GR_skope = load_dfc(;dfc_method=skope_method);
-        hoseq.GR_skope[2:4, :] = hoseq.SEQ.GR;
-        hoseq.GR_skope[:,8] = GR_skope;
+    if dfc
+        GR_dfc = load_dfc(;dfc_method=dfc_method);
+        hoseq.GR_dfc[2:4, :] = hoseq.SEQ.GR;
+        hoseq.GR_dfc[:,8] = GR_dfc;
     end
     return hoseq
 end
