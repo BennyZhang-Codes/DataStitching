@@ -65,7 +65,7 @@ function plot_seq(
     p[2O+3+1] = scatter(x=samples.adc.t*1e3, y=samples.adc.A*1.0, name="ADC", hovertemplate="(%{x:.4f} ms, %{y:i})",
                 xaxis=xaxis, yaxis=yaxis, legendgroup="ADC", showlegend=showlegend, color=marker=attr(color="#19D3F3"))
 
-    # for skope measured gradients
+    # for dfc measured gradients
     p[2O+3+1+1] = scatter(x=samples.h0.t*1e3, y=samples.h0.A*1e3, name="h0", hovertemplate="(%{x:.4f} ms, %{y:.2f} mT)",
                     xaxis=xaxis, yaxis=yaxis, legendgroup="h0", showlegend=showlegend, marker=attr(color="#5f4690"))
     p[2O+3+1+2] = scatter(x=samples.h1.t*1e3, y=samples.h1.A*1e3, name="h1", hovertemplate="(%{x:.4f} ms, %{y:.2f} mT/m)",

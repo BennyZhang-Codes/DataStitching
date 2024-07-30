@@ -17,12 +17,12 @@ acqData.traj[1].circular = false;
 shape = (Nx, Ny);
 
 hoseq = demo_hoseq()
-_, K_nominal_adc, _, K_skope_adc = get_kspace(hoseq; Δt=1)
+_, K_nominal_adc, _, K_dfc_adc = get_kspace(hoseq; Δt=1)
 
 t_adc = KomaMRIBase.get_adc_sampling_times(hoseq.SEQ)
 # times = t_adc .- minimum(t_adc)
 times = KomaMRIBase.get_adc_sampling_times(hoseq.SEQ)
-tr_skope = Trajectory(K_skope_adc'[:,:], acqData.traj[1].numProfiles, acqData.traj[1].numSamplingPerProfile; circular=false, times=times);
+tr_dfc = Trajectory(K_dfc_adc'[:,:], acqData.traj[1].numProfiles, acqData.traj[1].numSamplingPerProfile; circular=false, times=times);
 tr_nominal = Trajectory(K_nominal_adc'[1:3,:], acqData.traj[1].numProfiles, acqData.traj[1].numSamplingPerProfile; circular=false, times=times);
 
 T2map = brain_phantom2D_reference(BrainPhantom(); ss=3, location=0.8, key=:T2, target_fov=(150, 150), target_resolution=(1,1));

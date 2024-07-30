@@ -6,8 +6,8 @@ using KomaHighOrder
 using MRIReco, MRICoilSensitivities, PlotlyJS, MAT
 simtype = SimType(B0=false, T2=false, ss=5)
 BHO = BlochHighOrder("111")
-skope_method = "Stitched"   # :Stitched or :Standard
-dir = "$(@__DIR__)/src/demo/demo_recon/HighOrderOp_spiral/results_$skope_method/$(simtype.name)"; if ispath(dir) == false mkdir(dir) end
+dfc_method = "Stitched"   # :Stitched or :Standard
+dir = "$(@__DIR__)/src/demo/demo_recon/HighOrderOp_spiral/results_$dfc_method/$(simtype.name)"; if ispath(dir) == false mkdir(dir) end
 
 
 raw = demo_raw(BHO; simtype=simtype)
@@ -16,12 +16,12 @@ acqData = AcquisitionData(raw);
 acqData.traj[1].circular = false;
 shape = (Nx, Ny);
 
-hoseq = demo_hoseq(skope_method=Symbol(skope_method))
-_, K_nominal_adc, _, K_skope_adc = get_kspace(hoseq; Δt=1)
+hoseq = demo_hoseq(dfc_method=Symbol(dfc_method))
+_, K_nominal_adc, _, K_dfc_adc = get_kspace(hoseq; Δt=1)
 
-tr_skope = Trajectory(K_skope_adc'[:,:], acqData.traj[1].numProfiles, acqData.traj[1].numSamplingPerProfile, circular=false);
+tr_dfc = Trajectory(K_dfc_adc'[:,:], acqData.traj[1].numProfiles, acqData.traj[1].numSamplingPerProfile, circular=false);
 tr_nominal = Trajectory(K_nominal_adc'[1:3,:], acqData.traj[1].numProfiles, acqData.traj[1].numSamplingPerProfile, circular=false);
-# plot_traj2d(Trajectory(K_skope_adc'[2:3,:], acqData.traj[1].numProfiles, acqData.traj[1].numSamplingPerProfile, circular=false))
+# plot_traj2d(Trajectory(K_dfc_adc'[2:3,:], acqData.traj[1].numProfiles, acqData.traj[1].numSamplingPerProfile, circular=false))
 # plot_traj2d(Trajectory(K_nominal_adc'[1:3,:], acqData.traj[1].numProfiles, acqData.traj[1].numSamplingPerProfile, circular=false))
 #######################################################################################
 # HighOrderOp 
@@ -51,7 +51,7 @@ imgs = Array{ComplexF32,3}(undef, Nx, Ny, length(BHO_recos));
 for idx in eachindex(BHO_recos)
     @info "Simu: $(BHO.name), Reco: $(BHO_recos[idx])"
     BHO_reco = BHO_recos[idx]
-    Op = HighOrderOp(shape, tr_nominal, tr_skope, BlochHighOrder(BHO_reco);  Nblocks=9)
+    Op = HighOrderOp(shape, tr_nominal, tr_dfc, BlochHighOrder(BHO_reco);  Nblocks=9)
     recParams[:encodingOps] = reshape([Op], 1,1)
     @time rec = reconstruction(acqData, recParams);
     imgs[:,:, idx] = rec.data[:,:]
@@ -102,7 +102,7 @@ imgs = Array{ComplexF32,3}(undef, Nx, Ny, length(BHO_recos));
 for idx in eachindex(BHO_recos)
     @info "Simu: $(BHO_simu.name), Reco: $(BHO_recos[idx])"
     BHO_reco = BHO_recos[idx]
-    Op = HighOrderOp(shape, tr_nominal, tr_skope, BlochHighOrder(BHO_reco);  Nblocks=9)
+    Op = HighOrderOp(shape, tr_nominal, tr_dfc, BlochHighOrder(BHO_reco);  Nblocks=9)
     recParams[:encodingOps] = reshape([Op], 1,1)
     @time rec = reconstruction(acqData, recParams);
     imgs[:,:, idx] = rec.data[:,:]

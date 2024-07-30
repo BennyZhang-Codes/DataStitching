@@ -3,8 +3,8 @@ using ImageTransformations, ImageQualityIndexes, ImageDistances, ImageMorphology
 
 simtype = SimType(B0=false, T2=false, ss=5)
 
-skope_method = "Stitched"   # :Stitched or :Standard
-dir = "$(@__DIR__)/src/demo/demo_recon/HighOrderOp_spiral/results_$skope_method/$(simtype.name)"; if ispath(dir) == false mkdir(dir) end
+dfc_method = "Stitched"   # :Stitched or :Standard
+dir = "$(@__DIR__)/src/demo/demo_recon/HighOrderOp_spiral/results_$dfc_method/$(simtype.name)"; if ispath(dir) == false mkdir(dir) end
 
 
 headmask  = brain_phantom2D_reference(BrainPhantom(); ss=simtype.ss, location=0.8, key=:headmask , target_fov=(150, 150), target_resolution=(1,1));

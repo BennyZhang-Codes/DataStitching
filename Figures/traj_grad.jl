@@ -2,7 +2,7 @@ using PyPlot
 using KomaHighOrder
 
 key = :Standard
-hoseq = demo_hoseq(skope_method=key)[8]   # :Standard or :Stitched
+hoseq = demo_hoseq(dfc_method=key)[8]   # :Standard or :Stitched
 sh = SphericalHarmonics()
 
 samples = get_samples(hoseq; off_val=0) 

@@ -2,7 +2,7 @@ using PyPlot
 using KomaHighOrder
 
 
-hoseq = demo_hoseq(skope_method=key)   # :Standard or :Stitched 
+hoseq = demo_hoseq(dfc_method=key)   # :Standard or :Stitched 
 samples = get_samples(hoseq; off_val=Inf)
 
 

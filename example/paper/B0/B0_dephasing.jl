@@ -62,9 +62,9 @@ Nx = Ny = 150;
 acqData = AcquisitionData(raw, BlochHighOrder("111"); sim_params=sim_params);
 acqData.traj[1].circular = false;
 
-_, K_nominal_adc, _, K_skope_adc = get_kspace(hoseq; Δt=1);
+_, K_nominal_adc, _, K_dfc_adc = get_kspace(hoseq; Δt=1);
 times = KomaMRIBase.get_adc_sampling_times(hoseq.SEQ);
-tr_skope = Trajectory(K_skope_adc'[:,:], acqData.traj[1].numProfiles, acqData.traj[1].numSamplingPerProfile; circular=false, times=times);
+tr_dfc = Trajectory(K_dfc_adc'[:,:], acqData.traj[1].numProfiles, acqData.traj[1].numSamplingPerProfile; circular=false, times=times);
 tr_nominal = Trajectory(K_nominal_adc'[1:3,:], acqData.traj[1].numProfiles, acqData.traj[1].numSamplingPerProfile; circular=false, times=times);
 
 #######################################################################################
@@ -85,7 +85,7 @@ recParams[:iterations] = iter
 recParams[:solver] = solver
 # recParams = merge(defaultRecoParams(), recParams)
 
-Op = HighOrderOp((Nx, Ny), tr_nominal, tr_skope, BHO; Nblocks=9, fieldmap=Matrix(B0map), grid=1)
+Op = HighOrderOp((Nx, Ny), tr_nominal, tr_dfc, BHO; Nblocks=9, fieldmap=Matrix(B0map), grid=1)
 recParams[:encodingOps] = reshape([Op], 1,1)
 @time rec = reconstruction(acqData, recParams);
 p_iter_SignalOp = plot_image(abs.(rec.data[:,:]); title="HighOrderOp $(BHO.name), $(-maxOffresonance) Hz, $(solver)_$(reg)_iter$(iter)_λ$(λ)", width=650, height=600)

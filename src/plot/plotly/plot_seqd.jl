@@ -189,7 +189,7 @@ function plot_hoseqd_generate_seq_time_layout_config(title, width, height, range
                 "#AB63FA",                        # |B1|
                 # "#FFA15A",                      # <B1
                 "#19d3f3",                        # ADC                      #"#FF6692", "#B6E880", "#FF97FF", "#FECB52"
-                "#5f4690", "#1d6996", "#38a6a5", "#0f8554", "#73af48", "#edad08", "#e17c05", "#cc503e", "#94346e",  # prism, for skope measured gradients
+                "#5f4690", "#1d6996", "#38a6a5", "#0f8554", "#73af48", "#edad08", "#e17c05", "#cc503e", "#94346e",  # prism, for dfc measured gradients
                 #"#6f4070", "#666666"
             ],
 			shapes = shapes,

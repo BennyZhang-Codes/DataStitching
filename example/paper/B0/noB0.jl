@@ -55,12 +55,12 @@ acqData.traj[1].circular = false;
 shape = (Nx, Ny);
 
 hoseq = demo_hoseq();
-_, K_nominal_adc, _, K_skope_adc = get_kspace(hoseq; Δt=1);
+_, K_nominal_adc, _, K_dfc_adc = get_kspace(hoseq; Δt=1);
 
 t_adc = KomaMRIBase.get_adc_sampling_times(hoseq.SEQ);
 # times = t_adc .- minimum(t_adc)
 times = KomaMRIBase.get_adc_sampling_times(hoseq.SEQ);
-tr_skope = Trajectory(K_skope_adc'[:,:], acqData.traj[1].numProfiles, acqData.traj[1].numSamplingPerProfile; circular=false, times=times);
+tr_dfc = Trajectory(K_dfc_adc'[:,:], acqData.traj[1].numProfiles, acqData.traj[1].numSamplingPerProfile; circular=false, times=times);
 tr_nominal = Trajectory(K_nominal_adc'[1:3,:], acqData.traj[1].numProfiles, acqData.traj[1].numSamplingPerProfile; circular=false, times=times);
 
 
@@ -82,7 +82,7 @@ recParams[:λ] = 1e-2
 recParams[:iterations] = 20
 recParams[:solver] = "cgnr"
 
-Op = HighOrderOp(shape, tr_nominal, tr_skope, BHO; Nblocks=9, grid=1)
+Op = HighOrderOp(shape, tr_nominal, tr_dfc, BHO; Nblocks=9, grid=1)
 # Op = SignalOp(shape, tr_nominal, 1e-3, 1e-3; Nblocks=9, fieldmap=B0map)
 recParams[:encodingOps] = reshape([Op], 1,1)
 @time rec = reconstruction(acqData, recParams);

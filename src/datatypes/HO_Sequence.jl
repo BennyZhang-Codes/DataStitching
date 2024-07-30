@@ -10,11 +10,11 @@ import KomaMRI.KomaMRIBase: is_Gx_on, is_Gy_on, is_Gz_on, is_ADC_on, is_RF_on
 	hoseq = HO_Sequence(SEQ::Sequence, GR_dfc::Array{Grad,1}, DUR)
 
 
-The HO_Sequence struct. It contains MRI sequence and corresponding skope measured gradients.
+The HO_Sequence struct. It contains MRI sequence and corresponding DFC measured gradients.
 
 # Arguments
 - `SEQ`: (`::Sequence`) MRI sequence.
-- `GR_dfc`: (`::Matrix{Grad}`) gradient matrix for skope. Rows for amplitudes and columns are for blocks
+- `GR_dfc`: (`::Matrix{Grad}`) gradient matrix for DFC. Rows for amplitudes and columns are for blocks
 \n 	h0 := 1 
 \n  h1 := x
 \n  h2 := y 
@@ -46,25 +46,25 @@ end
 # Main Constructors
 function HO_Sequence(GR_dfc::Array{Grad,2})
 	M, N = size(GR_dfc)
-    gr_skope = [i <= M ? GR_dfc[i,j] : Grad(0, 0) for i in 1:9, j in 1:N]
-	M, N = size(gr_skope[2:3,:])   
-	seq = Sequence([i <= M ? gr_skope[i,j] : Grad(0, 0) for i in 1:3, j in 1:N])  # use skope gradient to generate seq
-	dur = maximum([seq.DUR gr_skope.dur],dims=2)[:]
-    return HO_Sequence(seq, gr_skope, dur)
+    gr_dfc = [i <= M ? GR_dfc[i,j] : Grad(0, 0) for i in 1:9, j in 1:N]
+	M, N = size(gr_dfc[2:3,:])   
+	seq = Sequence([i <= M ? gr_dfc[i,j] : Grad(0, 0) for i in 1:3, j in 1:N])  # use DFC gradient to generate seq
+	dur = maximum([seq.DUR gr_dfc.dur],dims=2)[:]
+    return HO_Sequence(seq, gr_dfc, dur)
 end
 
 function HO_Sequence(SEQ::Sequence, GR_dfc::Array{Grad,2})
 	@assert size(SEQ)[1] .== size(GR_dfc, 2) "The number of SEQ and GR_dfc objects must be the same."
 	M, N = size(GR_dfc)
-    gr_skope = [i <= M ? GR_dfc[i,j] : Grad(0, 0) for i in 1:9, j in 1:N]
-	dur = maximum([SEQ.DUR gr_skope.dur],dims=2)[:]
-    return HO_Sequence(SEQ, gr_skope, dur)
+    gr_dfc = [i <= M ? GR_dfc[i,j] : Grad(0, 0) for i in 1:9, j in 1:N]
+	dur = maximum([SEQ.DUR gr_dfc.dur],dims=2)[:]
+    return HO_Sequence(SEQ, gr_dfc, dur)
 end
 
 function HO_Sequence(SEQ::Sequence)
-	gr_skope = [Grad(0, 0) for _ in 1:9, _ in 1:size(SEQ)[1]]
-	dur = maximum([SEQ.DUR gr_skope.dur],dims=2)[:]
-    return HO_Sequence(SEQ, gr_skope, dur)
+	gr_dfc = [Grad(0, 0) for _ in 1:9, _ in 1:size(SEQ)[1]]
+	dur = maximum([SEQ.DUR gr_dfc.dur],dims=2)[:]
+    return HO_Sequence(SEQ, gr_dfc, dur)
 end
 
 # Other constructors
@@ -210,7 +210,7 @@ end
 
 
 """
-    K_nominal, K_nominal_adc, K_skope, K_skope_adc = get_kspace(hoseq::HO_Sequence; Δt=1)
+    K_nominal, K_nominal_adc, K_dfc, K_dfc_adc = get_kspace(hoseq::HO_Sequence; Δt=1)
 
 Outputs the designed k-space trajectory of the Sequence `hoseq`.
 
@@ -222,8 +222,8 @@ Outputs the designed k-space trajectory of the Sequence `hoseq`.
 # Returns
 - `K_nominal`: (`3-column ::Matrix{Float64}`) nominal kspace
 - `K_nominal_adc`: (`3-column ::Matrix{Float64}`) nominal adc kspace
-- `K_skope`: (`3-column ::Matrix{Float64}`) skope kspace
-- `K_skope_adc`: (`3-column ::Matrix{Float64}`) skope adc kspace
+- `K_dfc`: (`3-column ::Matrix{Float64}`) DFC kspace
+- `K_dfc_adc`: (`3-column ::Matrix{Float64}`) DFC adc kspace
 """
 get_kspace(hoseq::HO_Sequence; Δt=1,
 skip_rf=zeros(Bool, sum(is_RF_on.(hoseq.SEQ)))) = begin
@@ -234,11 +234,11 @@ skip_rf=zeros(Bool, sum(is_RF_on.(hoseq.SEQ)))) = begin
 	t = t[1:end-1]
 
 	G_nominal = Dict(1=>Gx, 2=>Gy, 3=>Gz)
-	G_skope = Dict(1=>H0, 2=>H1, 3=>H2, 4=>H3, 5=>H4, 6=>H5, 7=>H6, 8=>H7, 9=>H8)
+	G_dfc = Dict(1=>H0, 2=>H1, 3=>H2, 4=>H3, 5=>H4, 6=>H5, 7=>H6, 8=>H7, 9=>H8)
 	
 	K_nominal, K_nominal_adc = grad2kspace(hoseq.SEQ, G_nominal, t, Δt, skip_rf)
-	K_skope, K_skope_adc = grad2kspace(hoseq, G_skope, t, Δt, skip_rf)
-	return K_nominal, K_nominal_adc, K_skope, K_skope_adc
+	K_dfc, K_dfc_adc = grad2kspace(hoseq, G_dfc, t, Δt, skip_rf)
+	return K_nominal, K_nominal_adc, K_dfc, K_dfc_adc
 end
 
 function grad2kspace(seq::Sequence, G, t, Δt, skip_rf)

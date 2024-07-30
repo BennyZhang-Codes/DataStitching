@@ -6,7 +6,7 @@ using MRIReco, MRICoilSensitivities, PlotlyJS, MAT
 using ImageQualityIndexes, ImageDistances
 simtype = SimType(B0=false, T2=false, ss=5)
 BHO = BlochHighOrder("000")
-skope_method = "Stitched"   # :Stitched or :Standard
+dfc_method = "Stitched"   # :Stitched or :Standard
 
 sim_params = KomaMRICore.default_sim_params()
 sim_params["sim_method"] = BHO;
@@ -21,10 +21,10 @@ acqData = AcquisitionData(raw, BlochHighOrder("000"); sim_params=sim_params);
 acqData.traj[1].circular = false;
 shape = (Nx, Ny);
 
-hoseq = demo_hoseq(skope_method=Symbol(skope_method))
-_, K_nominal_adc, _, K_skope_adc = get_kspace(hoseq; Δt=1)
+hoseq = demo_hoseq(dfc_method=Symbol(dfc_method))
+_, K_nominal_adc, _, K_dfc_adc = get_kspace(hoseq; Δt=1)
 
-tr_skope = Trajectory(K_skope_adc'[:,:], acqData.traj[1].numProfiles, acqData.traj[1].numSamplingPerProfile, circular=false);
+tr_dfc = Trajectory(K_dfc_adc'[:,:], acqData.traj[1].numProfiles, acqData.traj[1].numSamplingPerProfile, circular=false);
 tr_nominal = Trajectory(K_nominal_adc'[1:3,:], acqData.traj[1].numProfiles, acqData.traj[1].numSamplingPerProfile, circular=false);
 ρ = brain_phantom2D_reference(BrainPhantom(); ss=simtype.ss, location=0.8, key=:ρ, target_fov=(150, 150), target_resolution=(1,1));
 dir = "$(@__DIR__)/params_search"; if ispath(dir) == false mkdir(dir) end
@@ -55,7 +55,7 @@ for solver in ["pogm",]
 
                 imgs = Array{ComplexF32,2}(undef, Nx, Ny);
                 @info "solver: $(solver), regularization: $(regularization), λ: $(λ), iteration: $(iteration)"
-                Op = HighOrderOp(shape, tr_nominal, tr_skope, BlochHighOrder(BHO_reco);  Nblocks=9)
+                Op = HighOrderOp(shape, tr_nominal, tr_dfc, BlochHighOrder(BHO_reco);  Nblocks=9)
                 recParams[:encodingOps] = reshape([Op], 1,1)
                 @time rec = reconstruction(acqData, recParams);
                 img = abs.(rec.data[:,:])
@@ -100,7 +100,7 @@ recParams[:solver] = "cgnr"
 BHO_reco = "000"
 
 imgs = Array{ComplexF32,2}(undef, Nx, Ny);
-Op = HighOrderOp(shape, tr_nominal, tr_skope, BlochHighOrder(BHO_reco);  Nblocks=9)
+Op = HighOrderOp(shape, tr_nominal, tr_dfc, BlochHighOrder(BHO_reco);  Nblocks=9)
 recParams[:encodingOps] = reshape([Op], 1,1)
 @time rec = reconstruction(acqData, recParams);
 img = abs.(rec.data[:,:])

@@ -32,8 +32,8 @@ sim_params["return_type"] = "mat";
 sim_params["precision"]   = "f64"
 
 # 4. simulate
-signal = simulate(obj, hoseq, sys; sim_params);
-raw = signal_to_raw_data(signal, hoseq, :nominal; sim_params=copy(sim_params));
+signal = simulate(obj, hoseq_stitched, sys; sim_params);
+raw = signal_to_raw_data(signal, hoseq_stitched, :nominal; sim_params=copy(sim_params));
 img = recon_2d(raw);
 p_image = plot_image(img; darkmode=true, title="Sim: $(BHO.name), Δw: [-$maxOffresonance,$maxOffresonance] Hz")
 savefig(p_image, dir*"/quadraticB0map_$(maxOffresonance)_reconNUFFT.svg", width=550,height=500,format="svg")
@@ -46,8 +46,9 @@ plot_image(B0map, darkmode=true, zmin=-maxOffresonance)
 
 acqData = AcquisitionData(raw, BHO; sim_params=sim_params);
 acqData.traj[1].circular = false;
-_, K_nominal_adc, _, K_skope_adc = get_kspace(hoseq; Δt=1);
-times = KomaMRIBase.get_adc_sampling_times(hoseq.SEQ);
+
+_, K_nominal_adc, _, K_skope_adc = get_kspace(hoseq_stitched; Δt=1);
+times = KomaMRIBase.get_adc_sampling_times(hoseq_stitched.SEQ);
 tr_skope   = Trajectory(    K_skope_adc'[:,:], acqData.traj[1].numProfiles, acqData.traj[1].numSamplingPerProfile; circular=false, times=times);
 tr_nominal = Trajectory(K_nominal_adc'[1:3,:], acqData.traj[1].numProfiles, acqData.traj[1].numSamplingPerProfile; circular=false, times=times);
 

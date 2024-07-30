@@ -2,7 +2,7 @@ using PyPlot
 using KomaHighOrder
 
 key = :Standard
-hoseq = demo_hoseq(skope_method=key)   # :Standard or :Stitched
+hoseq = demo_hoseq(dfc_method=key)   # :Standard or :Stitched
 sh = SphericalHarmonics()
 
 _, _, k_dfc, k_dfc_adc = get_kspace(hoseq; Δt=1)  # [nADC, nK]  zeroth-order: [:, 1], first-order: [:, 2:4], and second-order: [:, 5:9]

@@ -25,7 +25,7 @@ function signal_to_raw_data(
     seq = hoseq.SEQ
     version = string(VersionNumber(Pkg.TOML.parsefile(joinpath(@__DIR__, "..", "..", "Project.toml"))["version"]))
     #Number of samples and FOV
-    _, ktraj, _, ktraj_skope = get_kspace(hoseq) #kspace information
+    _, ktraj, _, ktraj_dfc = get_kspace(hoseq) #kspace information
     mink = minimum(ktraj, dims=1)
     maxk = maximum(ktraj, dims=1)
     Wk = maxk .- mink
@@ -52,8 +52,8 @@ function signal_to_raw_data(
     end
     #It needs to be transposed for the raw data
     ktraj = maximum(2*abs.(ktraj[:])) == 0 ? transpose(ktraj) : transpose(ktraj)./ maximum(2*abs.(ktraj[:]))
-    ktraj_skope = maximum(2*abs.(ktraj_skope[:])) == 0 ? transpose(ktraj_skope) : transpose(ktraj_skope)./ maximum(2*abs.(ktraj_skope[:]))
-    ktraj = [ktraj; ktraj_skope]
+    ktraj_dfc = maximum(2*abs.(ktraj_dfc[:])) == 0 ? transpose(ktraj_dfc) : transpose(ktraj_dfc)./ maximum(2*abs.(ktraj_dfc[:]))
+    ktraj = [ktraj; ktraj_dfc]
 
     #First we define the ISMRMRD data XML header
     #userParameters <- sim_params
@@ -243,11 +243,11 @@ function signal_to_raw_data(
     seq = hoseq.SEQ
     version = string(VersionNumber(Pkg.TOML.parsefile(joinpath(@__DIR__, "..", "..", "Project.toml"))["version"]))
     #Number of samples and FOV
-    _, ktraj, _, ktraj_skope = get_kspace(hoseq) #kspace information #kspace information
+    _, ktraj, _, ktraj_dfc = get_kspace(hoseq) #kspace information #kspace information
     if key == :nominal
         ktraj = ktraj
     elseif key == :measured
-        ktraj = ktraj_skope[:,2:4]
+        ktraj = ktraj_dfc[:,2:4]
     end
 
     if sim_params["precision"] == "f32" #Default
