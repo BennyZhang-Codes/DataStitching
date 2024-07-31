@@ -1,6 +1,7 @@
 using KomaHighOrder
 using MRIReco
 using MAT
+using PyPlot
 import RegularizedLeastSquares: SolverInfo
 using ImageDistances
 ############################################################################################## 
@@ -63,11 +64,11 @@ recParams = Dict{Symbol,Any}(); #recParams = merge(defaultRecoParams(), recParam
 recParams[:reconSize] = (Nx, Ny)  # 150, 150
 recParams[:densityWeighting] = true
 recParams[:reco] = "standard"
-recParams[:regularization] = "L1"  # ["L2", "L1", "L21", "TV", "LLR", "Positive", "Proj", "Nuclear"]
-recParams[:λ] = 1e-3
-recParams[:iterations] = 100
-recParams[:solver] = "admm"
-recParams[:solverInfo] = SolverInfo(ComplexF64, store_solutions=false);
+recParams[:regularization] = "L2"  # ["L2", "L1", "L21", "TV", "LLR", "Positive", "Proj", "Nuclear"]
+recParams[:λ] = 1e-2
+recParams[:iterations] = 10
+recParams[:solver] = "cgnr"
+recParams[:solverInfo] = SolverInfo(vec(ComplexF64.(x_ref)), store_solutions=true);
 
 recParams[:encodingOps] = reshape([Op4], 1,1);
 @time rec = abs.(reconstruction(acqData, recParams).data[:,:]);
@@ -86,7 +87,7 @@ end
 # plt_images(x_iter, width=17, height=3)
 
 fig, axs = plt.subplots(1,3, figsize=(15,5))
-curves = [solverinfo.convMeas, mse_values, solverinfo.nrmse]
+curves = [solverinfo.convMeas, mse_values, log10.(solverinfo.nrmse)]
 labels = ["convMeas", "RMSE", "NRMSE"]
 for i in 1:3
     axs[i].plot(curves[i], label=labels[i])
