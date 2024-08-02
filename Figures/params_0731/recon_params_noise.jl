@@ -1,5 +1,5 @@
 using KomaHighOrder
-using MRIReco
+using MRIReco, MRISimulation
 using MAT
 using PyPlot
 import RegularizedLeastSquares: SolverInfo
@@ -56,7 +56,8 @@ tr_nominal          = Trajectory(   K_nominal_adc'[1:3,:], acqData.traj[1].numPr
 tr_dfc_stitched     = Trajectory(K_dfc_adc_stitched'[:,:], acqData.traj[1].numProfiles, acqData.traj[1].numSamplingPerProfile; circular=false, times=times);
 tr_dfc_standard     = Trajectory(K_dfc_adc_standard'[:,:], acqData.traj[1].numProfiles, acqData.traj[1].numSamplingPerProfile; circular=false, times=times);
 
-
+# 1. ideally, with BlochHighOrder("000"), we use nominal trajectory and a null B0map
+Op1 = HighOrderOp((Nx, Ny), tr_nominal, tr_dfc_stitched , BlochHighOrder("000"); Nblocks=9, fieldmap=Matrix(B0map).*0, grid=1);
 # 4. include both ΔB₀ and all order terms of stitched DFC, with BlochHighOrder("111")
 Op4 = HighOrderOp((Nx, Ny), tr_nominal, tr_dfc_stitched , BlochHighOrder("111"); Nblocks=9, fieldmap=Matrix(B0map), grid=1);
 
@@ -64,38 +65,37 @@ Op4 = HighOrderOp((Nx, Ny), tr_nominal, tr_dfc_stitched , BlochHighOrder("111");
 # for params search
 
 ["admm", "cgnr", "fista", "optista", "pogm", "splitBregman"]
-["L2", "L1", "L21", "TV", "Positive", "Proj"]
+["L2", "L1", "L21", "TV"] # "Positive", "Proj"
 [1, 0.5, 0.1, 5.e-2, 1.e-2, 5.e-3, 1.e-3, 1.e-4, 1.e-5, 1.e-7, 1.e-9]
 
-solver = "fista"
+solver = "cgnr"
 regularization = "L2"
-λs     = [1,]
-λ = 0.1
 
-for solver in ["fista", "optista", "pogm"]
-    regularizations = solver == "cgnr" ? ["L2"] : ["L2", "L1", "TV",]
+for solver in ["admm"]
+    regularizations = solver == "cgnr" ? ["L2"] : ["L1"]
     for regularization in regularizations
-        λs     = [0.1, 1.e-2, 1.e-3, 1.e-4, 1.e-5, 1.e-6, 1.e-7, 1.e-8, 1.e-9, 0]
-        # λs     = [0.1, 1.e-9, 0]
+        noise_levels = [0, 2, 4, 6, 8, 10];
+        snrs = 100 ./noise_levels;
         convM  = Vector{Vector{Float64}}();
         nrmses = Vector{Vector{Float64}}();
         rmses  = Vector{Vector{Float64}}();
         mses   = Vector{Vector{Float64}}();
         ssims  = Vector{Vector{Float64}}();
-        for idx_λ in eachindex(λs)
-            λ = λs[idx_λ]
+        for idx_snr in eachindex(snrs)
+            snr = snrs[idx_snr];
+            acqData_noise = addNoise(acqData, snr);
             recParams = Dict{Symbol,Any}(); #recParams = merge(defaultRecoParams(), recParams)
             recParams[:reconSize] = (Nx, Ny)  # 150, 150
             recParams[:densityWeighting] = true
             recParams[:reco] = "standard"
             recParams[:regularization] = regularization  # ["L2", "L1", "L21", "TV", "LLR", "Positive", "Proj", "Nuclear"]
-            recParams[:λ] = λ
+            recParams[:λ] = 1.e-3
             recParams[:iterations] = 100
             recParams[:solver] = solver
             recParams[:solverInfo] = SolverInfo(vec(ComplexF64.(x_ref)), store_solutions=true);
 
             recParams[:encodingOps] = reshape([Op4], 1,1);
-            @time rec = abs.(reconstruction(acqData, recParams).data[:,:]);
+            @time rec = abs.(reconstruction(acqData_noise, recParams).data[:,:]);
             # plt_image(rotl90(rec); title="HighOrderOp, stitched: 111 with ΔB₀")
 
             solverinfo = recParams[:solverInfo];
@@ -117,6 +117,7 @@ for solver in ["fista", "optista", "pogm"]
             push!(rmses, m_rmse);
             push!(ssims, m_ssim);
         end
+
         figure_width       = 10
         figure_height      = 2
         linewidth          = 0.8
@@ -134,8 +135,8 @@ for solver in ["fista", "optista", "pogm"]
         labels = ["convergenceMeasure", "NRMSE", "SSIM"]
         for i in eachindex(curves)
             ax = axs[i]
-            for idx_λ in eachindex(λs)
-                ax.plot(curves[i][idx_λ], linewidth=linewidth, label=string(λs[idx_λ]))
+            for idx in eachindex(snrs)
+                ax.plot(curves[i][idx], linewidth=linewidth, label="$(noise_levels[idx]) %")
             end
             ax.set_facecolor(color_facecoler)
             ax.set_xlabel("Iteration", color=color_label, fontsize=fontsize_label)
@@ -144,27 +145,9 @@ for solver in ["fista", "optista", "pogm"]
             for spine in ax.spines  # "left", "right", "bottom", "top"
                 ax.spines[spine].set_color(color_label)
             end
-            ax.legend(ncols=2, fontsize=fontsize_legend, labelcolor=color_label, frameon=false, handlelength=1, handletextpad=0.5, labelspacing=0.1, columnspacing=1)
+            ax.legend(ncols=1, fontsize=fontsize_legend, labelcolor=color_label, frameon=false, handlelength=1, handletextpad=0.5, labelspacing=0.1, columnspacing=1)
         end
         fig.tight_layout(pad=0.3)
-        fig.savefig("$(dir)/solver_$(solver)_reg_$(regularization).png", dpi=300, bbox_inches="tight")
+        fig.savefig("$(dir)/addNoise_solver_$(solver)_reg_$(regularization).png", dpi=300, bbox_inches="tight")
     end
 end
-
-solver = "cgnr"
-regularization = "L2"
-λ = 1.e-2
-
-recParams = Dict{Symbol,Any}(); #recParams = merge(defaultRecoParams(), recParams)
-recParams[:reconSize] = (Nx, Ny)  # 150, 150
-recParams[:densityWeighting] = true
-recParams[:reco] = "standard"
-recParams[:regularization] = regularization  # ["L2", "L1", "L21", "TV", "LLR", "Positive", "Proj", "Nuclear"]
-recParams[:λ] = λ
-recParams[:iterations] = 50
-recParams[:solver] = solver
-recParams[:solverInfo] = SolverInfo(vec(ComplexF64.(x_ref)), store_solutions=true);
-
-recParams[:encodingOps] = reshape([Op4], 1,1);
-@time rec = abs.(reconstruction(acqData, recParams).data[:,:]);
-plt_image(rotl90(rec); title="HighOrderOp, stitched: 111 with ΔB₀")

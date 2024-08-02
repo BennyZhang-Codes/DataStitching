@@ -59,10 +59,10 @@ recParams = Dict{Symbol,Any}(); #recParams = merge(defaultRecoParams(), recParam
 recParams[:reconSize] = (Nx, Ny)  # 150, 150
 recParams[:densityWeighting] = true
 recParams[:reco] = "standard"
-recParams[:regularization] = "L2"  # ["L2", "L1", "L21", "TV", "LLR", "Positive", "Proj", "Nuclear"]
+recParams[:regularization] = "L1"  # ["L2", "L1", "L21", "TV", "LLR", "Positive", "Proj", "Nuclear"]
 recParams[:λ] = 1e-2
-recParams[:iterations] = 30
-recParams[:solver] = "cgnr"
+recParams[:iterations] = 90
+recParams[:solver] = "fista"
 recParams[:solverInfo] = SolverInfo(vec(ComplexF32.(x_ref)), store_solutions=true)
 
 imgs = Array{Float32,3}(undef, 5, Nx, Ny);
@@ -89,4 +89,4 @@ for idx in eachindex(Ops)
     plt_image(rotl90(rec); title=titles[idx])
 end
 
-MAT.matwrite(dir*"/recon_fully_sampled_cgnr_50_L2_1e-2.mat", Dict("imgs"=>imgs))
+MAT.matwrite(dir*"/recon_fully_sampled_fista_90_L1_1e-2.mat", Dict("imgs"=>imgs))
