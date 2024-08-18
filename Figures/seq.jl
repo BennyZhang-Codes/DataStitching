@@ -1,9 +1,12 @@
 using PyPlot
 using KomaHighOrder
+include("e:/skope/KomaHighOrder/Figures/info.jl")
 
-
-hoseq = demo_hoseq(dfc_method=key)   # :Standard or :Stitched 
+key = :Stitched
+hoseq = demo_hoseq(dfc_method=key)[4:end]   # :Standard or :Stitched 
 samples = get_samples(hoseq; off_val=Inf)
+adc_times = KomaMRIBase.get_adc_sampling_times(hoseq.SEQ)
+trigger_times = reshape(adc_times, 22000, 4)[1,:]
 
 
 figure_width       = 9
@@ -14,6 +17,7 @@ fontsize_label     = 11
 fontsize_ticklabel = 8
 color_facecoler    = "#ffffff"
 color_label        = "#000000"
+color_trigger      = "#000000"
 
 fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(figure_width, figure_height), facecolor=color_facecoler)
 
@@ -33,11 +37,13 @@ ax.plot(samples.gz.t*1e3,       samples.gz.A*1e3, color="#00CC96", linewidth=lin
 
 ax.plot(samples.rf.t*1e3, abs.(samples.rf.A)*1e7, color="#AB63FA", linewidth=linewidth, label=L"|B_{1}|")
 
-ax.set_ylim(-80, 120)
+ax.scatter(trigger_times*1e3, -50*ones(4), marker=L"\increment", color=color_trigger, linewidth=0.1, label=L"trigger")
+
+ax.set_ylim(-75, 75)
 
 ax.set_ylabel("amplitude (mT/m, mG)", fontsize=fontsize_label, color=color_label)
 ax.set_xlabel("time (ms)", fontsize=fontsize_label, color=color_label)
-ax.legend(fontsize=fontsize_legend, labelcolor=color_label, ncols=4, loc="upper right", frameon=false, handlelength=1, handletextpad=0.5, columnspacing=1)
+ax.legend(fontsize=fontsize_legend, labelcolor=color_label, ncols=5, loc="upper left", frameon=false, handlelength=1, handletextpad=0.5, columnspacing=1)
 fig.tight_layout()
 
-fig.savefig("Figures/out/seq.png", dpi=300)
+fig.savefig("$(out_path)/seq.png", dpi=300)
