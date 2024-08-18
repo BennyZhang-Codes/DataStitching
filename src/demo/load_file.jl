@@ -59,13 +59,18 @@ function load_dfc(;dfc_method::Symbol=:Stitched, seqname::String="demo", r::Int6
 
     grad = MAT.matread(dfc_path);
     Δt = grad["dt"];
-    dfcStitched = [zeros(9) grad["skopeStitched"]'] * 1e-3; 
-    dfcStandard = [zeros(9) grad["skopeStandard"]'] * 1e-3;
-    t = Δt * ones(88100);
+    nGradPoint, nTerm = size(grad["skopeStitched"])
+
+    dfcStitched = [zeros(nTerm) grad["skopeStitched"]'] * 1e-3; 
+    dfcStandard = [zeros(nTerm) grad["skopeStandard"]'] * 1e-3;
+    ntStitched = grad["ntStitched"]
+    ntStandard = grad["ntStandard"]
+
+    t = Δt * ones(nGradPoint);
     if dfc_method == :Stitched
         GR_dfc = reshape([KomaMRIBase.Grad(dfcStitched[idx,:], t, 0, 0, 0) for idx=1:9], :, 1);
     elseif dfc_method == :Standard
         GR_dfc = reshape([KomaMRIBase.Grad(dfcStandard[idx,:], t, 0, 0, 0) for idx=1:9], :, 1);
     end
-    return GR_dfc
+    return GR_dfc, ntStitched, ntStandard
 end

@@ -1,8 +1,8 @@
 using PyPlot
 using KomaHighOrder
 
-key = :Standard
-hoseq = demo_hoseq(dfc_method=key)[8]   # :Standard or :Stitched
+key = :Stitched
+hoseq = demo_hoseq(dfc_method=key, r=30)[8]   # :Standard or :Stitched
 sh = SphericalHarmonics()
 
 samples = get_samples(hoseq; off_val=0) 
@@ -59,5 +59,5 @@ for (ax, ncol) in zip(axs, [1, 3, 5])   # setup legend for each subplot
 end
 
 fig.tight_layout()
-fig.savefig("Figures/out/grad_$(String(key)).png", dpi=300)
+# fig.savefig("Figures/out/grad_$(String(key)).png", dpi=300)
 
