@@ -14,7 +14,7 @@ function plot_seqd(
         yaxis="y",
         showlegend=true
 )
-    scatter_used = WebGL ? scattergl : scatter
+    scatter_used = WebGL ? PlotlyJS.scattergl : PlotlyJS.scatter
     Gx  = scatter_used(x=hoseqd.seqd.t*1e3, y=hoseqd.seqd.Gx*1e3, name="Gx", mode="markers+lines", marker_symbol=:circle, 
             xaxis=xaxis, yaxis=yaxis, showlegend=showlegend, hovertemplate="(%{x:.4f} ms, %{y:.2f} mT/m)")
     Gy  = scatter_used(x=hoseqd.seqd.t*1e3, y=hoseqd.seqd.Gy*1e3, name="Gy", mode="markers+lines", marker_symbol=:circle, 
@@ -76,7 +76,7 @@ function plot_hoseqd(
         yaxis="y",
         showlegend=true
 )
-        scatter_used = WebGL ? scattergl : scatter
+        scatter_used = WebGL ? PlotlyJS.scattergl : PlotlyJS.scatter
         Gx  = scatter_used(x=hoseqd.seqd.t*1e3, y=hoseqd.seqd.Gx*1e3, name="Gx", mode="markers+lines", marker_symbol=:circle, 
                 xaxis=xaxis, yaxis=yaxis, showlegend=showlegend, hovertemplate="(%{x:.4f} ms, %{y:.2f} mT/m)")
         Gy  = scatter_used(x=hoseqd.seqd.t*1e3, y=hoseqd.seqd.Gy*1e3, name="Gy", mode="markers+lines", marker_symbol=:circle, 

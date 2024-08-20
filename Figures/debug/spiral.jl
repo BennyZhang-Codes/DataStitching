@@ -1,19 +1,19 @@
 using KomaHighOrder, MRISampling, MRIReco, MRICoilSensitivities
 import KomaHighOrder.MRIBase: rawdata
-R = 2
-simtype  = SimType(B0=false, T2=false, ss=5)
+R = 30
+simtype  = SimType(B0=false, T2=false, ss=1)
 csmtype= :real_32cha
 nCoil   = 32; nrows=4; ncols=8;
 BHO_name = "000"
 folder   = "spiral_$(csmtype)_nCoil$(nCoil)"
-path     = "$(@__DIR__)/demo/demo_sense/results/$folder"
+path     = "Figures/debug"; if ispath(dir) == false mkpath(dir) end     # output directory
 if ispath(path) == false mkpath(path) end
 
-seq = load_seq(seqname="spiral", r=R)
-hoseq = HO_Sequence(seq)
+# seq = load_seq(seqname="spiral", r=R)
+# hoseq = HO_Sequence(seq)
 
-hoseq = demo_hoseq(dfc_method=:Stitched, r=30)[4:end]   # :Stitched
-hoseq.SEQ.GR[1:2,5] = hoseq.SEQ.GR[1:2,5] * 1/7.5
+hoseq = demo_hoseq(dfc_method=:Stitched, r=R)[4:end]   # :Stitched
+hoseq.SEQ.GR[1:2,5] = hoseq.SEQ.GR[1:2,5] * 1
 plot_seq(hoseq)
 
 Nx = 150
@@ -41,8 +41,8 @@ images = recon_2d(raw, Nx=Nx, Ny=Ny);
 
 p_images = plot_imgs_subplots(abs.(images), nrows, ncols; title="$(nCoil) coils: NUFFT recon", height=400, width=800)
 p_sos = plot_image(sqrt.(sum(images.^2; dims=3))[:,:,1]; title="$(nCoil) coils: NUFFT recon, SOS", height=400, width=450)
-savefig(p_sos   , "$(path)/$(filename)-nufft_SOS.svg", format="svg", height=400, width=450)
-savefig(p_images, "$(path)/$(filename)-nufft.svg"    , format="svg", height=400, width=800)
+PlotlyJS.savefig(p_sos   , "$(path)/$(filename)-nufft_SOS.svg", format="svg", height=400, width=450)
+PlotlyJS.savefig(p_images, "$(path)/$(filename)-nufft.svg"    , format="svg", height=400, width=800)
 
 
 
@@ -64,14 +64,17 @@ T = Float32;
 coil = csmtype == :real_32cha ? csm_Real_32cha(217, 181) : csm_Birdcage(217, 181, nCoil, relative_radius=1.5);
 coil = get_center_crop(coil, 150, 150);
 
+coil = csmtype == :real_32cha ? csm_Real_32cha(1085, 905) : csm_Birdcage(217, 181, nCoil, relative_radius=1.5);
+coil = get_center_crop(coil, 466, 480);
+
 sensitivity = Array{ComplexF32,4}(undef, Nx, Ny, 1, nCoil);
 for c = 1:nCoil
     sensitivity[:,:,1,c] = imresize(transpose(coil[:,:,c]), shape)
 end
 
-p_smap_sos = plot_image(abs.(sqrt.(sum(sensitivity[:,:,1,:].^2; dims=3))[:,:,1]); title="$(nCoil) coils: Coil Sensitivity (Simulation), SOS")
+# p_smap_sos = plot_image(abs.(sqrt.(sum(sensitivity[:,:,1,:].^2; dims=3))[:,:,1]); title="$(nCoil) coils: Coil Sensitivity (Simulation), SOS")
 p_smap_mag = plot_imgs_subplots(  abs.(sensitivity[:,:,1,:]), nrows, ncols; title="$(nCoil) coils: Coil Sensitivity (Simulation)")
-p_smap_pha = plot_imgs_subplots(angle.(sensitivity[:,:,1,:]), nrows, ncols; title="$(nCoil) coils: Coil Sensitivity (Simulation)")
+# p_smap_pha = plot_imgs_subplots(angle.(sensitivity[:,:,1,:]), nrows, ncols; title="$(nCoil) coils: Coil Sensitivity (Simulation)")
 
 params = Dict{Symbol, Any}()
 params[:reco] = "multiCoil"
