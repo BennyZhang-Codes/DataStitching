@@ -1,18 +1,18 @@
 using KomaHighOrder, MRISampling, MRIReco, MRICoilSensitivities
 import KomaHighOrder.MRIBase: rawdata
-R = 30
-simtype  = SimType(B0=false, T2=false, ss=1)
+R = 4
+simtype  = SimType(B0=false, T2=false, ss=5)
 csmtype= :real_32cha
 nCoil   = 32; nrows=4; ncols=8;
 BHO_name = "000"
 folder   = "spiral_$(csmtype)_nCoil$(nCoil)"
-path     = "Figures/debug"; if ispath(dir) == false mkpath(dir) end     # output directory
+path     = "Figures/debug"; if ispath(path) == false mkpath(path) end     # output directory
 if ispath(path) == false mkpath(path) end
 
-# seq = load_seq(seqname="spiral", r=R)
-# hoseq = HO_Sequence(seq)
+seq = load_seq(seqname="demo", r=R)
+hoseq = HO_Sequence(seq)
 
-hoseq = demo_hoseq(dfc_method=:Stitched, r=R)[4:end]   # :Stitched
+# hoseq = demo_hoseq(dfc_method=:Stitched, r=R)[4:end]   # :Stitched
 hoseq.SEQ.GR[1:2,5] = hoseq.SEQ.GR[1:2,5] * 1
 plot_seq(hoseq)
 
@@ -35,41 +35,41 @@ signal = simulate(obj, hoseq, sys; sim_params);
 raw = signal_to_raw_data(signal, hoseq, :nominal)
 filename = "spiral_R$(R)_nCoil$(nCoil)"
 raw.params["protocolName"] = filename
-mrd = ISMRMRDFile("$(path)/$(filename).mrd")
-save(mrd, raw)
+# mrd = ISMRMRDFile("$(path)/$(filename).mrd")
+# save(mrd, raw)
 images = recon_2d(raw, Nx=Nx, Ny=Ny);
 
 p_images = plot_imgs_subplots(abs.(images), nrows, ncols; title="$(nCoil) coils: NUFFT recon", height=400, width=800)
 p_sos = plot_image(sqrt.(sum(images.^2; dims=3))[:,:,1]; title="$(nCoil) coils: NUFFT recon, SOS", height=400, width=450)
-PlotlyJS.savefig(p_sos   , "$(path)/$(filename)-nufft_SOS.svg", format="svg", height=400, width=450)
-PlotlyJS.savefig(p_images, "$(path)/$(filename)-nufft.svg"    , format="svg", height=400, width=800)
+# PlotlyJS.savefig(p_sos   , "$(path)/$(filename)-nufft_SOS.svg", format="svg", height=400, width=450)
+# PlotlyJS.savefig(p_images, "$(path)/$(filename)-nufft.svg"    , format="svg", height=400, width=800)
 
 
 
-raw = RawAcquisitionData(ISMRMRDFile("$(path)/spiral_R2_nCoil$(nCoil).mrd"));
+# raw = RawAcquisitionData(ISMRMRDFile("$(path)/spiral_R2_nCoil$(nCoil).mrd"));
 
-r = 2
+# r = 2
 acqData = AcquisitionData(raw); # raw = RawAcquisitionData(mrd);
 acqData.traj[1].circular = false;
 p_traj = plot_traj2d(acqData.traj[1]; height=400, width=400)
-savefig(p_traj, "$(path)/$(filename)-traj.svg", format="svg", height=400, width=400)
+# savefig(p_traj, "$(path)/$(filename)-traj.svg", format="svg", height=400, width=400)
 
 
-Nx, Ny, _ = raw.params["reconSize"]
+# Nx, Ny, _ = raw.params["reconSize"]
 shape = (Nx, Ny);
 T = Float32;
 #############################################################################
 # recon with the coil sensitivities as the same used in the simulation
 #############################################################################
 coil = csmtype == :real_32cha ? csm_Real_32cha(217, 181) : csm_Birdcage(217, 181, nCoil, relative_radius=1.5);
-coil = get_center_crop(coil, 150, 150);
+coil = get_center_crop(coil, Nx, Ny);
 
-coil = csmtype == :real_32cha ? csm_Real_32cha(1085, 905) : csm_Birdcage(217, 181, nCoil, relative_radius=1.5);
-coil = get_center_crop(coil, 466, 480);
+# coil = csmtype == :real_32cha ? csm_Real_32cha(1085, 905) : csm_Birdcage(217, 181, nCoil, relative_radius=1.5);
+# coil = get_center_crop(coil, 466, 480);
 
 sensitivity = Array{ComplexF32,4}(undef, Nx, Ny, 1, nCoil);
 for c = 1:nCoil
-    sensitivity[:,:,1,c] = imresize(transpose(coil[:,:,c]), shape)
+    sensitivity[:,:,1,c] = transpose(coil[:,:,c])
 end
 
 # p_smap_sos = plot_image(abs.(sqrt.(sum(sensitivity[:,:,1,:].^2; dims=3))[:,:,1]); title="$(nCoil) coils: Coil Sensitivity (Simulation), SOS")
@@ -79,17 +79,17 @@ p_smap_mag = plot_imgs_subplots(  abs.(sensitivity[:,:,1,:]), nrows, ncols; titl
 params = Dict{Symbol, Any}()
 params[:reco] = "multiCoil"
 params[:reconSize] = (Nx, Ny)
-params[:regularization] = "L2"
-params[:λ] = T(1.e-2)
-params[:iterations] = 50
+params[:regularization] = "L1"
+params[:λ] = T(1.e-6)
+params[:iterations] =50
 params[:relTol] = 0.0
-params[:solver] = "cgnr"
+params[:solver] = "admm"
 params[:toeplitz] = false
-params[:oversamplingFactor] = 1
+params[:oversamplingFactor] = 2
 params[:senseMaps] = Complex{T}.(reshape(sensitivity, Nx, Ny, 1, nCoil));
 img_recon = Array{ComplexF32,2}(undef, Nx, Ny);
 img_recon = reconstruction(acqData, params).data;
-p_img_recon = plot_image(abs.(img_recon[:,:]), title="$(nCoil) coils: Sense recon, R = $(r), sim-sensitivity")
+p_img_recon = plot_image(abs.(img_recon[:,:]), title="$(nCoil) coils: Sense recon, R = $(R), sim-sensitivity")
 
 savefig(p_smap_mag , "$(path)/$(filename)_simSmap_mag.svg"  , format="svg", height=400, width=800)
 savefig(p_smap_pha , "$(path)/$(filename)_simSmap_pha.svg"  , format="svg", height=400, width=800)

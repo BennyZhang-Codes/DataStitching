@@ -29,5 +29,5 @@ function plot_traj2d(
 		modeBarButtonsToRemove=["zoom", "select2d", "lasso2d", "autoScale", "resetScale2d", "pan",
 								"tableRotation", "resetCameraLastSave", "zoomIn", "zoomOut"]
 	)
-	return plot(s, l; config)
+	return PlotlyJS.plot(s, l; config)
 end
