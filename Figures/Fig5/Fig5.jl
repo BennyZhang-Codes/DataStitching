@@ -2,44 +2,69 @@ using PyPlot
 using MAT
 import Statistics: quantile
 
-dir = "Figures/out/recon_fully_sampled"; if ispath(dir) == false mkpath(dir) end     # output directory
+dir = "Figures/Fig5"; if ispath(dir) == false mkpath(dir) end     # output directory
+solver = "admm";
+regularization = "TV";
+λ = 1.e-4;
+iter=20;
 
-matfile = "recon_fully_sampled_admm_35_L1_1e-3"
+matfile = "fully_$(solver)_$(iter)_$(regularization)_$(λ)"
 
 imgs = MAT.matread("$(dir)/$(matfile).mat")["imgs"];
 nFrame, nX, nY = size(imgs)
 
-figure_width       = 10
-figure_height      = 3
+
+matplotlib.rc("mathtext", default="regular")
+matplotlib.rc("figure", dpi=200)
+matplotlib.rc("font", family="Times New Roman")
+matplotlib.rcParams["mathtext.default"]
+figure_width       = 12/2.54
+figure_height      = 6/2.54
 vmaxp              = 99
 vminp              = 1 
 cmap               = "gray"
-fontsize_legend    = 10
-fontsize_label     = 12
-fontsize_ticklabel = 8
+fontsize_legend    = 5
+fontsize_label     = 6
+fontsize_ticklabel = 4
+pad_label          = 2
 color_facecoler    = "#ffffff"
 color_label        = "#000000"
 color_imagelabel   = "#ffffff"
 
-fig, axs = plt.subplots(nrows=1, ncols=nFrame, figsize=(figure_width, figure_height), facecolor=color_facecoler)
+fig, axs = plt.subplots(nrows=2, ncols=4, figsize=(figure_width, figure_height), facecolor=color_facecoler)
 
-for idx = 1 : nFrame
-    ax = axs[idx]
-    img = imgs[idx,:,:]
-    vmin, vmax = quantile(img[:], vminp/100), quantile(img[:], vmaxp/100)
-    ax.axis("off")
-    ax.text(0.02, 0.98, "$(Char(96+idx))", fontsize=fontsize_label, color=color_imagelabel, transform=ax.transAxes, ha="left", va="top")
-    ax.imshow(img, cmap=cmap, vmin=vmin, vmax=vmax)
+idx_img = [1 2 3 0; 4 5 6 7]
+for row = 1 : 2
+    for col = 1 : 4
+        ax = axs[row, col]
+        idx = idx_img[row, col]
+
+        ax.tick_params(axis="both", bottom=false, top=false, left=false, right=false, labelbottom=false, labeltop=false, labelleft=false, labelright=false)
+        for spine in ax.spines  # "left", "right", "bottom", "top"
+            ax.spines[spine].set_visible(false)
+        end
+        if idx == 0
+            
+            continue
+        end
+        img = imgs[idx,:,:]
+        vmin, vmax = quantile(img[:], vminp/100), quantile(img[:], vmaxp/100)
+        ax.text(0.02, 0.98, "$(Char(96+idx))", fontsize=fontsize_label, color=color_imagelabel, transform=ax.transAxes, ha="left", va="top")
+        ax.imshow(img, cmap=cmap, vmin=vmin, vmax=vmax)
+    end
 end
-axs[1].set_title("w/o ΔB₀\nnominal"  , fontsize=fontsize_label, color=color_label)
-axs[2].set_title("w/ ΔB₀\nnominal"      , fontsize=fontsize_label, color=color_label)
-axs[3].set_title("w/ ΔB₀\nstitching 110", fontsize=fontsize_label, color=color_label)
-axs[4].set_title("w/ ΔB₀\nstitching 111", fontsize=fontsize_label, color=color_label)
-axs[5].set_title("w/ ΔB₀\nconventional 111" , fontsize=fontsize_label, color=color_label)
 
-fig.tight_layout(pad=0, w_pad=0.3, h_pad=0)
+axs[1,1].set_ylabel("w/o ΔB₀"         , fontsize=fontsize_label, color=color_label, labelpad=pad_label, rotation=0, ha="right", va="center", x=0, y=0.5,)
+axs[2,1].set_ylabel("with ΔB₀"        , fontsize=fontsize_label, color=color_label, labelpad=pad_label, rotation=0, ha="right", va="center", x=0, y=0.5,)
 
-fig.savefig("$(dir)/$(matfile).png", dpi=300, bbox_inches="tight")
+axs[1,1].set_title("nominal"          , fontsize=fontsize_label, color=color_label)
+axs[1,2].set_title("stitching 110"    , fontsize=fontsize_label, color=color_label)
+axs[1,3].set_title("stitching 111"    , fontsize=fontsize_label, color=color_label)
+axs[2,4].set_title("conventional 111" , fontsize=fontsize_label, color=color_label)
+
+# fig.tight_layout(pad=0, w_pad=0, h_pad=0)
+fig.subplots_adjust(left=0, right=1, bottom=0, top=1, wspace=0, hspace=0)
+fig.savefig("$(dir)/Fig5_$(matfile).png", dpi=300, bbox_inches="tight")
 
 
 

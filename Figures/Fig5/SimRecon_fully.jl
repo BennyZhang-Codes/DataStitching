@@ -12,7 +12,12 @@ phantom = BrainPhantom(prefix="brain3D724", x=0.2, y=0.2, z=0.2) # decide which 
 maxOffresonance = 200.                                           # set maximum off-resonance frequency in Hz for quadratic B0 map
 Nx = Ny = 150;
 
-dir = "Figures/debug"; if ispath(dir) == false mkpath(dir) end     # output directory
+solver = "admm";
+regularization = "TV";
+λ = 1.e-4;
+iter=20;
+
+dir = "Figures/Fig5"; if ispath(dir) == false mkpath(dir) end     # output directory
 
 # 1. sequence
 hoseq_stitched = demo_hoseq(dfc_method=:Stitched)[4:end]   # :Stitched
@@ -59,29 +64,42 @@ recParams = Dict{Symbol,Any}(); #recParams = merge(defaultRecoParams(), recParam
 recParams[:reconSize] = (Nx, Ny)  # 150, 150
 recParams[:densityWeighting] = true
 recParams[:reco] = "standard"
-recParams[:regularization] = "L1"  # ["L2", "L1", "L21", "TV", "LLR", "Positive", "Proj", "Nuclear"]
-recParams[:λ] = 1e-2
-recParams[:iterations] = 90
-recParams[:solver] = "fista"
+recParams[:regularization] = regularization  # ["L2", "L1", "L21", "TV", "LLR", "Positive", "Proj", "Nuclear"]
+recParams[:λ] = λ
+recParams[:iterations] = iter
+recParams[:solver] = solver
 recParams[:solverInfo] = SolverInfo(vec(ComplexF32.(x_ref)), store_solutions=true)
 
-imgs = Array{Float32,3}(undef, 5, Nx, Ny);
-# 1. ideally, with BlochHighOrder("000"), we use nominal trajectory and a null B0map
-Op1 = HighOrderOp((Nx, Ny), tr_nominal, tr_dfc_stitched , BlochHighOrder("000"); Nblocks=9, fieldmap=Matrix(B0map).*0, grid=1);
-# 2. include ΔB₀, with BlochHighOrder("000"), we use nominal trajectory
-Op2 = HighOrderOp((Nx, Ny), tr_nominal, tr_dfc_stitched , BlochHighOrder("000"); Nblocks=9, fieldmap=Matrix(B0map), grid=1);
-# 3. include both ΔB₀ and 0th/1st order terms of stitched DFC, with BlochHighOrder("110")
-Op3 = HighOrderOp((Nx, Ny), tr_nominal, tr_dfc_stitched , BlochHighOrder("110"); Nblocks=9, fieldmap=Matrix(B0map), grid=1);
-# 4. include both ΔB₀ and all order terms of stitched DFC, with BlochHighOrder("111")
-Op4 = HighOrderOp((Nx, Ny), tr_nominal, tr_dfc_stitched , BlochHighOrder("111"); Nblocks=9, fieldmap=Matrix(B0map), grid=1);
-# 5. include both ΔB₀ and all order terms of standard DFC, with BlochHighOrder("111")
-Op5 = HighOrderOp((Nx, Ny), tr_nominal, tr_dfc_standard , BlochHighOrder("111"); Nblocks=9, fieldmap=Matrix(B0map), grid=1);
-Ops = [Op1, Op2, Op3, Op4, Op5];
-titles = ["HighOrderOp, stitched: 000, without ΔB₀",
-          "HighOrderOp, stitched: 000, with ΔB₀",
-          "HighOrderOp, stitched: 110 with ΔB₀",
-          "HighOrderOp, stitched: 111 with ΔB₀",
-          "HighOrderOp, standard: 111 with ΔB₀"]
+
+
+Nblocks=9;
+##### w/o ΔB₀
+# 1. nominal trajectory, BlochHighOrder("000")
+Op1 = HighOrderOp((Nx, Ny), tr_nominal, tr_dfc_stitched , BlochHighOrder("000"); Nblocks=Nblocks, fieldmap=Matrix(B0map).*0, grid=1);
+# 2. stitched trajectory, BlochHighOrder("110")
+Op2 = HighOrderOp((Nx, Ny), tr_nominal, tr_dfc_stitched , BlochHighOrder("110"); Nblocks=Nblocks, fieldmap=Matrix(B0map).*0, grid=1);
+# 3. stitched trajectory, BlochHighOrder("111")
+Op3 = HighOrderOp((Nx, Ny), tr_nominal, tr_dfc_stitched , BlochHighOrder("111"); Nblocks=Nblocks, fieldmap=Matrix(B0map).*0, grid=1);
+
+##### with ΔB₀
+# 4. nominal trajectory, BlochHighOrder("000")
+Op4 = HighOrderOp((Nx, Ny), tr_nominal, tr_dfc_stitched , BlochHighOrder("000"); Nblocks=Nblocks, fieldmap=Matrix(B0map), grid=1);
+# 5. stitched trajectory, BlochHighOrder("110")
+Op5 = HighOrderOp((Nx, Ny), tr_nominal, tr_dfc_stitched , BlochHighOrder("110"); Nblocks=Nblocks, fieldmap=Matrix(B0map), grid=1);
+# 6. stitched trajectory, BlochHighOrder("111")
+Op6 = HighOrderOp((Nx, Ny), tr_nominal, tr_dfc_stitched , BlochHighOrder("111"); Nblocks=Nblocks, fieldmap=Matrix(B0map), grid=1);
+# 7. standard trajectory, BlochHighOrder("111")
+Op7 = HighOrderOp((Nx, Ny), tr_nominal, tr_dfc_standard , BlochHighOrder("111"); Nblocks=Nblocks, fieldmap=Matrix(B0map), grid=1);
+Ops = [Op1, Op2, Op3, Op4, Op5, Op6, Op7];
+
+imgs = Array{Float32,3}(undef, length(Ops), Nx, Ny);
+titles = ["HighOrderOp: w/o ΔB₀, stitched: 000",
+          "HighOrderOp: w/o ΔB₀, stitched: 110",
+          "HighOrderOp: w/o ΔB₀, stitched: 111",
+          "HighOrderOp: with ΔB₀, stitched: 000",
+          "HighOrderOp: with ΔB₀, stitched: 110",
+          "HighOrderOp: with ΔB₀, stitched: 111",
+          "HighOrderOp: with ΔB₀, standard: 111",]
 for idx in eachindex(Ops)
     recParams[:encodingOps] = reshape([Ops[idx]], 1,1);
     @time rec = abs.(reconstruction(acqData, recParams).data[:,:]);
@@ -89,4 +107,4 @@ for idx in eachindex(Ops)
     plt_image(rotl90(rec); title=titles[idx])
 end
 
-MAT.matwrite(dir*"/recon_fully_sampled_fista_90_L1_1e-2.mat", Dict("imgs"=>imgs))
+MAT.matwrite(dir*"/fully_$(solver)_$(iter)_$(regularization)_$(λ).mat", Dict("imgs"=>imgs))

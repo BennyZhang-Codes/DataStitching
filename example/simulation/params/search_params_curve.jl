@@ -1,6 +1,6 @@
 # julia -t 4
 using CUDA
-device!(4)
+device!(0)
 CUDA.used_memory()
 using KomaHighOrder
 using MRIReco, MRICoilSensitivities, PlotlyJS, MAT

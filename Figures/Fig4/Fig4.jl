@@ -94,6 +94,7 @@ fig.text(0.01, 1, "(a)", ha="left", va="baseline", fontsize=fontsize_subfigure)
 fig.text(0.51, 1, "(b)", ha="left", va="baseline", fontsize=fontsize_subfigure)
 
 fig.align_ylabels()
-fig.tight_layout(pad=0, h_pad=0.1, w_pad=0.3)
-fig.savefig("Figures/Fig4/Fig4.png", dpi=300, bbox_inches="tight")
+fig.subplots_adjust(left=0.1, right=0.95, bottom=0.05, top=0.95, wspace=0.2, hspace=0.2)
+# fig.tight_layout(pad=0, h_pad=0.1, w_pad=0.3)
+# fig.savefig("Figures/Fig4/Fig4.png", dpi=300, bbox_inches="tight")
 
