@@ -7,7 +7,7 @@ using ImageDistances, ImageQualityIndexes
 ############################################################################################## 
 # Setup
 ############################################################################################## 
-R=4
+R=6
 simtype = SimType(B0=false, T2=false, ss=5)                       # turn on B0, turn off T2, set phantom subsampling to 5
 csmtype= :real_32cha
 nCoil   = 32; nrows=4; ncols=8;
@@ -34,14 +34,17 @@ sim_params = KomaMRICore.default_sim_params()
 sim_params["sim_method"]  = BHO;
 sim_params["return_type"] = "mat";
 sim_params["precision"]   = "f64"
-sim_params["Nblocks"]    = 10000
+sim_params["Nblocks"]     = 20
+sim_params["gpu_device"]  = 2
 # 4. simulate
 signal = simulate(obj, hoseq, sys; sim_params);
 raw = signal_to_raw_data(signal, hoseq, :nominal; sim_params=copy(sim_params));
-imgs_nufft = recon_2d(raw);
-fig_nufft = plt_image(rotl90(sqrt.(sum(imgs_nufft.^2; dims=3))[:,:,1]); title="Sim: $(BHO.name), R=$(R), Δw: [-$maxOffresonance,$maxOffresonance] Hz")
-# savefig(p_image, dir*"/quadraticB0map_$(maxOffresonance)_reconNUFFT.svg", width=550,height=500,format="svg")
+imgs_nufft = recon_2d(raw; Nx=Nx, Ny=Ny);
 
+# fig_nufft = plt_image(rotl90(sqrt.(sum(imgs_nufft.^2; dims=3))[:,:,1]); title="Sim: $(BHO.name), R=$(R), Δw: [-$maxOffresonance,$maxOffresonance] Hz")
+fig = plt_image(rotl90(sqrt.(sum(imgs_nufft.^2; dims=3))[:,:,1]); width=12/2.54, height=12/2.54,title="")
+fig.tight_layout(pad=0, w_pad=0, h_pad=0)
+fig.savefig("$(dir)/R$(R)_NUFFT.png", pad_inches=0, dpi=300, bbox_inches="tight")
 
 
 # CSM 
@@ -88,16 +91,17 @@ Op4 = HighOrderOp((Nx, Ny), tr_nominal, tr_dfc , BlochHighOrder("000"); Nblocks=
 ["L2", "L1", "L21", "TV", "Positive", "Proj"]
 [1, 0.5, 0.1, 5.e-2, 1.e-2, 5.e-3, 1.e-3, 1.e-4, 1.e-5, 1.e-7, 1.e-9]
 
-solver = "cgnr"
-regularization = "L2"
+solver = "admm"
+regularization = "TV"
 λs     = [1,]
-λ = 1e-2
+λ = 1e-4
 
-for solver in ["cgnr", "admm", "fista"]
-    regularizations = solver == "cgnr" ? ["L2"] : ["L2", "L1", "TV",]
+
+for solver in ["admm"]
+    regularizations = solver == "cgnr" ? ["L2"] : ["TV",]
     for regularization in regularizations
-        λs     = [1.e-2, 1.e-3, 1.e-4, 1.e-5, 1.e-6, 0]
-        # λs     = [0.1, 1.e-9, 0]
+        # λs     = [1.e-2, 1.e-3, 1.e-4, 1.e-5, 1.e-6, 0]
+        λs     = [1.e-3, 1.e-4, 1.e-5]
         convM  = Vector{Vector{Float64}}();
         nrmses = Vector{Vector{Float64}}();
         rmses  = Vector{Vector{Float64}}();
@@ -112,7 +116,7 @@ for solver in ["cgnr", "admm", "fista"]
             recParams[:reco] = "multiCoil"
             recParams[:regularization] = regularization  # ["L2", "L1", "L21", "TV", "LLR", "Positive", "Proj", "Nuclear"]
             recParams[:λ] = λ
-            recParams[:iterations] = 50
+            recParams[:iterations] = 70
             recParams[:solver] = solver
             recParams[:solverInfo] = SolverInfo(vec(ComplexF64.(x_ref)), store_solutions=true);
             
@@ -181,25 +185,37 @@ for solver in ["cgnr", "admm", "fista"]
             ax.legend(ncols=2, fontsize=fontsize_legend, labelcolor=color_label, frameon=false, handlelength=1, handletextpad=0.5, labelspacing=0.1, columnspacing=1)
         end
         fig.tight_layout(pad=0.3)
-        fig.savefig("$(dir)/$(solver)_$(regularization).png", dpi=300, bbox_inches="tight")
+        fig.savefig("$(dir)/$(solver)_$(regularization)_R$(R).png", dpi=300, bbox_inches="tight")
     end
 end
 
-solver = "cgnr"
-regularization = "L2"
-λ = 1.e-2
+solvers = ["cgnr", "admm", "admm", "admm"]
+regs = ["L2", "L2", "L1", "TV"]
+λs = [1.e-4, 1e-4, 1e-3, 1e-4]
+iters = [30, 30, 20, 20]
 
-recParams = Dict{Symbol,Any}(); #recParams = merge(defaultRecoParams(), recParams)
-recParams[:reconSize] = (Nx, Ny)  # 150, 150
-recParams[:densityWeighting] = true
-recParams[:reco] = "multiCoil"
-recParams[:regularization] = regularization  # ["L2", "L1", "L21", "TV", "LLR", "Positive", "Proj", "Nuclear"]
-recParams[:λ] = λ
-recParams[:iterations] = 50
-recParams[:solver] = solver
-recParams[:solverInfo] = SolverInfo(vec(ComplexF64.(x_ref)), store_solutions=true);
 
-recParams[:senseMaps] = ComplexF64.(reshape(sensitivity, Nx, Ny, 1, nCoil));
-# recParams[:encodingOps] = reshape([Op], 1,1);
-@time rec = abs.(reconstruction(acqData, recParams).data[:,:]);
-plt_image(rotl90(rec); title="HighOrderOp, stitched: 111 with ΔB₀")
+for (solver, reg, λ, iter) in zip(solvers, regs, λs, iters)
+    @info "Solver: $(solver), Regularization: $(reg), λ: $(λ), iterations: $(iter)"
+    recParams = Dict{Symbol,Any}(); #recParams = merge(defaultRecoParams(), recParams)
+    recParams[:reconSize] = (Nx, Ny)  # 150, 150
+    recParams[:densityWeighting] = true
+    recParams[:reco] = "multiCoil"
+    recParams[:regularization] = reg  # ["L2", "L1", "L21", "TV", "LLR", "Positive", "Proj", "Nuclear"]
+    recParams[:λ] = λ
+    recParams[:iterations] = iter
+    recParams[:solver] = solver
+    recParams[:solverInfo] = SolverInfo(vec(ComplexF64.(x_ref)), store_solutions=true);
+
+
+    numContr, numChan = MRIReco.numContrasts(acqData), MRIReco.numChannels(acqData);
+    smaps = sensitivity[:,:,1,:];
+    S = SensitivityOp(reshape(ComplexF64.(smaps),:,numChan),1);
+    Op = DiagOp(Op4, numChan) ∘ S ;
+    recParams[:senseMaps] = ComplexF64.(reshape(sensitivity, Nx, Ny, 1, nCoil));
+    recParams[:encodingOps] = reshape([Op], 1,1);
+    @time rec = abs.(reconstruction(acqData, recParams).data[:,:]);
+    fig = plt_image(rotl90(rec); width=12/2.54, height=12/2.54,title="")
+    fig.tight_layout(pad=0, w_pad=0, h_pad=0)
+    fig.savefig("$(dir)/R$(R)_$(solver)_$(reg)_$(λ)_$(iter).png", pad_inches=0, dpi=300, bbox_inches="tight")
+end
