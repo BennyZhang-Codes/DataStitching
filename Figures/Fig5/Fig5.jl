@@ -24,12 +24,12 @@ vmaxp              = 99
 vminp              = 1 
 cmap               = "gray"
 fontsize_legend    = 5
-fontsize_label     = 6
-fontsize_ticklabel = 4
+fontsize_label     = 8
+fontsize_subfigure = 8
 pad_label          = 2
 color_facecoler    = "#ffffff"
 color_label        = "#000000"
-color_imagelabel   = "#ffffff"
+color_subfigure    = "#ffffff"
 
 fig, axs = plt.subplots(nrows=2, ncols=4, figsize=(figure_width, figure_height), facecolor=color_facecoler)
 
@@ -49,7 +49,7 @@ for row = 1 : 2
         end
         img = imgs[idx,:,:]
         vmin, vmax = quantile(img[:], vminp/100), quantile(img[:], vmaxp/100)
-        ax.text(0.02, 0.98, "$(Char(96+idx))", fontsize=fontsize_label, color=color_imagelabel, transform=ax.transAxes, ha="left", va="top")
+        ax.text(0.02, 0.98, "$(Char(96+idx))", fontsize=fontsize_subfigure, color=color_subfigure, transform=ax.transAxes, ha="left", va="top")
         ax.imshow(img, cmap=cmap, vmin=vmin, vmax=vmax)
     end
 end
