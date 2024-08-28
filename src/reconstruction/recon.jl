@@ -6,3 +6,7 @@ include("recon_2d_ifft.jl")
 
 export convert_fft, convert_ifft, recon_2d_ifft, get_kdata
 export recon_2d
+
+
+include("CoilCombine.jl")
+export CoilCombineSOS
