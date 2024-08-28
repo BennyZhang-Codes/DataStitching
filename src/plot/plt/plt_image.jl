@@ -75,6 +75,8 @@ julia> fig.savefig("123.png",bbox_inches="tight", pad_inches=0, transparent=true
 """
 function plt_images(
     imgs::AbstractArray{<:Real, 3};
+    nRow               = nothing  ,
+    nCol               = nothing  ,
     title              = ""       ,
     width              = 5        ,
     height             = 5        ,
@@ -85,7 +87,9 @@ function plt_images(
     color_facecoler    = "#ffffff",
     )
     nFrame, nX, nY = size(imgs)
-    nRow, nCol = get_factors(nFrame)
+    if nRow === nothing || nCol === nothing
+        nRow, nCol = get_factors(nFrame)
+    end
 
     vmin, vmax = quantile(reshape(imgs, :), vminp/100), quantile(reshape(imgs, :), vmaxp/100)
 
