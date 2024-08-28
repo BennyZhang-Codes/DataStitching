@@ -41,7 +41,7 @@ function plt_image(
 	fig.suptitle(title, fontsize=fontsize_title)
     ax.imshow(img, cmap=cmap, vmin=quantile(reshape(img, :), vminp/100), vmax=quantile(reshape(img, :), vmaxp/100))
     ax.axis("off")
-    fig.tight_layout()
+    fig.tight_layout(pad=0, h_pad=0, w_pad=0)
     return fig
 end
 
@@ -103,7 +103,7 @@ function plt_images(
         ax.imshow(imgs[frame, :, :], cmap=cmap, vmin=vmin, vmax=vmax)
         ax.axis("off")
     end
-    fig.tight_layout()
+    fig.tight_layout(pad=0, h_pad=0, w_pad=0)
     return fig
 end
 
