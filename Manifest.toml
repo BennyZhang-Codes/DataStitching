@@ -2,7 +2,7 @@
 
 julia_version = "1.9.4"
 manifest_format = "2.0"
-project_hash = "5df28ae5bc2cc5be10c03bbbbddb9900032acd35"
+project_hash = "d3aea6decb31a84c53024a594c9cfd22a88db3e3"
 
 [[deps.AMD]]
 deps = ["LinearAlgebra", "SparseArrays", "SuiteSparse_jll"]
@@ -1054,6 +1054,12 @@ deps = ["AbstractNFFTs", "LinearAlgebra", "NFFTTools"]
 git-tree-sha1 = "a96ba4ecb38712ebc395891e375dac99adb8bd72"
 uuid = "f7771a9a-6e57-4e71-863b-6e4b6a2f17df"
 version = "0.4.2"
+
+[[deps.MRICoilSensitivities]]
+deps = ["FFTW", "FLoops", "LinearAlgebra", "MRIBase", "Printf", "Reexport"]
+git-tree-sha1 = "6c839d4d92e91eda49e64a54fb76f385f60c8ef3"
+uuid = "c57eb701-aafc-44a2-a53c-128049758959"
+version = "0.1.3"
 
 [[deps.MRIFiles]]
 deps = ["FileIO", "HDF5", "LightXML", "LinearAlgebra", "MRIBase", "Printf", "Reexport"]
