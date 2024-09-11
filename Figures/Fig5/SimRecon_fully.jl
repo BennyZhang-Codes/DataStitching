@@ -17,7 +17,7 @@ regularization = "TV";
 λ = 1.e-4;
 iter=20;
 
-dir = "Figures/Fig5"; if ispath(dir) == false mkpath(dir) end     # output directory
+dir = "Figures/Fig5/out"; if ispath(dir) == false mkpath(dir) end     # output directory
 
 # 1. sequence
 hoseq_stitched = demo_hoseq(dfc_method=:Stitched)[4:end]   # :Stitched
@@ -68,7 +68,7 @@ recParams[:regularization] = regularization  # ["L2", "L1", "L21", "TV", "LLR", 
 recParams[:λ] = λ
 recParams[:iterations] = iter
 recParams[:solver] = solver
-recParams[:solverInfo] = SolverInfo(vec(ComplexF32.(x_ref)), store_solutions=true)
+recParams[:solverInfo] = SolverInfo(vec(ComplexF32.(x_ref)), store_solutions=true);
 
 
 
@@ -80,26 +80,29 @@ Op1 = HighOrderOp((Nx, Ny), tr_nominal, tr_dfc_stitched , BlochHighOrder("000");
 Op2 = HighOrderOp((Nx, Ny), tr_nominal, tr_dfc_stitched , BlochHighOrder("110"); Nblocks=Nblocks, fieldmap=Matrix(B0map).*0, grid=1);
 # 3. stitched trajectory, BlochHighOrder("111")
 Op3 = HighOrderOp((Nx, Ny), tr_nominal, tr_dfc_stitched , BlochHighOrder("111"); Nblocks=Nblocks, fieldmap=Matrix(B0map).*0, grid=1);
+# 4. standard trajectory, BlochHighOrder("111")
+Op4 = HighOrderOp((Nx, Ny), tr_nominal, tr_dfc_stitched , BlochHighOrder("111"); Nblocks=Nblocks, fieldmap=Matrix(B0map).*0, grid=1);
 
 ##### with ΔB₀
-# 4. nominal trajectory, BlochHighOrder("000")
-Op4 = HighOrderOp((Nx, Ny), tr_nominal, tr_dfc_stitched , BlochHighOrder("000"); Nblocks=Nblocks, fieldmap=Matrix(B0map), grid=1);
-# 5. stitched trajectory, BlochHighOrder("110")
-Op5 = HighOrderOp((Nx, Ny), tr_nominal, tr_dfc_stitched , BlochHighOrder("110"); Nblocks=Nblocks, fieldmap=Matrix(B0map), grid=1);
-# 6. stitched trajectory, BlochHighOrder("111")
-Op6 = HighOrderOp((Nx, Ny), tr_nominal, tr_dfc_stitched , BlochHighOrder("111"); Nblocks=Nblocks, fieldmap=Matrix(B0map), grid=1);
-# 7. standard trajectory, BlochHighOrder("111")
-Op7 = HighOrderOp((Nx, Ny), tr_nominal, tr_dfc_standard , BlochHighOrder("111"); Nblocks=Nblocks, fieldmap=Matrix(B0map), grid=1);
-Ops = [Op1, Op2, Op3, Op4, Op5, Op6, Op7];
+# 5. nominal trajectory, BlochHighOrder("000")
+Op5 = HighOrderOp((Nx, Ny), tr_nominal, tr_dfc_stitched , BlochHighOrder("000"); Nblocks=Nblocks, fieldmap=Matrix(B0map), grid=1);
+# 6. stitched trajectory, BlochHighOrder("110")
+Op6 = HighOrderOp((Nx, Ny), tr_nominal, tr_dfc_stitched , BlochHighOrder("110"); Nblocks=Nblocks, fieldmap=Matrix(B0map), grid=1);
+# 7. stitched trajectory, BlochHighOrder("111")
+Op7 = HighOrderOp((Nx, Ny), tr_nominal, tr_dfc_stitched , BlochHighOrder("111"); Nblocks=Nblocks, fieldmap=Matrix(B0map), grid=1);
+# 8. standard trajectory, BlochHighOrder("111")
+Op8 = HighOrderOp((Nx, Ny), tr_nominal, tr_dfc_standard , BlochHighOrder("111"); Nblocks=Nblocks, fieldmap=Matrix(B0map), grid=1);
+Ops = [Op1, Op2, Op3, Op4, Op5, Op6, Op7, Op8];
 
 imgs = Array{Float32,3}(undef, length(Ops), Nx, Ny);
-titles = ["HighOrderOp: w/o ΔB₀, stitched: 000",
-          "HighOrderOp: w/o ΔB₀, stitched: 110",
-          "HighOrderOp: w/o ΔB₀, stitched: 111",
-          "HighOrderOp: with ΔB₀, stitched: 000",
-          "HighOrderOp: with ΔB₀, stitched: 110",
-          "HighOrderOp: with ΔB₀, stitched: 111",
-          "HighOrderOp: with ΔB₀, standard: 111",]
+titles = ["w/o ΔB₀, stitched: 000",
+          "w/o ΔB₀, stitched: 110",
+          "w/o ΔB₀, stitched: 111",
+          "w/o ΔB₀, standard: 111",
+          "w/  ΔB₀, stitched: 000",
+          "w/  ΔB₀, stitched: 110",
+          "w/  ΔB₀, stitched: 111",
+          "w/  ΔB₀, standard: 111",];
 for idx in eachindex(Ops)
     recParams[:encodingOps] = reshape([Ops[idx]], 1,1);
     @time rec = abs.(reconstruction(acqData, recParams).data[:,:]);
@@ -107,4 +110,4 @@ for idx in eachindex(Ops)
     plt_image(rotl90(rec); title=titles[idx])
 end
 
-MAT.matwrite(dir*"/fully_$(solver)_$(iter)_$(regularization)_$(λ).mat", Dict("imgs"=>imgs))
+MAT.matwrite(dir*"/fully_$(solver)_$(iter)_$(regularization)_$(λ).mat", Dict("imgs"=>imgs, "titles"=>titles))

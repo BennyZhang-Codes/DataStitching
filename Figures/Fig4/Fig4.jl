@@ -19,22 +19,22 @@ t_adc_under = samples_under_Stitched.h0.t .* 1e3;  # convert to ms
 
 
 
-matplotlib.rc("mathtext", default="regular")
-matplotlib.rc("figure", dpi=200)
-matplotlib.rc("font", family="Times New Roman")
-matplotlib.rcParams["mathtext.default"]
+# matplotlib.rc("mathtext", default="regular")
+# matplotlib.rc("figure", dpi=200)
+# matplotlib.rc("font", family="Times New Roman")
+# matplotlib.rcParams["mathtext.default"]
 figure_width       = 18/2.54
 figure_height      = 9/2.54
-linewidth          = 0.5
-ticklength         = 1.5
-fontsize_legend    = 5
-fontsize_label     = 6
-fontsize_ticklabel = 4
-fontsize_subfigure = 8
-pad_labeltick      = 2
-pad_label          = 2
-color_facecoler    = "#ffffff"
-color_label        = "#000000"
+# linewidth          = 0.5
+# ticklength         = 1.5
+# fontsize_legend    = 5
+# fontsize_label     = 6
+# fontsize_ticklabel = 4
+# fontsize_subfigure = 8
+# pad_labeltick      = 2
+# pad_label          = 2
+# color_facecoler    = "#ffffff"
+# color_label        = "#000000"
 color_segment      = ["C0", "C1", "C2", "C3"]
 
 fig, axs = plt.subplots(nrows=7, ncols=2, figsize=(figure_width, figure_height), 
@@ -94,7 +94,7 @@ fig.text(0.01, 1, "(a)", ha="left", va="baseline", fontsize=fontsize_subfigure)
 fig.text(0.51, 1, "(b)", ha="left", va="baseline", fontsize=fontsize_subfigure)
 
 fig.align_ylabels()
-fig.subplots_adjust(left=0.1, right=0.95, bottom=0.05, top=0.95, wspace=0.2, hspace=0.2)
-# fig.tight_layout(pad=0, h_pad=0.1, w_pad=0.3)
+# fig.subplots_adjust(left=0.1, right=0.95, bottom=0.05, top=0.95, wspace=0.2, hspace=0.2)
+fig.tight_layout(pad=0, h_pad=0.1, w_pad=0.3)
 # fig.savefig("Figures/Fig4/Fig4.png", dpi=300, bbox_inches="tight")
 
