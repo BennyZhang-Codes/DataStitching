@@ -363,7 +363,8 @@ function signal_to_raw_data(
 
             for seg = 0:adc_nSegments-1
                 sample_range_start = current + seg * adc_segmentLength
-                sample_range_end = adc_nSegments != 1 ? min(adc_length, current + (seg + 1) * adc_segmentLength - 1) : current + seg * adc_segmentLength + Nsamples - 1
+                # sample_range_end = adc_nSegments != 1 ? min(adc_length, current + (seg + 1) * adc_segmentLength - 1) : current + seg * adc_segmentLength + Nsamples - 1
+                sample_range_end = sample_range_start +  adc_segmentLength - 1
                 number_of_samples = sample_range_end - sample_range_start + 1
 
                 t0_us = floor( t_acq[sample_range_start] * 1e6 )
