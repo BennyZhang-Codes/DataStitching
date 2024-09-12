@@ -15,11 +15,11 @@ linewidth          = 1
 fontsize_legend    = 10
 fontsize_label     = 11
 fontsize_ticklabel = 8
-color_facecoler    = "#ffffff"
+color_facecolor    = "#ffffff"
 color_label        = "#000000"
 color_trigger      = "#000000"
 
-fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(figure_width, figure_height), facecolor=color_facecoler)
+fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(figure_width, figure_height), facecolor=color_facecolor)
 
 ax.tick_params(axis="both", color=color_label, labelcolor=color_label, labelsize=fontsize_ticklabel)
 for spine in ax.spines  # "left", "right", "bottom", "top"
@@ -27,7 +27,7 @@ for spine in ax.spines  # "left", "right", "bottom", "top"
     ax.spines[spine].set_visible(false)
 end
 ax.set_xlim(samples.gz.t[1]*1e3, samples.gz.t[end]*1e3)
-ax.set_facecolor(color_facecoler)
+ax.set_facecolor(color_facecolor)
 ax.yaxis.set_major_locator(plt.MultipleLocator(20))
 
 ax.axhline(y=0, color="#555555", linewidth=linewidth)

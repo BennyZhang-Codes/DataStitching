@@ -56,7 +56,7 @@ figure_width       = 5/2.54
 figure_height      = 4/2.54
 
 
-fig, axs = plt.subplots(nrows=1, ncols=2, figsize=(figure_width, figure_height), facecolor=color_facecoler)
+fig, axs = plt.subplots(nrows=1, ncols=2, figsize=(figure_width, figure_height), facecolor=color_facecolor)
 for ax in axs
     ax.axis("off")
 end
@@ -92,7 +92,7 @@ cm_gray = plt.cm.get_cmap("gray")
 cm_gray_ref = cm_gray.from_list("gray_ref",  cm_gray(ρ_values), length(ρ_values))
 norm = mcolors.BoundaryNorm([-1; ρ_values] , cm_gray_ref.N)
 
-fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(figure_width, figure_height), facecolor=color_facecoler)
+fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(figure_width, figure_height), facecolor=color_facecolor)
 ax.axis("off")
 
 ai = ax.imshow(x_ref, cmap="gray") # "bilinear", "spline36", "gaussian"

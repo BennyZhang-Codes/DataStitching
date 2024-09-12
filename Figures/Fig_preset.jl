@@ -30,7 +30,7 @@ ticklength         = 1.5;
 pad_label          = 2;
 pad_labeltick      = 2;
 
-color_facecoler    = "#ffffff";
+color_facecolor    = "#ffffff";
 color_label        = "#000000";
 color_subfigure    = "#ffffff";
 

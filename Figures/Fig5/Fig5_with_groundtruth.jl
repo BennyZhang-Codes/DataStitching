@@ -94,7 +94,7 @@ figure_width       = width/2.54
 figure_height      = height/2.54
 
 
-fig, axs = plt.subplots(nrows=2, ncols=6, figsize=(figure_width, figure_height), facecolor=color_facecoler, width_ratios=width_ratios)
+fig, axs = plt.subplots(nrows=2, ncols=6, figsize=(figure_width, figure_height), facecolor=color_facecolor, width_ratios=width_ratios)
 ylabels = ["w/o ΔB₀", "w/ ΔB₀"]
 titles  = ["nominal", "stitching 110", "stitching 111", "conventional 111"]
 
@@ -118,9 +118,8 @@ for row = 1 : 2
 
     end
 end
-
-GT_dB0(axs[1,1])
-GT_ρ(axs[2,1])
+GT_ρ(axs[1,1])
+GT_dB0(axs[2,1])
 
 fig.text(0, 1, "(a)", ha="left", va="baseline", fontsize=fontsize_subfigure)
 fig.text(0.95*sum(width_ratios[1:2]) / sum(width_ratios) + 0, 1, "(b)", ha="right", va="baseline", fontsize=fontsize_subfigure)

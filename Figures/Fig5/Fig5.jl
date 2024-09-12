@@ -27,11 +27,11 @@ fontsize_legend    = 5
 fontsize_label     = 8
 fontsize_subfigure = 8
 pad_label          = 2
-color_facecoler    = "#ffffff"
+color_facecolor    = "#ffffff"
 color_label        = "#000000"
 color_subfigure    = "#ffffff"
 
-fig, axs = plt.subplots(nrows=2, ncols=4, figsize=(figure_width, figure_height), facecolor=color_facecoler)
+fig, axs = plt.subplots(nrows=2, ncols=4, figsize=(figure_width, figure_height), facecolor=color_facecolor)
 
 idx_img = [1 2 3 0; 4 5 6 7]
 for row = 1 : 2
@@ -87,11 +87,11 @@ cmap               = "gray"
 fontsize_legend    = 10
 fontsize_label     = 14
 fontsize_imagelabel= 13
-color_facecoler    = "#ffffff"
+color_facecolor    = "#ffffff"
 color_label        = "#000000"
 color_imagelabel   = "#ffffff"
 
-fig, axs = plt.subplots(nrows=nRow, ncols=nCol, figsize=(figure_width, figure_height), facecolor=color_facecoler)
+fig, axs = plt.subplots(nrows=nRow, ncols=nCol, figsize=(figure_width, figure_height), facecolor=color_facecolor)
 
 for idx = 1 : nFrame
     row, col = Int(ceil(idx/nCol)), (idx-1)%nCol + 1

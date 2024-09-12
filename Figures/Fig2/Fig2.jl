@@ -40,11 +40,11 @@ fontsize_ticklabel = 4
 fontsize_subfigure = 8
 pad_labeltick      = 2
 pad_label          = 2
-color_facecoler    = "#ffffff"
+color_facecolor    = "#ffffff"
 color_label        = "#000000"
 color_trigger      = "#000000"
 
-fig, axs = plt.subplots(nrows=1, ncols=2, figsize=(figure_width, figure_height), facecolor=color_facecoler)
+fig, axs = plt.subplots(nrows=1, ncols=2, figsize=(figure_width, figure_height), facecolor=color_facecolor)
 
 samples_list = [samples_fully, samples_under]
 t_trigger_list = [t_trigger_fully, t_trigger_under]
@@ -59,7 +59,7 @@ for (ax, samples, t_trigger) in zip(axs, samples_list, t_trigger_list)
         ax.spines[spine].set_visible(false)
     end
     ax.set_xlim(samples.gz.t[1]*1e3, samples.gz.t[end]*1e3)
-    ax.set_facecolor(color_facecoler)
+    ax.set_facecolor(color_facecolor)
     ax.yaxis.set_major_locator(plt.MultipleLocator(20))
 
     ax.axhline(y=0, color="#555555", linewidth=linewidth)

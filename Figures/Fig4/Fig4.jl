@@ -33,12 +33,12 @@ figure_height      = 9/2.54
 # fontsize_subfigure = 8
 # pad_labeltick      = 2
 # pad_label          = 2
-# color_facecoler    = "#ffffff"
+# color_facecolor    = "#ffffff"
 # color_label        = "#000000"
 color_segment      = ["C0", "C1", "C2", "C3"]
 
 fig, axs = plt.subplots(nrows=7, ncols=2, figsize=(figure_width, figure_height), 
-                        facecolor=color_facecoler)
+                        facecolor=color_facecolor)
 
 for ax in axs[1:6, :]
     ax.tick_params(axis="both", labelbottom=false)
@@ -53,7 +53,7 @@ for ax in axs
         #     ax.spines[spine].set_visible(false)
         # end
     end
-    ax.set_facecolor(color_facecoler)
+    ax.set_facecolor(color_facecolor)
 end
 ylabels = [L"G_{0}", L"G_{x}", L"G_{y}", L"G_{z}", L"G_{xy}", L"G_{zy}", L"G_{2z^2-(x^2+y^2)}", L"G_{xz}", L"G_{x^2-y^2}"]
 
