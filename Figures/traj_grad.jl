@@ -14,11 +14,11 @@ linewidth          = 1
 fontsize_legend    = 10
 fontsize_label     = 11
 fontsize_ticklabel = 8
-color_facecoler    = "#ffffff"
+color_facecolor    = "#ffffff"
 color_label        = "#000000"
 
 fig, axs = plt.subplots(nrows=3, ncols=1, figsize=(figure_width, figure_height), 
-                        sharex=true, facecolor=color_facecoler)
+                        sharex=true, facecolor=color_facecolor)
 ax1, ax2, ax3 = axs # unpack the 3 axes for zeroth-order, first-order, and second-order plots
 vmaxs = 1.2 * [maximum(abs.(samples.h0.A*1e3)), maximum(abs.(samples.h1.A*1e3)), maximum(abs.(samples.h5.A*1e3))]
 for (ax, vmax) in zip(axs, vmaxs)
@@ -27,7 +27,7 @@ for (ax, vmax) in zip(axs, vmaxs)
         ax.spines[spine].set_color(color_label)
         ax.spines[spine].set_visible(false)
     end
-    ax.set_facecolor(color_facecoler)
+    ax.set_facecolor(color_facecolor)
     ax.set_xlim(0, t_adc[end]+1)
     ax.set_ylim(-vmax, vmax)
     ax.yaxis.set_major_locator(plt.MultipleLocator(round(vmax/3, sigdigits=1)))

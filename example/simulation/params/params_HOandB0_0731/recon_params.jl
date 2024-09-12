@@ -124,11 +124,11 @@ for solver in ["fista", "optista", "pogm"]
         fontsize_label     = 10
         fontsize_ticklabel = 6
         fontsize_title     = 10
-        color_facecoler    = "#1F1F1F"
+        color_facecolor    = "#1F1F1F"
         color_label        = "#CCCCCC"
 
 
-        fig, axs = plt.subplots(1,3, figsize=(figure_width,figure_height), facecolor=color_facecoler)
+        fig, axs = plt.subplots(1,3, figsize=(figure_width,figure_height), facecolor=color_facecolor)
         fig.suptitle("Solver: $(solver), Regularization: $(regularization)", x=0.5, y=1, ha="center", va="top", color=color_label, fontsize=fontsize_title)
         curves = [convM, nrmses, ssims]
         labels = ["convergenceMeasure", "NRMSE", "SSIM"]
@@ -137,7 +137,7 @@ for solver in ["fista", "optista", "pogm"]
             for idx_λ in eachindex(λs)
                 ax.plot(curves[i][idx_λ], linewidth=linewidth, label=string(λs[idx_λ]))
             end
-            ax.set_facecolor(color_facecoler)
+            ax.set_facecolor(color_facecolor)
             ax.set_xlabel("Iteration", color=color_label, fontsize=fontsize_label)
             ax.set_ylabel(labels[i], color=color_label, fontsize=fontsize_label)
             ax.tick_params(axis="both", color=color_label, labelcolor=color_label, labelsize=fontsize_ticklabel)

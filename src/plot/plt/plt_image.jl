@@ -1,6 +1,6 @@
 
 """
-    fig = plt_image(img::Array{<:Real, 2}; title="", width=5, height=5, vmaxp=100, vminp=0, cmap="gray", fontsize_title=10, color_facecoler="#ffffff")
+    fig = plt_image(img::Array{<:Real, 2}; title="", width=5, height=5, vmaxp=100, vminp=0, cmap="gray", fontsize_title=10, color_facecolor="#ffffff")
     Plots an image array using matplotlib 
 
 # Arguments
@@ -14,7 +14,7 @@
 - `vminp`: (`::Real`, `=0`) percentile of minimum value to be used for window width/ window level
 - `cmap`: (`::String`, `="gray"`) colormap to be used for plotting
 - `fontsize_title`: (`::Integer`, `=10`) font size of the title
-- `color_facecoler`: (`::String`, `="#ffffff"`) background color of the figure
+- `color_facecolor`: (`::String`, `="#ffffff"`) background color of the figure
 
 # Returns
 - `Figure`: a PyObject representing the figure
@@ -35,9 +35,9 @@ function plt_image(
     vminp              = 0        ,
     cmap               = "gray"   ,
     fontsize_title     = 10       ,
-    color_facecoler    = "#ffffff",
+    color_facecolor    = "#ffffff",
     )
-    fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(width, height), facecolor=color_facecoler)
+    fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(width, height), facecolor=color_facecolor)
 	fig.suptitle(title, fontsize=fontsize_title)
     ax.imshow(img, cmap=cmap, vmin=quantile(reshape(img, :), vminp/100), vmax=quantile(reshape(img, :), vmaxp/100))
     ax.axis("off")
@@ -46,7 +46,7 @@ function plt_image(
 end
 
 """
-    fig = plt_images(imgs::Array{<:Real, 3}; title="", width=5, height=5, vmaxp=100, vminp=0, cmap="gray", fontsize_title=10, color_facecoler="#ffffff")
+    fig = plt_images(imgs::Array{<:Real, 3}; title="", width=5, height=5, vmaxp=100, vminp=0, cmap="gray", fontsize_title=10, color_facecolor="#ffffff")
     Plots a sequence of image array using matplotlib 
 
 # Arguments
@@ -60,7 +60,7 @@ end
 - `vminp`: (`::Real`, `=0`) percentile of minimum value to be used for window width/ window level
 - `cmap`: (`::String`, `="gray"`) colormap to be used for plotting
 - `fontsize_title`: (`::Integer`, `=10`) font size of the title
-- `color_facecoler`: (`::String`, `="#ffffff"`) background color of the figure
+- `color_facecolor`: (`::String`, `="#ffffff"`) background color of the figure
 
 # Returns
 - `Figure`: a PyObject representing the figure
@@ -84,7 +84,7 @@ function plt_images(
     vminp              = 0        ,
     cmap               = "gray"   ,
     fontsize_title     = 10       ,
-    color_facecoler    = "#ffffff",
+    color_facecolor    = "#ffffff",
     )
     nFrame, nX, nY = size(imgs)
     if nRow === nothing || nCol === nothing
@@ -93,7 +93,7 @@ function plt_images(
 
     vmin, vmax = quantile(reshape(imgs, :), vminp/100), quantile(reshape(imgs, :), vmaxp/100)
 
-    fig, axs = plt.subplots(nrows=nRow, ncols=nCol, figsize=(width, height), facecolor=color_facecoler)
+    fig, axs = plt.subplots(nrows=nRow, ncols=nCol, figsize=(width, height), facecolor=color_facecolor)
 	axs = reshape(axs, nRow, nCol) # to keep axs as a 2D array
     
     fig.suptitle(title, fontsize=fontsize_title)

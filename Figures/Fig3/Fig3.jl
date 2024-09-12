@@ -68,11 +68,11 @@ fontsize_ticklabel = 4
 fontsize_subfigure = 8
 pad_labeltick      = 2
 pad_label          = 2
-color_facecoler    = "#ffffff"
+color_facecolor    = "#ffffff"
 color_label        = "#000000"
 color_segment      = ["#1f77b4","#ff7f0e","#2ca02c","#d62728","#9467bd",  "#e377c2",  "#bcbd22","#17becf"]#,"#8c564b"  ,"#7f7f7f"
 fig, axs = plt.subplots(nrows=2, ncols=3, figsize=(figure_width, figure_height), 
-                        facecolor=color_facecoler)
+                        facecolor=color_facecolor)
 ax1, ax2, ax3, ax4, ax5, ax6 = axs # unpack the 3 axes for zeroth-order, first-order, and second-order plots
 vmax_g_fully = 1.1 * maximum(abs.(samples_fully_Stitched.h1.A*1e3))
 vmax_k_fully = 1.1 * maximum([maximum(abs.(k_dfc_adc_fully_Stitched[:,2:3])), maximum(abs.(k_dfc_adc_fully_Standard[:,2:3]))])
@@ -87,7 +87,7 @@ for ax in axs
         ax.spines[spine].set_color(color_label)
         ax.spines[spine].set_visible(false)
     end
-    ax.set_facecolor(color_facecoler)
+    ax.set_facecolor(color_facecolor)
 end
 
 titles = [L"G_x", L"G_y", "k-space trajectory"]

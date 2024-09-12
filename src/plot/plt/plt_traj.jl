@@ -7,7 +7,7 @@ function plt_traj(
     cmap               = "viridis",
     fontsize_label     = 6        ,
     fontsize_ticklabel = 4        ,
-    color_facecoler    = "#ffffff",
+    color_facecolor    = "#ffffff",
     color_label        = "#000000",
     linewidth          = 0.5      ,
     ticklength         = 1.5      ,
@@ -23,9 +23,9 @@ function plt_traj(
     nPoints = size(ktraj, 2)
     kx, ky, kz = ktraj[1, :], ktraj[2, :], ktraj[3, :]
 
-    fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(width/2.54, height/2.54), facecolor=color_facecoler)
+    fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(width/2.54, height/2.54), facecolor=color_facecolor)
     ax.set_aspect("equal", "box")
-    ax.set_facecolor(color_facecoler)
+    ax.set_facecolor(color_facecolor)
     ax.tick_params(axis="both", length=ticklength, width=linewidth, pad=pad_labeltick, 
         color=color_label, labelcolor=color_label, labelsize=fontsize_ticklabel)
     for spine in ax.spines  # "left", "right", "bottom", "top"
