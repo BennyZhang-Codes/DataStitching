@@ -14,11 +14,6 @@ function plt_traj(
     pad_label          = 2        ,
     pad_labeltick      = 2        ,
     )
-    matplotlib.rc("mathtext", default="regular");
-    matplotlib.rc("figure", dpi=300);
-    matplotlib.rc("font", family="Times New Roman");
-    matplotlib.rcParams["mathtext.default"];
-    
     @assert size(ktraj, 1) == 3 "ktraj should be a 2D array with 3 rows for [kx, ky, kz]"
     nPoints = size(ktraj, 2)
     kx, ky, kz = ktraj[1, :], ktraj[2, :], ktraj[3, :]
