@@ -74,3 +74,20 @@ function load_dfc(;dfc_method::Symbol=:Stitched, seqname::String="demo", r::Int6
     end
     return GR_dfc, ntStitched, ntStandard
 end
+
+function load_dfc_mat(dfc_path::String)
+    @assert ispath(dfc_path) "the dfc file does not exist: $(dfc_path)"
+    grad = MAT.matread(dfc_path);
+    Δt = grad["dt"];
+    nGradPoint, nTerm = size(grad["skopeStitched"])
+
+    dfcStitched = [zeros(nTerm) grad["skopeStitched"]'] * 1e-3; 
+    dfcStandard = [zeros(nTerm) grad["skopeStandard"]'] * 1e-3;
+    ntStitched = grad["ntStitched"]
+    ntStandard = grad["ntStandard"]
+
+    t = Δt * ones(nGradPoint);
+    GR_dfcStitched = reshape([KomaMRIBase.Grad(dfcStitched[idx,:], t, 0, 0, 0) for idx=1:9], :, 1);
+    GR_dfcStandard = reshape([KomaMRIBase.Grad(dfcStandard[idx,:], t, 0, 0, 0) for idx=1:9], :, 1);
+    return GR_dfcStitched, GR_dfcStandard, ntStitched, ntStandard
+end
