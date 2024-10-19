@@ -1,5 +1,6 @@
 using KomaHighOrder, MRIReco
 import KomaHighOrder.MRIBase: rawdata
+import RegularizedLeastSquares: SolverInfo
 path     = "Figures/debug/out/R10_reduced_SENSE_CS"; if ispath(path) == false mkpath(path) end     # output directory
 
 ##############################################################################################
@@ -30,6 +31,9 @@ hoseq = HO_Sequence(seq)
 # hoseq = demo_hoseq(dfc_method=:Stitched, r=R)[4:end]   # :Stitched
 hoseq.SEQ.GR[1:2,8] = hoseq.SEQ.GR[1:2,8] * grad_scale
 plot_seq(hoseq)
+_, k_nominal, _, _ = get_kspace(hoseq; Δt=1);
+fig_traj = plt_traj(k_nominal'; color_label="#CCCCCC")
+fig_traj.savefig("$(path)/$(fileprefix)-traj.png", dpi=300, bbox_inches="tight", pad_inches=0, transparent=true)
 
 ##### 2. phantom
 obj = brain_hophantom2D(phantom; ss=simtype.ss, location=0.8, csmtype=csmtype, nCoil=nCoil, B0type=:quadratic, maxOffresonance=maxOffresonance); 
@@ -59,8 +63,6 @@ fig_cha.savefig("$(path)/$(fileprefix)-nufft.png"    , dpi=300, bbox_inches="tig
 ##### 5. plot trajectory
 acqData = AcquisitionData(raw); # raw = RawAcquisitionData(mrd);
 acqData.traj[1].circular = false;
-p_traj = plot_traj2d(acqData.traj[1]; height=400, width=400)
-# PlotlyJS.savefig(p_traj, "$(path)/$(fileprefix)-traj.svg", format="svg", height=400, width=400)
 
 
 #############################################################################
