@@ -6,6 +6,7 @@ export generate_raw
 
 include("load_file.jl")
 export load_raw, load_seq, load_dfc
+export load_dfc_mat
 
 export demo, demo_hoseq, demo_sim
 
