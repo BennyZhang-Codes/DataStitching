@@ -102,6 +102,7 @@ idx_img = [1 2 3 4; 5 6 7 8]
 for row = 1 : 2
     for col = 1 : 6
         ax = axs[row, col]
+        ax.set_facecolor(color_facecolor)
         ax.tick_params(axis="both", bottom=false, top=false, left=false, right=false, labelbottom=false, labeltop=false, labelleft=false, labelright=false)
         for spine in ax.spines  # "left", "right", "bottom", "top"
             ax.spines[spine].set_visible(false)
@@ -121,8 +122,8 @@ end
 GT_ρ(axs[1,1])
 GT_dB0(axs[2,1])
 
-fig.text(0, 1, "(a)", ha="left", va="baseline", fontsize=fontsize_subfigure)
-fig.text(0.95*sum(width_ratios[1:2]) / sum(width_ratios) + 0, 1, "(b)", ha="right", va="baseline", fontsize=fontsize_subfigure)
+fig.text(0, 1, "(a)", ha="left", va="baseline", fontsize=fontsize_subfigure, color=color_label)
+fig.text(0.95*sum(width_ratios[1:2]) / sum(width_ratios) + 0, 1, "(b)", ha="right", va="baseline", fontsize=fontsize_subfigure, color=color_label)
 
 fig.subplots_adjust(left=0.025, right=0.975, bottom=0.025, top=0.975, wspace=0, hspace=0)
 fig.savefig("$(dir)/Fig5_GT_$(matfile).png", dpi=300, bbox_inches="tight")

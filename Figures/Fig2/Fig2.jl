@@ -82,7 +82,7 @@ orders = ["a", "b"]
 
 for col = 1:2
     order = orders[col]
-    fig.text(0.01+(col-1)/2, 1, "($(order))", ha="left", va="baseline", fontsize=fontsize_subfigure)
+    fig.text(0.01+(col-1)/2, 1, "($(order))", ha="left", va="baseline", fontsize=fontsize_subfigure, color=color_label)
 end
 fig.tight_layout(pad=0, h_pad=0.5, w_pad=0.5)
 fig.savefig("Figures/Fig2/Fig2.png", dpi=300, bbox_inches="tight")

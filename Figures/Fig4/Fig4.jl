@@ -35,6 +35,7 @@ figure_height      = 9/2.54
 # pad_label          = 2
 # color_facecolor    = "#ffffff"
 # color_label        = "#000000"
+color_difference   = "#000000"
 color_segment      = ["C0", "C1", "C2", "C3"]
 
 fig, axs = plt.subplots(nrows=7, ncols=2, figsize=(figure_width, figure_height), 
@@ -74,7 +75,7 @@ for row = 1:7
         ax.set_ylim(-vmax, vmax)
         ax.set_xlim(t[1], t[end])
 
-        line1, = ax.plot(t, (sampleStitched[Symbol("h$(term)")].A-sampleStandard[Symbol("h$(term)")].A)*1e3, color="black", linewidth=linewidth, label="Difference")
+        line1, = ax.plot(t, (sampleStitched[Symbol("h$(term)")].A-sampleStandard[Symbol("h$(term)")].A)*1e3, color=color_difference, linewidth=linewidth, label="Difference")
         line2, = ax.plot(t, sampleStitched[Symbol("h$(term)")].A*1e3, color=sh.dict["h$(term)"].color, linewidth=linewidth, label="Stitched measurement")
         ax.yaxis.set_major_locator(plt.MultipleLocator(vmax))
         ax.set_ylabel("$(ylabels[term+1])\n(m$(sh.dict["h$(term)"].unit))",rotation=0, 
@@ -90,8 +91,8 @@ end
 axs[7, 1].set_xlabel("Time (ms)", fontsize=fontsize_label, color=color_label, labelpad=pad_label)
 axs[7, 2].set_xlabel("Time (ms)", fontsize=fontsize_label, color=color_label, labelpad=pad_label)
 
-fig.text(0.01, 1, "(a)", ha="left", va="baseline", fontsize=fontsize_subfigure)
-fig.text(0.51, 1, "(b)", ha="left", va="baseline", fontsize=fontsize_subfigure)
+fig.text(0.01, 1, "(a)", ha="left", va="baseline", fontsize=fontsize_subfigure, color=color_label)
+fig.text(0.51, 1, "(b)", ha="left", va="baseline", fontsize=fontsize_subfigure, color=color_label)
 
 fig.align_ylabels()
 # fig.subplots_adjust(left=0.1, right=0.95, bottom=0.05, top=0.95, wspace=0.2, hspace=0.2)

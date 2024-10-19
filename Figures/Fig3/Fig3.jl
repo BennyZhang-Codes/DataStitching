@@ -70,6 +70,7 @@ pad_labeltick      = 2
 pad_label          = 2
 color_facecolor    = "#ffffff"
 color_label        = "#000000"
+color_difference   = "#000000"
 color_segment      = ["#1f77b4","#ff7f0e","#2ca02c","#d62728","#9467bd",  "#e377c2",  "#bcbd22","#17becf"]#,"#8c564b"  ,"#7f7f7f"
 fig, axs = plt.subplots(nrows=2, ncols=3, figsize=(figure_width, figure_height), 
                         facecolor=color_facecolor)
@@ -122,8 +123,8 @@ for seg = 1:nSegment_fully
     axs[1,1].plot(t_adc_fully[seg_r], samples_fully_Stitched.h1.A[seg_r]*1e3, color=color_segment[seg], linewidth=linewidth, label="Stitched segment $(seg)")
     axs[1,2].plot(t_adc_fully[seg_r], samples_fully_Stitched.h2.A[seg_r]*1e3, color=color_segment[seg], linewidth=linewidth, label="Stitched segment $(seg)")
 end
-axs[1,1].plot(t_adc_fully, (samples_fully_Stitched.h1.A-samples_fully_Standard.h1.A)*1e3, color="black", linewidth=linewidth, label="Difference")
-axs[1,2].plot(t_adc_fully, (samples_fully_Stitched.h2.A-samples_fully_Standard.h2.A)*1e3, color="black", linewidth=linewidth, label="Difference")
+axs[1,1].plot(t_adc_fully, (samples_fully_Stitched.h1.A-samples_fully_Standard.h1.A)*1e3, color=color_difference, linewidth=linewidth, label="Difference")
+axs[1,2].plot(t_adc_fully, (samples_fully_Stitched.h2.A-samples_fully_Standard.h2.A)*1e3, color=color_difference, linewidth=linewidth, label="Difference")
 axs[1,3].plot(k_dfc_adc_fully_Stitched[:,2], k_dfc_adc_fully_Stitched[:,3], color="C1", linewidth=linewidth, label="Stitched measurement")
 axs[1,3].plot(k_dfc_adc_fully_Standard[:,2], k_dfc_adc_fully_Standard[:,3], color="C0", linewidth=linewidth, label="Single measurement")
 axs[1,3].set_aspect(1)
@@ -137,8 +138,8 @@ for seg = 1:nSegment_under
     axs[2,1].plot(t_adc_under[seg_r], samples_under_Stitched.h1.A[seg_r]*1e3, color=color_segment[color_idx], linewidth=linewidth, label="Stitched measurement")
     axs[2,2].plot(t_adc_under[seg_r], samples_under_Stitched.h2.A[seg_r]*1e3, color=color_segment[color_idx], linewidth=linewidth, label="Stitched measurement")
 end 
-lDiff_gx, = axs[2,1].plot(t_adc_under, (samples_under_Stitched.h1.A-samples_under_Standard.h1.A)*1e3, color="black", linewidth=linewidth, label="Difference")
-lDiff_gy, = axs[2,2].plot(t_adc_under, (samples_under_Stitched.h2.A-samples_under_Standard.h2.A)*1e3, color="black", linewidth=linewidth, label="Difference")
+lDiff_gx, = axs[2,1].plot(t_adc_under, (samples_under_Stitched.h1.A-samples_under_Standard.h1.A)*1e3, color=color_difference, linewidth=linewidth, label="Difference")
+lDiff_gy, = axs[2,2].plot(t_adc_under, (samples_under_Stitched.h2.A-samples_under_Standard.h2.A)*1e3, color=color_difference, linewidth=linewidth, label="Difference")
 axs[2,3].plot(k_dfc_adc_under_Stitched[:,2], k_dfc_adc_under_Stitched[:,3], color="C1", linewidth=linewidth, label="Stitched measurement")
 axs[2,3].plot(k_dfc_adc_under_Standard[:,2], k_dfc_adc_under_Standard[:,3], color="C0", linewidth=linewidth, label="Single measurement")
 axs[2,3].set_aspect(1)
@@ -168,7 +169,7 @@ orders = ["a", "b", "c", "d", "e", "f"]
 for row = 1:2
     for col = 1:3
         order = orders[3*(row-1)+col]
-        fig.text(0.01+(col-1)/3, 1-0.5*(row-1), "($(order))", ha="left", va="baseline", fontsize=fontsize_subfigure)
+        fig.text(0.01+(col-1)/3, 1-0.5*(row-1), "($(order))", ha="left", va="baseline", fontsize=fontsize_subfigure, color=color_label)
     end
 end
 fig.tight_layout(pad=0, h_pad=0.5, w_pad=0.5)
