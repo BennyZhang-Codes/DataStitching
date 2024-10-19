@@ -2,13 +2,13 @@ using KomaHighOrder, MRIReco, MRICoilSensitivities, PyPlot
 import KomaHighOrder.MRIBase: AcquisitionData
 
 path       = "/home/jyzhang/Desktop/pulseq/20240902_invivo/"
-seq_file   = path * "gres6e_fov200_200_bw556.seq"
-raw_file   = path * "meas_MID00040_FID47485_pulseq_v0_gres6e.mrd"
+seq_file   = path * "grec6e_fov200_200_bw556.seq"
+raw_file   = path * "meas_MID00039_FID47484_pulseq_v0_grec6e.mrd"
 T          = Float32
 
 seq          = read_seq(seq_file);
 TE = seq.DEF["TE"];  # s
-ReadoutMode = seq.DEF["ReadoutMode"];
+ReadoutMode = seq.DEF["ReadoutMode"]; # "Bipolar" or "Monopolar"
 # get signal data
 raw              = RawAcquisitionData(ISMRMRDFile(raw_file))
 
@@ -109,9 +109,5 @@ niter_cg_d = 100
 b0 = fmap_cg_d * -1;  # Hz
 
 
-fig, ax = plt.subplots(1,1);
-i = ax.imshow(b0, cmap="jet", vmin=-100, vmax=100)
-ax.axis("off")
-fig.colorbar(i)
-fig.tight_layout(pad=0, h_pad=0, w_pad=0)
-fig.savefig("$(path)/$(raw.params["protocolName"])_b0map.png", dpi=300, bbox_inches="tight", pad_inches=0)
+fig = plt_B0map(b0, width=5, height=4)
+fig.savefig("$(path)/$(raw.params["protocolName"])_b0map.png", dpi=300, bbox_inches="tight", pad_inches=0, transparent=true)

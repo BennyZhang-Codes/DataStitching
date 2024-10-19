@@ -77,6 +77,8 @@ recParams[:senseMaps] = Complex{T}.(reshape(sensitivity, Nx, Ny, 1, nCha));
 
 @time rec = abs.(reconstruction(acqData, recParams).data[:,:]);
 fig = plt_image(transpose(rec))
+
+
 fig.savefig("$(path)/$(raw.params["protocolName"])_sense_$(solver)_$(reg)_$(iter)_$(λ).png", dpi=300, bbox_inches="tight", pad_inches=0)
 
 
