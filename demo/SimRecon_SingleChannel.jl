@@ -25,9 +25,9 @@ dfc_file = "$(@__DIR__)/demo/DynamicFields/1mm_R1.mat"   # *.mat file contains t
 
 print("$(@__DIR__)")
 # 1. read the *.seq file and reverse the sign of the gradient (axis x)
-seq = read_seq(seq_file);   # read_seq function from KomaMRI.jl, return a struct of Sequence
-seq.GR[1,:] = -seq.GR[1,:]; # reverse the sign of the gradient (axis x)
-plot_seq(seq)               # plot_seq function from KomaMRI.jl, plot the Sequence
+seq = read_seq(seq_file)[4:end];   # read_seq function from KomaMRI.jl, return a struct of Sequence
+seq.GR[1,:] = -seq.GR[1,:];        # reverse the sign of the gradient (axis x)
+plot_seq(seq)                      # plot_seq function from KomaMRI.jl, plot the Sequence
 
 
 grad = MAT.matread(dfc_file);
@@ -46,8 +46,8 @@ hoseqStitched = HO_Sequence(seq);                       # hoseq, defined in Koma
 hoseqStandard = HO_Sequence(seq);                       # hoseq, defined in KomaHighOrder.jl
 hoseqStitched.GR_dfc[2:4, :] = hoseqStitched.SEQ.GR;    # copy the 1st-order nominal gradient data from the seq object to the hoseq object
 hoseqStandard.GR_dfc[2:4, :] = hoseqStandard.SEQ.GR;    # copy the 1st-order nominal gradient data from the seq object to the hoseq object
-hoseqStitched.GR_dfc[:,8] = GR_dfcStitched;             # "8" is the index of the readout block in the spiral sequence
-hoseqStandard.GR_dfc[:,8] = GR_dfcStandard;             # "8" is the index of the readout block in the spiral sequence
+hoseqStitched.GR_dfc[:,5] = GR_dfcStitched;             # "5" is the index of the readout block in the spiral sequence
+hoseqStandard.GR_dfc[:,5] = GR_dfcStandard;             # "5" is the index of the readout block in the spiral sequence
 plot_seq(hoseqStitched)
 plot_seq(hoseqStandard)
 
