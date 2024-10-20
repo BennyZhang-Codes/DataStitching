@@ -2,7 +2,9 @@
 
 This is a Julia toolbox for MR simulation that can incorporate dynamic field changes associated with the gradients throughout the sequence.
 This is an extension of KomaMRI.jl (https://github.com/JuliaHealth/KomaMRI.jl), a Julia package for highly efficient MR simulations.
-You may run the demo script, `/demo/SimRecon_SingleChannel.jl`, to grab an idea of how this toolbox can be used to simulate MRI signals given a pulseq sequence and dynamic field changes measured using a field camera.
+You may run the [demos](https://github.com/BennyZhang-Codes/KomaHighOrder/blob/master/demo), to grab an idea of how this toolbox can be used to simulate MRI signals given a pulseq sequence and dynamic field changes measured using a field camera.
+
+[demo 1](https://github.com/BennyZhang-Codes/KomaHighOrder/blob/master/demo/SimRecon_SingleChannel.jl): Simulation and reconstruction of a fully-sampled single-shot spiral sequence (1 mm resolution) with dynamic field changes and ΔB₀.
 
 If you use the toolbox, please consider citing the following abstract:
 
