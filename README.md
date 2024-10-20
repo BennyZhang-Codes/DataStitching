@@ -7,7 +7,7 @@ You may run the [demos](https://github.com/BennyZhang-Codes/KomaHighOrder/blob/m
 demos:
 
 1. [SimRecon_SingleChannel](https://github.com/BennyZhang-Codes/KomaHighOrder/blob/master/demo/SimRecon_SingleChannel.jl): Simulation and reconstruction of a [fully-sampled single-shot spiral sequence (1 mm resolution)](https://github.com/BennyZhang-Codes/KomaHighOrder/blob/master/demo/Sequence/1mm_R1.seq) with [dynamic field changes](https://github.com/BennyZhang-Codes/KomaHighOrder/blob/master/demo/DynamicFields/1mm_R1.mat) and ΔB₀.
-2. [Multi-echo_GRE](https://github.com/BennyZhang-Codes/KomaHighOrder/blob/master/demo/Muti-echo_GRE): estimating ΔB₀ map and coil-sensitivity map from the multi-echo GRE data in the [ISMRMRD](https://github.com/ismrmrd/ismrmrd) format. Additionally, the ME-GRE sequence can be modified within the [source code](https://github.com/BennyZhang-Codes/KomaHighOrder/blob/master/demo/Muti-echo_GRE/pulseq) ([Pulseq](https://github.com/pulseq/pulseq), MATLAB version)
+2. [Multi-echo_GRE](https://github.com/BennyZhang-Codes/KomaHighOrder/blob/master/demo/Muti-echo_GRE): estimating ΔB₀ map and coil-sensitivity map from the multi-echo GRE data in the [ISMRMRD](https://github.com/ismrmrd/ismrmrd) format. Additionally, the ME-GRE sequence can be modified within the [source code](https://github.com/BennyZhang-Codes/KomaHighOrder/blob/master/demo/Muti-echo_GRE/pulseq) ([Pulseq](https://github.com/pulseq/pulseq), MATLAB version).
 
 If you use the toolbox, please consider citing the following abstract:
 
