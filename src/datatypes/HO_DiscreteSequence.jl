@@ -3,7 +3,8 @@ import KomaMRI.KomaMRIBase: discretize, get_rfs, default_sampling_params, get_va
 """
     seqd = HO_DiscreteSequence(seqd, h0, h1, h2, h3, h4, h5, h6, h7, h8)
 
-A sampled version of a HO_Sequence struct, containing vectors for event amplitudes at specified
+# Description
+    A sampled version of a HO_Sequence struct, containing vectors for event amplitudes at specified
 times. DiscreteSequence is the struct used for simulation.
 
 # Arguments
@@ -77,7 +78,8 @@ Base.iterate(hoseqd::HO_DiscreteSequence, i) = (i <= length(hoseqd)) ? (hoseqd[i
 """
     hoseqd = discretize(hoseq::HO_Sequence; sampling_params=default_sampling_params())
 
-This function returns a sampled Sequence struct with RF and gradient time refinements
+# Description
+    This function returns a sampled Sequence struct with RF and gradient time refinements
 based on simulation parameters.
 
 # Arguments
