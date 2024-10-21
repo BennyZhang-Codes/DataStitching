@@ -34,7 +34,7 @@ end
 # Returns
 - `seq`: (`::Sequence`)
 """
-function load_seq(; seqname::String="demo", r::Int64=1)
+function load_seq(; seqname::String="spiral", r::Int64=1)
     seq_path = "$(@__DIR__)/seq/$(seqname)_R$(r).seq"
     @assert ispath(seq_path) "the sequence file does not exist: $(seq_path)"
     seq = read_seq(seq_path)
