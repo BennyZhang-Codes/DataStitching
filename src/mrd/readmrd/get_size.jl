@@ -1,4 +1,22 @@
+"""
+    shape = get_ksize(raw::RawAcquisitionData)
 
+# Description
+    get the k-space size of the raw acquisition data.
+
+# Arguments
+- `raw::RawAcquisitionData`: the raw acquisition data.
+
+# Returns
+- `shape::Tuple`: [nCha, nZ, nY, nX, nAvg, nSli, nCon, nPha, nRep, nSet, nSeg]
+
+# Example
+```julia-repl
+julia> raw = RawAcquisitionData(ISMRMRDFile("path/to/file.mrd"))
+julia> shape = get_ksize(raw)
+julia> nCha, nZ, nY, nX, nAvg, nSli, nCon, nPha, nRep, nSet, nSeg = shape
+```
+"""
 function get_ksize(raw::RawAcquisitionData)
     profiles = raw.profiles
     nCha = nZ = nY = nX = nAvg = nSli = nCon = nPha = nRep = nSet = nSeg = 1 
@@ -36,8 +54,21 @@ function get_ksize(raw::RawAcquisitionData)
     return shape
 end
 
+"""
+    fov, matrix, shape = get_kinfo(raw::RawAcquisitionData)
 
-function get_isize(raw::RawAcquisitionData)
+# Description
+    get the fov, matrix size, k-space shape of the raw acquisition data.
+
+# Arguments
+- `raw::RawAcquisitionData`: the raw acquisition data.
+
+# Returns
+- `fov::Tuple`: (eFOVx, eFOVy, eFOVz, rFOVx, rFOVy, rFOVz)
+- `matrix::Tuple`: (eNx, eNy, eNz, rNx, rNy, rNz)
+- `shape::Tuple`: (nCha, nZ, nY, nX, nAvg, nSli, nCon, nPha, nRep, nSet, nSeg)
+"""
+function get_kinfo(raw::RawAcquisitionData)
     Flag_IgnoreSeg = true
     header = raw.params
 
@@ -66,7 +97,3 @@ function get_isize(raw::RawAcquisitionData)
     return fov, matrix, shape
 end
 
-# fov, matrix, shape = get_isize(raw)
-# eFOVx, eFOVy, eFOVz, rFOVx, rFOVy, rFOVz = fov
-# eNx, eNy, eNz, rNx, rNy, rNz = matrix
-# nCha, nZ, nY, nX, nAvg, nSli, nCon, nPha, nRep, nSet, nSeg = shape
