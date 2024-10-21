@@ -1,6 +1,3 @@
-include("SimType.jl")
-export SimType
-
 include("rawdata/generate_raw.jl")
 export generate_raw
 

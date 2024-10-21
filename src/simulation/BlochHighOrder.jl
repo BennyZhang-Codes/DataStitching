@@ -1,4 +1,18 @@
+"""
+    BHO = BlochHighOrder(ho0, ho1, ho2, Δw_excitation, Δw_precession)
 
+a Simulation Method, which defines some parameters for the simulation with dynamic fields (up to second order).
+
+# Arguments
+- `ho0`: (`::Bool`), zeroth order
+- `ho1`: (`::Bool`), first order
+- `ho2`: (`::Bool`), second order
+- `Δw_excitation`: (`::Bool`), whether to include ΔB₀ in excitation
+- `Δw_precession`: (`::Bool`), whether to include ΔB₀ in precession
+
+# Returns
+- `BHO`: (`::BlochHighOrder`) BlochHighOrder struct
+"""
 Base.@kwdef struct BlochHighOrder <: SimulationMethod 
     ho0::Bool = true
     ho1::Bool = true
