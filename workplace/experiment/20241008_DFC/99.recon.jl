@@ -20,7 +20,7 @@ fig.savefig("$(path)/$(raw.params["protocolName"])_sos.png", dpi=300, bbox_inche
 # espirit
 ############
 sensitivity = espirit(acqData, (6,6), 30, eigThresh_1=0.02, eigThresh_2=0.99);  # (nX, nY, 1, nCha)
-csm = permutedims(sensitivity, [2,1,4,3])[:,:,:,1];# (nX, nY, 1, nCha) => (nY, nX, nCha, 1) => (nX, nY, nCha)
+csm = permutedims(sensitivity, [2,1,4,3])[:,:,:,1];# (nX, nY, 1, nCha) => (nY, nX, nCha, 1) => (nY, nX, nCha)
 fig = plt_images(permutedims(abs.(csm), [3,1,2]),width=10, height=5)  # (nCha, nY, nX)
 fig.savefig("$(path)/$(raw.params["protocolName"])_Con1_CoilSens_espirit.png", dpi=300, bbox_inches="tight", pad_inches=0)
 
