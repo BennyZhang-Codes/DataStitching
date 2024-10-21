@@ -91,3 +91,16 @@ function load_dfc_mat(dfc_path::String)
     GR_dfcStandard = reshape([KomaMRIBase.Grad(dfcStandard[idx,:], t, 0, 0, 0) for idx=1:9], :, 1);
     return GR_dfcStitched, GR_dfcStandard, ntStitched, ntStandard
 end
+
+
+function load_hoseq(;dfc::Bool=true, dfc_method::Symbol=:Stitched, seqname::String="demo", r::Int64=1) ::HO_Sequence
+    seq = load_seq(;seqname=seqname, r=r); # dfc sequence
+    seq.GR[1,:] = -seq.GR[1,:]; # reverse the sign of the gradient (axis x)
+    hoseq = HO_Sequence(seq); # hoseq
+    if dfc
+        GR_dfc, ntStitched, ntStandard = load_dfc(;dfc_method=dfc_method, seqname=seqname, r=r);
+        hoseq.GR_dfc[2:4, :] = hoseq.SEQ.GR;
+        hoseq.GR_dfc[:,8] = GR_dfc;
+    end
+    return hoseq
+end
