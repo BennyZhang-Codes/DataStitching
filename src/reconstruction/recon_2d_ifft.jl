@@ -13,7 +13,7 @@ This function takes a `RawAcquisitionData` object and returns the k-space data a
 # Returns
 `k` :: `Array{ComplexF64, 3}`, (Nx, Ny, Ncoils)
 # Example
-```julia
+```julia-repl
 >>> k = get_kdata(raw)
 >>> plot_img(abs.(k[:,:,1]).^0.1)
 >>> plot_img(abs.(reconstruct_ifft(k))[:,:,1])

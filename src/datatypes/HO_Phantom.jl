@@ -30,7 +30,6 @@ a property value representing a spin. This struct serves as an input for the sim
 # Examples
 ```julia-repl
 julia> obj = HO_Phantom(x=[0.0])
-
 julia> obj.ρ
 ```
 """

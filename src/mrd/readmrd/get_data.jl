@@ -1,6 +1,24 @@
+"""
+    kdata = get_kdata(raw::RawAcquisitionData)
+
+# Description
+    get the k-space data from the raw acquisition data.
+
+# Arguments
+- `raw::RawAcquisitionData`: the raw acquisition data.
+
+# Returns
+- `kdata::Array{Complex{Float32}, 11}`: k-space data with dimensions [nCha, nZ, nY, nX, nAvg, nSli, nCon, nPha, nRep, nSet, nSeg]
+
+# Example
+```julia-repl
+julia> raw = RawAcquisitionData(ISMRMRDFile("path/to/file.mrd"))
+julia> kdata = get_kdata(raw)
+```
+"""
 function get_kdata(raw::RawAcquisitionData, shape::Tuple)
     profiles = raw.profiles
-    data = Array{Complex{Float32},length(shape)}(undef,shape);
+    kdata = Array{Complex{Float32},length(shape)}(undef,shape);
     for idx in eachindex(profiles)
         profile = profiles[idx]
         header = profile.head
@@ -16,11 +34,8 @@ function get_kdata(raw::RawAcquisitionData, shape::Tuple)
         Rep = 1 + header.idx.repetition
         Set = 1 + header.idx.set
         Seg = 1 + header.idx.segment
-        data[:, Z, Y, :, Avg, Sli, Con, Pha, Rep, Set, Seg] = transpose(profile.data);
+        kdata[:, Z, Y, :, Avg, Sli, Con, Pha, Rep, Set, Seg] = transpose(profile.data);
     end
-    return data
+    return kdata
 end
 
-# kdata = get_kdata(raw, shape)
-# kdata = dropdims(kdata, dims = tuple(findall(size(kdata) .== 1)...))
-# kdims = [dims[idx] for idx in 1:length(shape) if shape[idx]>1]
