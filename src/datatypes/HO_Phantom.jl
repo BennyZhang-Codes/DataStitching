@@ -1,7 +1,8 @@
 """
     obj = HO_Phantom(name, x, y, z, ρ, T1, T2, T2s, Δw, Dλ1, Dλ2, Dθ, ux, uy, uz, csm)
 
-The HO_Phantom struct. Most of its field names are vectors, with each element associated with
+# Description
+	The HO_Phantom struct. Most of its field names are vectors, with each element associated with
 a property value representing a spin. This struct serves as an input for the simulation.
 
 # Arguments

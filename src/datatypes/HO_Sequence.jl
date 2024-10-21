@@ -9,8 +9,8 @@ import KomaMRI.KomaMRIBase: is_Gx_on, is_Gy_on, is_Gz_on, is_ADC_on, is_RF_on
 	hoseq = HO_Sequence(GR_dfc::Array{Grad,1})
 	hoseq = HO_Sequence(SEQ::Sequence, GR_dfc::Array{Grad,1}, DUR)
 
-
-The HO_Sequence struct. It contains MRI sequence and corresponding DFC measured gradients.
+# Description
+	The HO_Sequence struct. It contains MRI sequence and corresponding DFC measured gradients.
 
 # Arguments
 - `SEQ`: (`::Sequence`) MRI sequence.
@@ -101,7 +101,8 @@ size(x::HO_Sequence) = size(x.GR_dfc[1,:])
 """
     str = show(io::IO, s::HO_Sequence)
 
-Displays information about the Sequence struct `s` in the julia REPL.
+# Description
+	Displays information about the Sequence struct `s` in the julia REPL.
 
 # Arguments
 - `s`: (`::HO_Sequence`) Sequence struct
@@ -123,7 +124,8 @@ end
 """
     samples = get_samples(hoseq::HO_Sequence; off_val=0, max_rf_samples=Inf)
 
-Returns the samples of the events in `hoseq`.
+# Description
+	Returns the samples of the events in `hoseq`.
 
 # Arguments
 - `hoseq`: (`::HO_Sequence`) HO_Sequence struct
@@ -212,7 +214,8 @@ end
 """
     K_nominal, K_nominal_adc, K_dfc, K_dfc_adc = get_kspace(hoseq::HO_Sequence; Δt=1)
 
-Outputs the designed k-space trajectory of the Sequence `hoseq`.
+# Description
+	Outputs the designed k-space trajectory of the Sequence `hoseq`.
 
 # Arguments
 - `hoseq`: (`::HO_Sequence`) HO_Sequence struct
