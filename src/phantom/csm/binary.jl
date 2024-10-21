@@ -1,7 +1,7 @@
 
 
 """
-    mask = csm_Fan_binary(Nx::Int64, Ny::Int64, nCoil::Int64; overlap::Real=1)
+    mask = csm_Fan_binary(Nx::Int64, Ny::Int64, nCoil::Int64; overlap::Real=1, verbose::Bool=false)
 
 # Description
     get fan-shaped csm with arbitrary overlap.
@@ -13,6 +13,7 @@
 
 # Keywords
 - `overlap`: (`::Real`) overlapping factor 
+- `verbose`: (`::Real`) print information (default: false)
 
 # Returns
 - `mask`: (`::Array{Float64, 3}`) mask (Nx, Ny, nCoil)
@@ -47,6 +48,29 @@ function csm_Fan_binary(Nx::Int64, Ny::Int64, nCoil::Int64; overlap::Real=0.5, v
     # plot_imgs_subplots(mask, 2,2)
 end
 
+"""
+    mask = csm_Rect_binary(Nx::Int64, Ny::Int64, nCoil::Int64; verbose::Bool=false)
+
+# Description
+    get Rect-shaped csm.
+
+# Arguments
+- `Nx`: (`::Int64`) 
+- `Ny`: (`::Int64`) 
+- `nCoil`: (`::Int64`) 
+
+# Keywords
+- `verbose`: (`::Real`) print information (default: false)
+
+# Returns
+- `mask`: (`::Array{Float64, 3}`) mask (Nx, Ny, nCoil)
+
+# Examples
+```julia-repl
+julia> mask = csm_Rect_binary(100, 100, 6; verbose=true)
+julia> plot_imgs_subplots(mask, 2, 3)
+```
+"""
 function csm_Rect_binary(Nx::Int64, Ny::Int64, nCoil::Int64; verbose::Bool=false)
     Npartsx, Npartsy = get_factors(nCoil)
     if verbose
