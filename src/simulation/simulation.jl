@@ -11,5 +11,8 @@ include("BlochHighOrder.jl")
 export BlochHighOrder
 
 # define simulation functions for different phantoms
-include("Phantom/simulation.jl")
-include("HO_Phantom/simulation.jl")
+include("Phantom/simulation.jl")       # simulation for Phantom defined in KomaMRI.jl
+include("HO_Phantom/simulation.jl")    # simulation for HO_Phantom defined in KomaHighOrder.jl
+
+include("SimType.jl")
+export SimType

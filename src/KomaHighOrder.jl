@@ -30,7 +30,7 @@ include("simulation/simulation.jl")
 include("plot/plot.jl")
 include("mrd/mrd.jl")
 include("reconstruction/recon.jl")
-include("demo/demo.jl")
+include("example/example.jl")
 
 #Package version, KomaMRI.__VERSION__
 using Pkg

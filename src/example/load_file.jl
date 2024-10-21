@@ -1,32 +1,9 @@
-
-"""
-    raw = load_raw(BlochHighOrder("000"); simtype=SimType("B0wo_T2w_ss3"))
-    load rawdata file from `src/demo/raw` folder and return a `RawAcquisitionData` object.
-
-# Arguments
-- `BHO`: (`::BlochHighOrder`) BlochHighOrder struct
-# Keywords
-- `simtype`: (`::SimType`) SimType struct
-
-# Returns
-- `raw`: (`::RawAcquisitionData`)
-"""
-function load_raw(BHO::BlochHighOrder; simtype::SimType=SimType("B0wo_T2w_ss3")) ::RawAcquisitionData
-    folder = simtype.name
-    raw_folder = "$(@__DIR__)/rawdata/$(folder)"
-    @assert ispath(raw_folder) "folder not exist: $(raw_folder)"
-    @info "rawdata for demo" sim_method=BHO.name mrd_file="$(@__DIR__)/raw/$(folder)/xw_sp2d-1mm-r1_$(BHO.name).mrd"
-
-    raw_file = "$(@__DIR__)/rawdata/$(folder)/xw_sp2d-1mm-r1_$(BHO.name).mrd"
-    @assert ispath(raw_file) "the raw file does not exist: $(raw_file)"
-    raw = RawAcquisitionData(ISMRMRDFile(raw_file));
-    return raw
-end
-
-
 """
     seq = load_seq(; seq="spiral", r=2)
-    load sequence file from `src/demo/seq` folder and return a `Sequence` object.
+
+# Description
+    using read_seq function to load sequence file from `src/example/seq` folder and return a `Sequence` object.
+
 # Keywords
 - `seqname`: (`::String`) Sequence name
 - `r`: (`::Int64`) under sampling factor for Parallel Imaging
@@ -34,7 +11,7 @@ end
 # Returns
 - `seq`: (`::Sequence`)
 """
-function load_seq(; seqname::String="spiral", r::Int64=1)
+function load_seq(; seqname::String="spiral", r::Int64=1)::Sequence
     seq_path = "$(@__DIR__)/seq/$(seqname)_R$(r).seq"
     @assert ispath(seq_path) "the sequence file does not exist: $(seq_path)"
     seq = read_seq(seq_path)
@@ -42,65 +19,91 @@ function load_seq(; seqname::String="spiral", r::Int64=1)
 end
 
 """
+    GR_dfcStitched, GR_dfcStandard, ntStitched, ntStandard = load_dfc_mat(dfc_path)
+
+# Description
+    This function loads the dfc (dynamic field changes) file (`*.mat`) and returns the dynamic gradient of the stitched and standard methods.
+the dfc file (*.mat) contains the following fields:
+- `dt`               time interval between two time points [s].
+- `ntStandard`       number of time points of the standard method.
+- `ntStitched`       number of time points of the stitched method. A vector, one element for each segment.
+- `skopeStandard`    dynamic measurment (up to 2nd order) of the standard method.
+- `skopeStitched`    dynamic measurment (up to 2nd order) of the stitched method.
+
+# Arguments
+- `dfc_path`: (`::String`) path to the dfc file
+
+# Returns
+- `GR_dfcStitched`: (`::Array{Grad,2}`) stitched dynamic gradient
+- `GR_dfcStandard`: (`::Array{Grad,2}`) standard dynamic gradient
+- `ntStitched`: (`::Int64`) number of time points of the stitched method
+- `ntStandard`: (`::Int64`) number of time points of the standard method
+"""
+function load_dfc_mat(dfc_path::String)
+    @assert ispath(dfc_path) "the dfc file does not exist: $(dfc_path)"
+    grad = MAT.matread(dfc_path);
+    Δt = grad["dt"];
+    nGradPoint, nTerm = size(grad["skopeStitched"])              
+    dfcStitched = grad["skopeStitched"]' * 1e-3; # mT, mT/m, mT/m² => T, T/m, T/m²
+    dfcStandard = grad["skopeStandard"]' * 1e-3; # mT, mT/m, mT/m² => T, T/m, T/m²
+    ntStitched  = grad["ntStitched"]
+    ntStandard  = grad["ntStandard"]
+    t = Δt * (nGradPoint-1);
+    GR_dfcStitched = reshape([KomaMRIBase.Grad(dfcStitched[idx,:], t, Δt/2, Δt/2, 0) for idx=1:9], :, 1);
+    GR_dfcStandard = reshape([KomaMRIBase.Grad(dfcStandard[idx,:], t, Δt/2, Δt/2, 0) for idx=1:9], :, 1);
+    return GR_dfcStitched, GR_dfcStandard, ntStitched, ntStandard
+end
+
+
+"""
     dfc_grad = load_dfc(; seq="spiral", r=2)
-    load dfc file from `src/demo/dfc` folder and return a `Grad` object.
+
+# Description
+    load dfc file from `src/example/dfc` folder and return a `Grad` object.
+
 # Keywords
 - `dfc_method`: (`::Symbol`) `:Stitched` or `:Standard`
-- `seqname`: (`::String`) Sequence name
+- `seqname`: (`::String`) prefix of the sequence name: "spiral" or "gre" ...
 - `r`: (`::Int64`) under sampling factor for Parallel Imaging
 
 # Returns
 - `GR_dfc`: 
 """
-function load_dfc(;dfc_method::Symbol=:Stitched, seqname::String="demo", r::Int64=1)
+function load_dfc(;dfc_method::Symbol=:Stitched, seqname::String="spiral", r::Int64=1)
     dfc_path = "$(@__DIR__)/dfc/$(seqname)_R$(r).mat"
-    @assert ispath(dfc_path) "the dfc file does not exist: $(dfc_path)"
     @assert dfc_method in [:Stitched, :Standard] "dfc_method must be :Stitched or :Standard"
 
-    grad = MAT.matread(dfc_path);
-    Δt = grad["dt"];
-    nGradPoint, nTerm = size(grad["skopeStitched"])
+    GR_dfcStitched, GR_dfcStandard, ntStitched, ntStandard = load_dfc_mat(dfc_path);
 
-    dfcStitched = [zeros(nTerm) grad["skopeStitched"]'] * 1e-3; 
-    dfcStandard = [zeros(nTerm) grad["skopeStandard"]'] * 1e-3;
-    ntStitched = grad["ntStitched"]
-    ntStandard = grad["ntStandard"]
-
-    t = Δt * ones(nGradPoint);
     if dfc_method == :Stitched
-        GR_dfc = reshape([KomaMRIBase.Grad(dfcStitched[idx,:], t, 0, 0, 0) for idx=1:9], :, 1);
+        GR_dfc = GR_dfcStitched;
     elseif dfc_method == :Standard
-        GR_dfc = reshape([KomaMRIBase.Grad(dfcStandard[idx,:], t, 0, 0, 0) for idx=1:9], :, 1);
+        GR_dfc = GR_dfcStandard;
     end
     return GR_dfc, ntStitched, ntStandard
 end
 
-function load_dfc_mat(dfc_path::String)
-    @assert ispath(dfc_path) "the dfc file does not exist: $(dfc_path)"
-    grad = MAT.matread(dfc_path);
-    Δt = grad["dt"];
-    nGradPoint, nTerm = size(grad["skopeStitched"])
+"""
+    hoseq = load_hoseq(;dfc_method=:Stitched, seqname="spiral", r=2)
 
-    dfcStitched = [zeros(nTerm) grad["skopeStitched"]'] * 1e-3; 
-    dfcStandard = [zeros(nTerm) grad["skopeStandard"]'] * 1e-3;
-    ntStitched = grad["ntStitched"]
-    ntStandard = grad["ntStandard"]
+# Description
+    This function loads the sequence (*.seq) and dfc file (*.mat) and returns a `HO_Sequence` object.
 
-    t = Δt * ones(nGradPoint);
-    GR_dfcStitched = reshape([KomaMRIBase.Grad(dfcStitched[idx,:], t, 0, 0, 0) for idx=1:9], :, 1);
-    GR_dfcStandard = reshape([KomaMRIBase.Grad(dfcStandard[idx,:], t, 0, 0, 0) for idx=1:9], :, 1);
-    return GR_dfcStitched, GR_dfcStandard, ntStitched, ntStandard
-end
+# Keywords
+- `dfc`: (`::Bool`) whether to include dfc in the sequence
+- `dfc_method`: (`::Symbol`) `:Stitched` or `:Standard`
+- `seqname`: (`::String`) Sequence name
+- `r`: (`::Int64`) under sampling factor for Parallel Imaging
 
-
-function load_hoseq(;dfc::Bool=true, dfc_method::Symbol=:Stitched, seqname::String="demo", r::Int64=1) ::HO_Sequence
+# Returns
+- `hoseq`: (`::HO_Sequence`) the HO_Sequence object
+"""
+function load_hoseq(;dfc_method::Symbol=:Stitched, seqname::String="spiral", r::Int64=1) ::HO_Sequence
     seq = load_seq(;seqname=seqname, r=r); # dfc sequence
-    seq.GR[1,:] = -seq.GR[1,:]; # reverse the sign of the gradient (axis x)
-    hoseq = HO_Sequence(seq); # hoseq
-    if dfc
-        GR_dfc, ntStitched, ntStandard = load_dfc(;dfc_method=dfc_method, seqname=seqname, r=r);
-        hoseq.GR_dfc[2:4, :] = hoseq.SEQ.GR;
-        hoseq.GR_dfc[:,8] = GR_dfc;
-    end
+    seq.GR[1,:] = -seq.GR[1,:];            # reverse the sign of the gradient (axis x)
+    hoseq = HO_Sequence(seq);              # convert to HO_Sequence object
+    GR_dfc, ntStitched, ntStandard = load_dfc(;dfc_method=dfc_method, seqname=seqname, r=r);
+    hoseq.GR_dfc[2:4, :] = hoseq.SEQ.GR;
+    hoseq.GR_dfc[:,8] = GR_dfc;            # "8" is the index of the readout block in the spiral sequence
     return hoseq
 end

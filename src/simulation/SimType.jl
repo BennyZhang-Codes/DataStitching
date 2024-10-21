@@ -1,4 +1,16 @@
+"""
+    simtype = SimType(B0, T2, ss)
 
+a struct used to specify some parameters for the simulation.
+
+# Arguments
+- `B0`: (`::Bool`), whether to include ΔB₀ in phantom/simulation.
+- `T2`: (`::Bool`), whether to include ΔT₂ in phantom/simulation.
+- `ss`: (`::Int64`), subsampling factor for the phantom.
+
+# Returns
+- `simtype`: (`::SimType`) SimType struct
+"""
 Base.@kwdef struct SimType
     B0::Bool = true
     T2::Bool = true
