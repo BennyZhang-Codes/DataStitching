@@ -9,6 +9,8 @@ export HO_img_scale, HO_MSE, HO_RMSE, HO_NRMSE, HO_SSIM
 
 """
     factor_a, factor_b = get_factors(num::Int64)
+
+# Description
     Get the factors of a number, Where a * b = num, make the difference between a and b as small as possible.
 
 # Arguments

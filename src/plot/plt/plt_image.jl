@@ -1,6 +1,8 @@
 
 """
-    fig = plt_image(img::Array{<:Real, 2}; title="", width=5, height=5, vmaxp=100, vminp=0, cmap="gray", fontsize_title=10, color_facecolor="#ffffff")
+    fig = plt_image(img::Array{<:Real, 2}; kwargs...)
+
+# Description
     Plots an image array using matplotlib 
 
 # Arguments

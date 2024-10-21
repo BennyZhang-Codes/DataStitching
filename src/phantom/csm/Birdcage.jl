@@ -1,9 +1,15 @@
 """
     csm_Birdcage(N::Int64, nCoil::Int64, relative_radius::Float64)
 
-Computes the sensitivity maps for each coils that are arranged
-in a birdcage manner.
-# out
+# Description
+    Computes the sensitivity maps for each coils that are arranged in a birdcage manner.
+
+# Arguments
+- `N::Int64`: The number of pixels in the x-direction.
+- `nCoil::Int64`: The number of coils in the birdcage.
+- `relative_radius::Float64`: The relative radius.
+
+# Returns
    A complex array of size (Nx, Ny, nCoil) containing the sensitivity maps.
 # Examples
 ```julia-repl

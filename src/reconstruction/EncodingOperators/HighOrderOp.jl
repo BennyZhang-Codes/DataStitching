@@ -25,7 +25,8 @@ LinearOperators.storage_type(op::HighOrderOp) = typeof(op.Mv5)
 """
     HighOrderOp(shape::NTuple{D,Int64}, tr_nominal::Trajectory, tr_measured::Trajectory; Nblocks::Int64=50, use_gpu::Bool=true) where D
 
-generates a `HighOrderOp` which explicitely evaluates the MRI Fourier HighOrder encoding operator.
+# Description
+    generates a `HighOrderOp` which explicitely evaluates the MRI Fourier HighOrder encoding operator.
 
 # Arguments:
 * `shape::NTuple{D,Int64}`  - size of image to encode/reconstruct

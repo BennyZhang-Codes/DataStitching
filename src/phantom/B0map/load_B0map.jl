@@ -2,7 +2,8 @@
 """
     B0map = load_B0map(B0_file::Symbol; axis="axial", ss=1, location=0.5)
 
-Loads the B0map from the BrainPhantom package.
+# Description
+    Loads the B0map from the BrainPhantom package.
 
 # Arguments
 - `B0_file::Symbol`: The name of the B0map file to load. Must be one of `:B0` or `:B0_medianfiltered_r4`.
