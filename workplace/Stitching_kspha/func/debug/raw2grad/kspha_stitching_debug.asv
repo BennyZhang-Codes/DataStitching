@@ -1,0 +1,175 @@
+close all;
+clear;
+
+root = 'E:\skope\AqSysDataImport\';addpath(root);skopepath = fullfile(root,'24_09_24_spiral_isocenter');
+r = 4;
+idStitched =8;  % 4   8-4segs
+seqStitched = sprintf('xw_sp2d_7T-1mm-200-r%d-4segs_woRF.seq', r);
+seqfileStitched = fullfile(skopepath, seqStitched);
+plotfileStitched = fullfile(skopepath, sprintf('r%d_Stitched.png', r));
+%% segmented measurement
+params = struct();
+params.folder = skopepath;
+params.id = idStitched;
+params.seqfile = seqfileStitched;
+
+folder = params.folder;     % root directory
+id = params.id;             % ID of the skope recording
+seqName = params.seqfile;   % full path of *.seq file
+
+% 1. read *.seq, get some corresponding parameters
+myseq = mr.Sequence();
+myseq.read(seqName);
+gradFreeDelay  = myseq.getDefinition('skope_gradFreeDelay');
+nSeg           = myseq.getDefinition('skope_nSegments2measure');
+gradRasterTime = myseq.getDefinition('GradientRasterTime');
+nPrescan       = myseq.getDefinition('skope_nPrescans');
+trigDelay      = myseq.getDefinition('skope_triggerDelays');
+readoutGradDur = myseq.getDefinition('readoutGradientDuration');
+segDur = myseq.getDefinition('skope_segmentDuration');
+if isempty(segDur)
+    % mode = 'variable';
+    segDur = myseq.getDefinition('skope_maxSegmentDuration');
+end
+
+% 2. read skope raw data
+scan = AqSysData(folder, id);
+dt = scan.k.tDwell;
+nSamplePerSeg = round(segDur/dt); % number of samples per segmentation.
+
+% [nSample,nChannel,nInterleave,nDynamic]
+kspha = scan.getData('kspha', [], [], [], nPrescan+1:nPrescan+nSeg); 
+[nSample,nTerm,nInterleave,nDynamic] = size(kspha);
+%% determination of nSampleAllSeg and nSampleStitched
+if length(trigDelay) > 1   % if length(trigDelay) > 1, stitching method, otherwise, conventional method
+    nSampleAllSeg = round((trigDelay(2:end)-trigDelay(1:end-1))/dt);
+    nSampleAllSeg = [nSampleAllSeg; round((readoutGradDur-trigDelay(end))/dt)];
+else
+    nSampleAllSeg = nSamplePerSeg;
+end
+nSampleStitched = sum(nSampleAllSeg);
+%% skope_phaseCoeffs2Bfield
+clear bfield;
+
+delayshift = gradFreeDelay- scan.k.extTrigDelay - 0.5*dt; % 
+bfield = zeros(nSample-1,nTerm,nInterleave,nDynamic);
+for dynamic = 1: nDynamic 
+    for interleave =1 : nInterleave
+        for term = 1: nTerm 
+            bfield(:,term,interleave,dynamic) = deriveBfieldFromPhase(kspha(:,term,interleave,dynamic),dt,gradRasterTime,0);
+            bfield(:,term,interleave,dynamic) = interp1_TrajTime(bfield(:,term,interleave,dynamic), dt, delayshift);
+        end
+    end
+end
+bfield = bfield(1:nSamplePerSeg,:,:,:); % [nSamplePerSeg,nTerm,nInterleave,nDynamic]
+% bfield = mr.convert(bfield,'Hz/m','mT/m','gamma',scan.gammas.mrSystem);
+
+bfield_stitched = zeros(nSampleStitched,nTerm);
+for seg = 1:nSeg
+    idx_e = sum(nSampleAllSeg(1:seg));
+    idx_s = sum(nSampleAllSeg(1:seg)) - nSampleAllSeg(seg) + 1; % fprintf("%d : %d\n", idx_s, idx_e);
+    bfield_stitched(idx_s:idx_e,:) = bfield(1:nSampleAllSeg(seg),:,1,seg);
+end
+% plot_grad(bfield_stitched, dt);
+
+
+%% problem: filterPhaseData, then diff, -> some ripples appearing at the both ends of each segment
+k = kspha(:,2,1,4);
+k_f = filterPhaseData(k, 1e-6, 1e-5);
+figure, subplot(2,1,1), hold on;
+plot(k); plot(k_f); ylabel("rad/m"); xlabel('time (us)')
+subplot(2,1,2), hold on;
+plot(diff(k)/(2*pi)/dt/mr.opts().gamma*1e3); plot(diff(k_f)/(2*pi)/dt/mr.opts().gamma*1e3); ylabel("mT/m"); xlabel('time (us)')
+
+%% stitching all segments of kspha to kspha_all 
+kspha_all = zeros(nSample*nDynamic, nTerm);
+field_all = zeros(nSample*nDynamic, nTerm);
+for seg = 1: nSeg
+    kspha_all(1+(seg-1)*nSample:seg*nSample, :) = kspha(:,:,1,seg);
+end
+plot_kspha(kspha_all, dt);
+%% kspha_all -> filterPhaseData -> comparison
+kx=kspha_all(:,2);
+kx_f = filterPhaseData(kx, 1e-6, 1e-5);
+kx_f = [0; kx_f];
+kx_d = diff(kx)/(2*pi)/dt/mr.opts().gamma*1e3;
+kx_f_d  = diff(kx_f)/(2*pi)/dt/mr.opts().gamma*1e3;
+
+figure, hold on; plot(kx_d); plot(kx_f_d); legend('diff kspha all','diff kspha all filter'), ylabel("mT/m"); xlabel('time (us)')
+figure, hold on; plot(kx); plot(kx_f); legend('kspha all','kspha all filter');ylabel("rad/m"); xlabel('time (us)')
+% plot(kspha(:,2,1,4));
+%% kspha align and stitch
+clear kspha_shift
+
+delayshift = gradFreeDelay - scan.k.extTrigDelay;
+kspha_shift = zeros(nSample,nTerm,nInterleave,nDynamic);
+for dynamic = 1: nDynamic 
+    for interleave =1 : nInterleave
+        for term = 1: nTerm 
+            % k = filterPhaseData(kspha(:,term,interleave,dynamic), dt, gradRasterTime);
+            kspha_shift(:,term,interleave,dynamic) = interp1_TrajTime(kspha(:,term,interleave,dynamic), dt, delayshift);
+            % kspha_shift(:,term,interleave,dynamic) = kspha(:,term,interleave,dynamic);
+        end
+    end
+end
+figure, subplot(1,2,1), hold on;
+shift = mean(kspha_shift(nSamplePerSeg+1:nSample,2,1,seg-1) - kspha_shift(1:nSample-nSamplePerSeg,2,1,seg));
+plot(kspha_shift(nSamplePerSeg+1:nSample,2,1,seg-1));
+plot(kspha_shift(1:nSample-nSamplePerSeg,2,1,seg)+shift);
+subplot(1,2,2)
+plot(kspha_shift(nSamplePerSeg+1:nSample,2,1,seg-1)-kspha_shift(1:nSample-nSamplePerSeg,2,1,seg));
+
+%%
+for seg = 2:nSeg
+    delta_kspha = kspha_shift(nSamplePerSeg+1,:,1,seg-1) - kspha_shift(1,:,1,seg);
+    disp(delta_kspha);
+    delta_kspha = mean(kspha_shift(nSamplePerSeg+1:nSamplePerSeg+100,:,1,seg-1) - kspha_shift(1:100,:,1,seg));
+    disp(delta_kspha);
+    kspha_shift(:,:,1,seg) = kspha_shift(:,:,1,seg) + delta_kspha;
+end
+
+% kspha_shift = kspha_shift(1:nSamplePerSeg,:,:,:); % [nSamplePerSeg,nTerm,nInterleave,nDynamic]
+
+kspha_stitched = zeros(nSampleStitched, nTerm);
+for seg = 1:nSeg
+    idx_e = sum(nSampleAllSeg(1:seg));
+    idx_s = sum(nSampleAllSeg(1:seg)) - nSampleAllSeg(seg) + 1; % fprintf("%d : %d\n", idx_s, idx_e);
+    kspha_stitched(idx_s:idx_e,:) = kspha_shift(1:nSampleAllSeg(seg),:,1,seg);
+end
+
+kspha_stitched = filterPhaseData(kspha_stitched, 1e-6, 1e-5);
+plot_kspha(kspha_stitched, dt);
+
+plot_kspha(diff(kspha_stitched) / 1e-9 / 2/pi/ mr.opts().gamma,dt)
+
+%% kspha_stitched to bfield
+bfield_kspha_stitched = zeros(nSampleStitched-1, nTerm);
+for term = 1:nTerm
+    bfield_kspha_stitched(:,term) = deriveBfieldFromPhase(kspha_stitched(:,term),dt);
+    bfield_kspha_stitched(:,term) = interp1_TrajTime(bfield_kspha_stitched(:,term), dt, -0.5*dt);
+end
+% plot_grad(bfield_kspha_stitched, dt);
+% 
+% % compare of bfield_kspha_stitched and bfield_stitched
+figure, subplot(2,1,1), hold on;
+plot(bfield_kspha_stitched(:, 2));
+plot(bfield_stitched(1:end-1, 2));
+subplot(2,1,2);
+plot(bfield_stitched(1:end-1, 2)-bfield_kspha_stitched(:, 2));
+% 
+% % comparison of bfield_kspha_stitched and bfield_stitched when converted to
+% % traj
+%%
+k_kspha  = grad2traj(bfield_kspha_stitched(nSamplePerSeg+1:end,:), dt);
+k_bfield = grad2traj(bfield_stitched(nSamplePerSeg+1:end-1,:), dt);
+
+figure,subplot(1,2,1),hold on;
+plot(k_kspha(:, 2));
+plot(k_bfield(1:end, 2));
+subplot(1,2,2)
+plot(k_kspha(:, 2)-k_bfield(:, 2));
+
+figure,hold on;
+plot(k_kspha(:, 2), k_kspha(:, 3));
+plot(k_bfield(1:end, 2), k_bfield(1:end, 3));
+
