@@ -1,25 +1,25 @@
 using KomaHighOrder, MRIReco, MRICoilSensitivities, PyPlot
 import KomaHighOrder.MRIBase: AcquisitionData
 
-path       = "/home/jyzhang/Desktop/pulseq/20240924_skope_exp/dat_phantom_acr_isocenter/"
-seq_file   = "$(path)/seq/gres6e_fov200_200_bw556.seq"
-raw_file   = "$(path)/mrd/meas_MID00071_FID49275_pulseq_v0_gres6.mrd"
+path       = "/home/jyzhang/Desktop/pulseq/20241010_skope_fa90/invivo"
+seq_file = "$(path)/seq/" * [f for f in readdir("$(path)/seq") if occursin("gres6", f)][1]
+raw_file = "$(path)/mrd/" * [f for f in readdir("$(path)/mrd") if occursin("gres6", f)][1]
 T          = Float64
 
-kdata, ktraj, kdims, shape, TE, ReadoutMode, acqData, raw = read_gre(seq_file, raw_file);
+kdata, ktraj, kdims, shape, TE, ReadoutMode, gre_acqData, raw = read_gre(seq_file, raw_file);
 nCha, nZ, nY, nX, nAvg, nSli, nCon, nPha, nRep, nSet, nSeg = shape;
 
 # IFFT of gre
-imgs = convert_ifft(kdata, dims=[2,3]);
-imgs = CoilCombineSOS(abs.(imgs), 1);
-imgs = permutedims(imgs, [3,1,2]);
-fig = plt_images(imgs,width=7.5, height=5, vminp=0, vmaxp=99)
+gre_imgs = convert_ifft(kdata, dims=[2,3]);
+gre_imgs = CoilCombineSOS(abs.(gre_imgs), 1);
+gre_imgs = permutedims(gre_imgs, [3,1,2]);
+fig = plt_images(gre_imgs,width=7.5, height=5, vminp=0, vmaxp=99)
 fig.savefig("$(path)/$(raw.params["protocolName"])_sos.png", dpi=300, bbox_inches="tight", pad_inches=0)
 
 ############
 # espirit
 ############
-sensitivity = espirit(acqData, (6,6), 30, eigThresh_1=0.02, eigThresh_2=0.99);  # (nX, nY, 1, nCha)
+sensitivity = espirit(gre_acqData, (6,6), 30, eigThresh_1=0.02, eigThresh_2=0.99);  # (nX, nY, 1, nCha)
 csm = permutedims(sensitivity, [2,1,4,3])[:,:,:,1];# (nX, nY, 1, nCha) => (nY, nX, nCha, 1) => (nY, nX, nCha)
 fig = plt_images(permutedims(abs.(csm), [3,1,2]),width=10, height=5)  # (nCha, nY, nX)
 fig.savefig("$(path)/$(raw.params["protocolName"])_Con1_CoilSens_espirit.png", dpi=300, bbox_inches="tight", pad_inches=0)
@@ -44,11 +44,10 @@ fig.savefig("$(path)/$(raw.params["protocolName"])_b0map.png", dpi=300, bbox_inc
 
 
 
-# path = "/home/jyzhang/Desktop/pulseq/20241010_skope_fa90/invivo/"
-seq_file = "$(path)/seq/xw_sp2d_7T-1mm-200-r4-noSync-fa10.seq"
-mrd_file = "$(path)/mrd/meas_MID00074_FID49278_pulseq_v0_seg1_r4.mrd"
-dfc_file = "$(path)/dfc/xw_sp2d_7T-1mm-200-r4.mat"
-
+path = "/home/jyzhang/Desktop/pulseq/20241010_skope_fa90/invivo/"
+seq_file = "$(path)/seq/" * [f for f in readdir("$(path)/seq") if occursin("r4", f)][1]
+mrd_file = "$(path)/mrd/" * [f for f in readdir("$(path)/mrd") if occursin("r4", f)][1]
+dfc_file = "$(path)/dfc/" * [f for f in readdir("$(path)/dfc") if occursin("r4.mat", f)][1]
 
 ########################################################################
 # 1. load the *.seq file and extract some infomations
@@ -167,7 +166,7 @@ tr_nominal = Trajectory(ktraj_adc'[1:3,:], nSet, nX; circular=false, times=times
 tr_dfc     = Trajectory(zeros(9, nX*nSet), nSet, nX; circular=false, times=times);
 Op0 = HighOrderOp((Nx, Ny), tr_nominal, tr_dfc , BlochHighOrder("000"); fieldmap=Matrix(rotl90(b0)), Nblocks=9, grid=1);
 
-B0map = rotl90(b0); Nblocks=2;
+B0map = rotl90(get_B0map(ydata, TE, smap, mask)[1]); Nblocks=5;
 
 solver = "cgnr"
 reg = "L2"

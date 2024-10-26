@@ -1,3 +1,4 @@
+# https://github.com/HarmonizedMRI/Calibration/blob/main/b0/b0estimation/b0estimation.jl
 using MRIFieldmaps: b0init, b0map
 using ROMEO: unwrap
 using MAT: matread, matwrite
