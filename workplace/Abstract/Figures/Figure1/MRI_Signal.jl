@@ -10,6 +10,7 @@ sh = SphericalHarmonics()
 path         = "E:/pulseq/20241010_skope_fa90/invivo"
 r=4
 syn_file     = "$(path)/syn/" * [f for f in readdir("$(path)/syn") if occursin("r$(r)", f)][1]
+outpath = "workplace/Abstract/Figures/Figure1/out"; if ispath(outpath) == false mkpath(outpath) end
 
 
 data       = matread(syn_file)["data"];
@@ -44,6 +45,6 @@ for cha = 1 : nCha
     ax.plot(abs.(data[:, cha]), linewidth=0.5, color="C$(cha%9)")
     fig.tight_layout(pad=0)
 
-    fig.savefig("workplace/Abstract/Figure1/out/Fig_signal_r$(r)_cha$(cha).png", dpi=300, bbox_inches="tight", transparent=true, pad_inches=0)
-    fig.savefig("workplace/Abstract/Figure1/out/Fig_signal_r$(r)_cha$(cha).svg", dpi=300, bbox_inches="tight", transparent=true, pad_inches=0)
+    fig.savefig("$(outpath)/Fig_signal_r$(r)_cha$(cha).png", dpi=300, bbox_inches="tight", transparent=true, pad_inches=0)
+    fig.savefig("$(outpath)/Fig_signal_r$(r)_cha$(cha).svg", dpi=300, bbox_inches="tight", transparent=true, pad_inches=0)
 end

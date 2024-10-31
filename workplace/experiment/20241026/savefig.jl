@@ -5,7 +5,7 @@ T = Float64
 
 path         = "E:/pulseq/20241010_skope_fa90/invivo"
 
-name = "r2_cgnr_L2_0.001_20"
+name = "r2_cgnr_L2_0.01_10"
 
 mat_file = "$(path)/out/" * [f for f in readdir("$(path)/out") if occursin("$(name).mat", f)][1]
 outpath = "$(path)/out/" * name; if ispath(outpath) == false mkpath(outpath) end

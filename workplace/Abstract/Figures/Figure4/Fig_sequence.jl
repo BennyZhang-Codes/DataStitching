@@ -6,8 +6,8 @@ path         = "E:/pulseq/20241010_skope_fa90/invivo"
 r=4
 seq_file     = "$(path)/seq/" * [f for f in readdir("$(path)/seq") if occursin("r$(r)", f)][1]
 dfc_file     = "$(path)/dfc/" * [f for f in readdir("$(path)/dfc") if occursin("r$(r).mat", f)][1]
-# syn_file     = "$(path)/syn/" * [f for f in readdir("$(path)/syn") if occursin("r$(r)", f)][1]
-# gre_file     = "$(path)/syn/" * [f for f in readdir("$(path)/syn") if occursin(r"^syn.*gre.*mat$", f)][1]
+
+outpath = "workplace/Abstract/Figures/Figure4/out"; if ispath(outpath) == false mkpath(outpath) end
 
 
 ########################################################################
@@ -86,8 +86,8 @@ ax.plot(samples.gz.t*1e3,       samples.gz.A*1e3, color="#00CC96", linewidth=lin
 
 ax.plot(samples.rf.t*1e3, abs.(samples.rf.A)*1e6, color="#AB63FA", linewidth=linewidth, label=L"|B_{1}|")
 
-ax.scatter(t_trigger*1e3, -55*ones(length(t_trigger)), s=15, marker=L"\mapsup", color=color_trig, linewidth=0.1, label=L"Stitching \quad trigger")
-ax.scatter(t_trigger[1]*1e3, -40, s=15, marker=L"\twoheaduparrow", color=color_trig, linewidth=0.1, label=L"Standard \quad trigger")
+ax.scatter(t_trigger*1e3, -55*ones(length(t_trigger)), s=15, marker=L"\mapsup", color=color_trig, linewidth=0.1, label=L"Stitching \ trigger")
+ax.scatter(t_trigger[1]*1e3, -40, s=15, marker=L"\twoheaduparrow", color=color_trig, linewidth=0.1, label=L"Standard \ trigger")
 
 ax.set_ylim(-70, 70)
 ax.set_ylabel("Amplitude [mT/m, μT]", fontsize=fontsize_label, color=color_label)
@@ -95,5 +95,5 @@ ax.set_xlabel("Time (ms)", fontsize=fontsize_label, color=color_label)
 ax.legend(loc="upper left", bbox_to_anchor=(0, 1.1), fontsize=fontsize_legend, labelcolor=color_label, ncols=6, frameon=false, handlelength=1, handletextpad=0.5, columnspacing=1)
 
 fig.tight_layout(pad=0, h_pad=0.5, w_pad=0.5)
-fig.savefig("workplace/Abstract/out/Fig_sequence_r$(r).png", dpi=300, bbox_inches="tight", transparent=true)
-fig.savefig("workplace/Abstract/out/Fig_sequence_r$(r).svg", dpi=300, bbox_inches="tight", transparent=true)
+fig.savefig("$(outpath)/Fig_sequence_r$(r).png", dpi=300, bbox_inches="tight", transparent=true, pad_inches=0)
+fig.savefig("$(outpath)/Fig_sequence_r$(r).svg", dpi=300, bbox_inches="tight", transparent=true, pad_inches=0)

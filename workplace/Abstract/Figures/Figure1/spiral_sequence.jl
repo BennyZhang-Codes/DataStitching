@@ -6,8 +6,7 @@ path         = "E:/pulseq/20241010_skope_fa90/invivo"
 r=4
 seq_file     = "$(path)/seq/" * [f for f in readdir("$(path)/seq") if occursin("r$(r)", f)][1]
 dfc_file     = "$(path)/dfc/" * [f for f in readdir("$(path)/dfc") if occursin("r$(r).mat", f)][1]
-# syn_file     = "$(path)/syn/" * [f for f in readdir("$(path)/syn") if occursin("r$(r)", f)][1]
-# gre_file     = "$(path)/syn/" * [f for f in readdir("$(path)/syn") if occursin(r"^syn.*gre.*mat$", f)][1]
+outpath = "workplace/Abstract/Figures/Figure1/out"; if ispath(outpath) == false mkpath(outpath) end
 
 
 ########################################################################
@@ -94,5 +93,5 @@ ax.legend(loc="upper left", bbox_to_anchor=(0, 1), fontsize=fontsize_legend, lab
 ax.set_ylim(-70, 70)
 
 fig.tight_layout(pad=0)
-fig.savefig("workplace/Abstract/Figure1/out/Fig_sequence_r$(r).png", dpi=300, bbox_inches="tight", transparent=true, pad_inches=0)
-fig.savefig("workplace/Abstract/Figure1/out/Fig_sequence_r$(r).svg", dpi=300, bbox_inches="tight", transparent=true, pad_inches=0)
+fig.savefig("$(outpath)/Fig_sequence_r$(r).png", dpi=300, bbox_inches="tight", transparent=true, pad_inches=0)
+fig.savefig("$(outpath)/Fig_sequence_r$(r).svg", dpi=300, bbox_inches="tight", transparent=true, pad_inches=0)

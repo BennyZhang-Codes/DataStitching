@@ -24,7 +24,7 @@ path         = "E:/pulseq/20241010_skope_fa90/invivo"
 gre_seq_file = "$(path)/seq/" * [f for f in readdir("$(path)/seq") if occursin("gres6", f)][1]
 gre_mrd_file = "$(path)/mrd/" * [f for f in readdir("$(path)/mrd") if occursin("gres6", f)][1]
 
-outpath = "workplace/Abstract/Figure1/out"; if ispath(outpath) == false mkpath(outpath) end
+outpath = "workplace/Abstract/Figures/Figure1/out"; if ispath(outpath) == false mkpath(outpath) end
 
 kdata, ktraj, kdims, shape, TE, ReadoutMode, acqData, raw = read_gre(gre_seq_file, gre_mrd_file);
 nCha, nZ, nY, nX, nAvg, nSli, nCon, nPha, nRep, nSet, nSeg = shape;

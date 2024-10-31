@@ -84,7 +84,7 @@ grid=5;
 
 solver = "cgnr"
 reg = "L2"
-iter = 10
+iter = 2
 λ = 1e-2
 recParams = Dict{Symbol,Any}()
 recParams[:reconSize]        = (nX, nY)
@@ -98,11 +98,11 @@ recParams[:solver] = solver
 recParams[:senseMaps] = Complex{T}.(reshape(csm, nX, nY, 1, nCha));
 S = SensitivityOp(reshape(Complex{T}.(csm),:,nCha),1);
 
-
-# Op0 = HighOrderOp((nX, nY), tr_nominal, tr_Stitched, BlochHighOrder("000"); fieldmap=b0map, Nblocks=Nblocks, grid=grid, verbose=true);
-# recParams[:encodingOps] = reshape([DiagOp(Op0, nCha) ∘ S], 1,1);
-# @time rec = reconstruction(acqData, recParams).data[:,:];
-# plt_image(abs.(rec))
+# tr_Stitched = Trajectory(kStitched'[:,:].*(1), 1, nSample; circular=false, times=times);
+Op0 = HighOrderOp((nX, nY), tr_nominal, tr_Stitched, BlochHighOrder("010"); fieldmap=b0map, Nblocks=Nblocks, grid=grid, verbose=true);
+recParams[:encodingOps] = reshape([DiagOp(Op0, nCha) ∘ S], 1,1);
+@time rec = reconstruction(acqData, recParams).data[:,:];
+plt_image(abs.(rec))
 
 
 

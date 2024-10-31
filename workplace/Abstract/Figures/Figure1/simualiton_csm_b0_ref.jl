@@ -3,6 +3,7 @@ using MAT
 import Statistics: quantile
 
 dir = "workplace/Abstract/Simulation/out"; if ispath(dir) == false mkpath(dir) end     # output directory
+outpath = "workplace/Abstract/Figures/Figure1/out"; if ispath(outpath) == false mkpath(outpath) end
 
 ###### load images reconstructed by different considerations of the extended signal model 
 solver = "admm";
@@ -43,7 +44,7 @@ for idx = 1 : 8
     end
     ax.imshow(img, cmap=cmap, vmin=vmin, vmax=vmax)
     fig.tight_layout(pad=0)
-    fig.savefig("workplace/Abstract/Figure1/out/Sim_csm_Birdcage_cha$(idx).png", dpi=300, transparent=true, bbox_inches="tight", pad_inches=0)
+    fig.savefig("$(outpath)/Sim_csm_Birdcage_cha$(idx).png", dpi=300, transparent=true, bbox_inches="tight", pad_inches=0)
 end
 
 
@@ -65,7 +66,7 @@ end
 
 ai = ax.imshow(B0map, cmap="jet")#, interpolation="gaussian") # "bilinear", "spline36", "gaussian"
 fig.tight_layout(pad=0)
-fig.savefig("workplace/Abstract/Figure1/out/Sim_b0_quadratic.png", dpi=300, transparent=true, bbox_inches="tight", pad_inches=0)
+fig.savefig("$(outpath)/Sim_b0_quadratic.png", dpi=300, transparent=true, bbox_inches="tight", pad_inches=0)
 
 
 ########################################################################
@@ -83,7 +84,7 @@ for spine in ax.spines  # "left", "right", "bottom", "top"
 end
 ax.imshow(x_ref, cmap="gray") # "bilinear", "spline36", "gaussian"
 fig.tight_layout(pad=0)
-fig.savefig("workplace/Abstract/Figure1/out/Sim_ProtonDensity.png", dpi=300, transparent=true, bbox_inches="tight", pad_inches=0)
+fig.savefig("$(outpath)/Sim_ProtonDensity.png", dpi=300, transparent=true, bbox_inches="tight", pad_inches=0)
 
 
 
