@@ -16,7 +16,7 @@ function load_csm(
     elseif csmtype == :rect
         csm = csm_Rect_binary(Nx, Ny, nCoil; verbose=verbose)
     elseif csmtype == :birdcage
-        csm = csm_Birdcage_binary(Nx, Ny, nCoil; relative_radius=Float64(relative_radius), verbose=verbose)
+        csm = csm_Birdcage(Nx, Ny, nCoil; relative_radius=Float64(relative_radius), verbose=verbose)
     elseif csmtype == :real_32cha
         csm = csm_Real_32cha(Nx, Ny; verbose=verbose)
     end
