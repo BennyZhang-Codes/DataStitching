@@ -73,14 +73,20 @@ function HighOrderOp(
 
     Nx, Ny = shape
     x, y = 1:Nx, 1:Ny
-    x, y, z = vec(x .+ y'*0.0), vec(x*0.0 .+ y'), vec(x*0.0 .+ y'*0.0) #grid points
-    if grid == 1
+    if grid == 1      # x up->down, y left->right
+        x, y, z = vec(x .+ y'*0.0), vec(x*0.0 .+ y'), vec(x*0.0 .+ y'*0.0) #grid points
         x, y = x .- Nx/2 .- 1, y .- Ny/2 .- 1
     elseif grid == 2
+        x, y, z = vec(x .+ y'*0.0), vec(x*0.0 .+ y'), vec(x*0.0 .+ y'*0.0) #grid points
         x, y = x .- (Nx+1)/2, y .- (Ny+1)/2
-    elseif grid == 3
-        x, y = 1:Nx, 1:Ny
+    elseif grid == 3  # x left->right, y down->up
         x, y, z = vec(x*0.0 .+ y'), vec(x[end:-1:1] .+ 0.0*y'), vec(x*0.0 .+ y'*0.0) #grid points
+        x, y = x .- (Nx+1)/2, y .- (Ny+1)/2
+    elseif grid == 4  # x left->right, y up->down
+        x, y, z = vec(x*0.0 .+ y'), vec(x .+ 0.0*y'), vec(x*0.0 .+ y'*0.0) #grid points
+        x, y = x .- (Nx+1)/2, y .- (Ny+1)/2
+    elseif grid == 5  # x right->left, y up->down
+        x, y, z = vec(x*0.0 .+ y[end:-1:1]'), vec(x .+ 0.0*y'), vec(x*0.0 .+ y'*0.0) #grid points
         x, y = x .- (Nx+1)/2, y .- (Ny+1)/2
     end
     # print(x)
