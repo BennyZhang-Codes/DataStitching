@@ -51,6 +51,8 @@ sim_params["precision"]   = "f64"
 
 ##### 4. simulate
 signal = simulate(obj, hoseq, sys; sim_params);
+
+
 raw = signal_to_raw_data(signal, hoseq, :nominal; sim_params=copy(sim_params));
 img_nufft = recon_2d(raw, Nx=Nx, Ny=Ny);
 
