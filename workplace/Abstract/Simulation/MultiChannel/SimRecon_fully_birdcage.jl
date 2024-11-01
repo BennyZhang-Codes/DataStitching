@@ -39,11 +39,11 @@ sim_params["precision"]   = "f64"
 
 # 4. simulate
 signal = simulate(obj, hoseq_stitched, sys; sim_params);
-# data = signal[:,:,1];
-# raw = signal_to_raw_data(signal, hoseq_stitched, :nominal; sim_params=copy(sim_params));
-# img_nufft = recon_2d(raw, Nx=Nx, Ny=Ny);
-# fig_sos = plt_image(rotl90(sqrt.(sum(img_nufft.^2; dims=3))[:,:,1]); width=12/2.54, height=12/2.54)
-# fig_cha = plt_images(permutedims(mapslices(rotl90, img_nufft,dims=[1,2]), [3, 1, 2]),width=8, height=8)
+data = signal[:,:,1];
+raw = signal_to_raw_data(signal, hoseq_stitched, :nominal; sim_params=copy(sim_params));
+img_nufft = recon_2d(raw, Nx=Nx, Ny=Ny);
+fig_sos = plt_image(rotl90(sqrt.(sum(img_nufft.^2; dims=3))[:,:,1]); width=12/2.54, height=12/2.54)
+fig_cha = plt_images(permutedims(mapslices(rotl90, img_nufft,dims=[1,2]), [3, 1, 2]),width=8, height=8)
 
 
 #############################################################################
