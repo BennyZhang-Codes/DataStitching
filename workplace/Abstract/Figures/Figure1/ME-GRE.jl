@@ -56,7 +56,8 @@ for idx = 1 : nCha
     end
     ax.imshow(img, cmap=cmap, vmin=vmin, vmax=vmax)
     fig.tight_layout(pad=0)
-    fig.savefig("$(outpath)/csm_$(idx).png", dpi=300, transparent=true)
+    fig.savefig("$(outpath)/csm_$(idx).png", dpi=900, transparent=true)
+    fig.savefig("$(outpath)/csm_$(idx).svg", dpi=900, transparent=true)
 end
 
 
@@ -87,7 +88,8 @@ for idx = 1 : nCon
     end
     ax.imshow(img, cmap=cmap, vmin=vmin, vmax=vmax)
     fig.tight_layout(pad=0)
-    fig.savefig("$(outpath)/gre_mag_echo$(idx).png", dpi=300, transparent=true)
+    fig.savefig("$(outpath)/gre_mag_echo$(idx).png", dpi=900, transparent=true)
+    fig.savefig("$(outpath)/gre_mag_echo$(idx).svg", dpi=900, transparent=true)
 end
 
 vmin, vmax = quantile(angle.(yik_sos)[:], 0), quantile(angle.(yik_sos)[:], 1)
@@ -102,7 +104,8 @@ for idx = 1 : nCon
     end
     ax.imshow(img, cmap=cmap, vmin=vmin, vmax=vmax)
     fig.tight_layout(pad=0)
-    fig.savefig("$(outpath)/gre_pha_echo$(idx).png", dpi=300, transparent=true)
+    fig.savefig("$(outpath)/gre_pha_echo$(idx).png", dpi=900, transparent=true)
+    fig.savefig("$(outpath)/gre_pha_echo$(idx).svg", dpi=900, transparent=true)
 end
 
 img = -b0
@@ -116,4 +119,5 @@ for spine in ax.spines  # "left", "right", "bottom", "top"
 end
 ax.imshow(img, cmap="jet", vmin=-130,   vmax=130)
 fig.tight_layout(pad=0)
-fig.savefig("$(outpath)/B0map.png", dpi=300, transparent=false)
+fig.savefig("$(outpath)/B0map.png", dpi=900, transparent=false)
+fig.savefig("$(outpath)/B0map.svg", dpi=900, transparent=false)

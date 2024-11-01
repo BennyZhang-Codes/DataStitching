@@ -2,7 +2,7 @@ include("Figures/Fig_preset.jl");
 using MAT
 import Statistics: quantile
 
-dir = "workplace/Abstract/Simulation/out"; if ispath(dir) == false mkpath(dir) end     # output directory
+dir = "workplace/Abstract/Simulation/SingleChannel/out"; if ispath(dir) == false mkpath(dir) end     # output directory
 
 ###### load images reconstructed by different considerations of the extended signal model 
 solver = "admm";
