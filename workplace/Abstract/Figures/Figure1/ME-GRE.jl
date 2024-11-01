@@ -1,6 +1,6 @@
 using KomaHighOrder, MRIReco, MRICoilSensitivities, PyPlot, MAT
 import KomaHighOrder.MRIBase: AcquisitionData
-
+import Statistics: quantile
 #=
 prepare data for synchronization
 1. Multi-Echo GRE (ME-GRE) data: 

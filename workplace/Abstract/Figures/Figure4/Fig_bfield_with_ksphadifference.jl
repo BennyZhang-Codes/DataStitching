@@ -8,7 +8,7 @@ using KomaHighOrder
 sh = SphericalHarmonics()
 
 path         = "E:/pulseq/20241010_skope_fa90/invivo"
-r=4
+r=2
 seq_file     = "$(path)/seq/" * [f for f in readdir("$(path)/seq") if occursin("r$(r)", f)][1]
 dfc_file     = "$(path)/dfc/" * [f for f in readdir("$(path)/dfc") if occursin("r$(r).mat", f)][1]
 
@@ -31,6 +31,7 @@ t = collect(0:nSample-1) .* dt .* 1e3;  # convert to ms
 matplotlib.rc("mathtext", default="regular")
 matplotlib.rc("figure", dpi=200)
 matplotlib.rc("font", family="Times New Roman")
+matplotlib.rc("font", family="Arial")
 matplotlib.rcParams["mathtext.default"]
 figure_width       = 9/2.54
 figure_height      = 9/2.54
@@ -77,7 +78,7 @@ for ax in twinxs
         ax.spines[spine].set_linewidth(linewidth)
     end
     ax.tick_params(axis="y", color=color_kspha_diff)
-    ax.spines["right"].set_color(color_difference)
+    ax.spines["right"].set_color(color_kspha_diff)
     for spine in ["left", "bottom", "top"]
         ax.spines[spine].set_visible(false)
     end
@@ -102,7 +103,7 @@ for row = 1:9
         ax_twin.set_ylim(-kspha_vmaxs[row], kspha_vmaxs[row])
         ax.set_xlim(t[1], t[end])
 
-        line2, = ax.plot(t, bfield_diff, color=color_bfield_diff, linewidth=linewidth, label="Field difference")
+        # line2, = ax.plot(t, bfield_diff, color=color_bfield_diff, linewidth=linewidth, label="Field difference")
         line1, = ax.plot(t, bfield_Stitched, color=sh.dict["h$(term)"].color, linewidth=linewidth, label="Stitching")
         line3,  = ax_twin.plot(t, kspha_diff, color=color_kspha_diff, linewidth=linewidth, label="Coefficent difference")
         ax_twin.set_ylabel("$(kspha_ylabels[term+1])\n($(units[row]))",rotation=0, 
@@ -111,7 +112,7 @@ for row = 1:9
         ax.set_ylabel("$(bfield_ylabels[term+1])\n(m$(sh.dict["h$(term)"].unit))",rotation=0, 
             ha="right", va="center", x=0, y=0.5,
             fontsize=fontsize_label, color=color_label, labelpad=pad_label)
-        ax.legend(handles=[line1, line2], fontsize=fontsize_legend, labelcolor=color_label, ncols=2, 
+        ax.legend(handles=[line1,], fontsize=fontsize_legend, labelcolor=color_label, ncols=2, 
             loc="upper left", bbox_to_anchor=(0,1.3),
             frameon=false, handlelength=1, handletextpad=0.5, columnspacing=1,labelspacing=0.2)
         ax_twin.legend(handles=[line3], fontsize=fontsize_legend, labelcolor=color_label, ncols=2, 

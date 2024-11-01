@@ -50,6 +50,7 @@ t_trigger = (s .+ 1)*dt .+ KomaMRIBase.get_block_start_times(hoseq.SEQ)[5] .+ t_
 matplotlib.rc("mathtext", default="regular")
 matplotlib.rc("figure", dpi=200)
 matplotlib.rc("font", family="Times New Roman")
+matplotlib.rc("font", family="Arial")
 matplotlib.rcParams["mathtext.default"]
 figure_width       = 9/2.54
 figure_height      = 3/2.54
@@ -90,7 +91,7 @@ ax.scatter(t_trigger*1e3, -55*ones(length(t_trigger)), s=15, marker=L"\mapsup", 
 ax.scatter(t_trigger[1]*1e3, -40, s=15, marker=L"\twoheaduparrow", color=color_trig, linewidth=0.1, label=L"Standard \ trigger")
 
 ax.set_ylim(-70, 70)
-ax.set_ylabel("Amplitude [mT/m, μT]", fontsize=fontsize_label, color=color_label)
+ax.set_ylabel("Amplitude (mT/m, μT)", fontsize=fontsize_label, color=color_label)
 ax.set_xlabel("Time (ms)", fontsize=fontsize_label, color=color_label)
 ax.legend(loc="upper left", bbox_to_anchor=(0, 1.1), fontsize=fontsize_legend, labelcolor=color_label, ncols=6, frameon=false, handlelength=1, handletextpad=0.5, columnspacing=1)
 
