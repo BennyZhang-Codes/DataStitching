@@ -20,10 +20,10 @@ vminp              = 1;
 color_facecolor    = "#ffffff";
 
 
-
+#############################################################################
+# plot signal in each channel
+#############################################################################
 nImg, nX, nY = size(imgs)
-
-
 # vmin, vmax = quantile(abs.(imgs)[:], 0), quantile(abs.(imgs)[:], 0.98)
 for idx = 1 : nImg
     img = abs.(imgs)[idx,:,:]
@@ -51,14 +51,13 @@ end
 
 
 
-
-
-
-
-
+#############################################################################
+# plot signal in each channel
+#############################################################################
+nSample, nCha = size(data);
 for cha = 1 : nCha
     matplotlib.rc("mathtext", default="regular")
-    matplotlib.rc("figure", dpi=200)
+    matplotlib.rc("figure", dpi=100)
     matplotlib.rc("font", family="Times New Roman")
     matplotlib.rcParams["mathtext.default"]
     figure_width       = 3.5/2.54

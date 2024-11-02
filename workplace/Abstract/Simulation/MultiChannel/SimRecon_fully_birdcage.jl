@@ -103,7 +103,7 @@ tr_dfc_standard     = Trajectory(K_dfc_adc_standard'[:,:], acqData.traj[1].numPr
 # 4. Running reconstruction
 #############################################################################
 solver = "admm";
-regularization = "TV";
+reg = "TV";
 λ = 1.e-4;
 iter=20;
 
@@ -111,7 +111,7 @@ recParams = Dict{Symbol,Any}(); #recParams = merge(defaultRecoParams(), recParam
 recParams[:reconSize] = (Nx, Ny)  # 150, 150
 recParams[:densityWeighting] = true
 recParams[:reco] = "multiCoil"
-recParams[:regularization] = regularization  # ["L2", "L1", "L21", "TV", "LLR", "Positive", "Proj", "Nuclear"]
+recParams[:regularization] = reg  # ["L2", "L1", "L21", "TV", "LLR", "Positive", "Proj", "Nuclear"]
 recParams[:λ] = λ
 recParams[:iterations] = iter
 recParams[:solver] = solver
@@ -135,41 +135,36 @@ S = SensitivityOp(reshape(ComplexF64.(smaps),:,numChan),1)
 Nblocks=10;
 ##### w/o ΔB₀
 # 1. nominal trajectory, BlochHighOrder("000")
-Op1 = HighOrderOp((Nx, Ny), tr_nominal, tr_dfc_stitched , BlochHighOrder("000"); Nblocks=Nblocks, fieldmap=Matrix(B0map).*0, grid=1);
+Op1 = HighOrderOp((Nx, Ny), tr_nominal, tr_dfc_stitched , BlochHighOrder("000"); Nblocks=Nblocks, fieldmap=Matrix(B0map), grid=1);
 # 2. stitched trajectory, BlochHighOrder("110")
-Op2 = HighOrderOp((Nx, Ny), tr_nominal, tr_dfc_stitched , BlochHighOrder("110"); Nblocks=Nblocks, fieldmap=Matrix(B0map).*0, grid=1);
+Op2 = HighOrderOp((Nx, Ny), tr_nominal, tr_dfc_stitched , BlochHighOrder("110"); Nblocks=Nblocks, fieldmap=Matrix(B0map), grid=1);
 # 3. stitched trajectory, BlochHighOrder("111")
-Op3 = HighOrderOp((Nx, Ny), tr_nominal, tr_dfc_stitched , BlochHighOrder("111"); Nblocks=Nblocks, fieldmap=Matrix(B0map).*0, grid=1);
+Op3 = HighOrderOp((Nx, Ny), tr_nominal, tr_dfc_stitched , BlochHighOrder("111"); Nblocks=Nblocks, fieldmap=Matrix(B0map), grid=1);
 # 4. standard trajectory, BlochHighOrder("111")
-Op4 = HighOrderOp((Nx, Ny), tr_nominal, tr_dfc_stitched , BlochHighOrder("111"); Nblocks=Nblocks, fieldmap=Matrix(B0map).*0, grid=1);
+Op4 = HighOrderOp((Nx, Ny), tr_nominal, tr_dfc_stitched , BlochHighOrder("111"); Nblocks=Nblocks, fieldmap=Matrix(B0map), grid=1);
 
 ##### with ΔB₀
 # 5. nominal trajectory, BlochHighOrder("000")
-Op5 = HighOrderOp((Nx, Ny), tr_nominal, tr_dfc_stitched , BlochHighOrder("000"); Nblocks=Nblocks, fieldmap=Matrix(B0map), grid=1);
+Op5 = HighOrderOp((Nx, Ny), tr_nominal, tr_dfc_stitched , BlochHighOrder("000"); Nblocks=Nblocks, fieldmap=Matrix(B0map).*0, grid=1);
 # 6. stitched trajectory, BlochHighOrder("110")
-Op6 = HighOrderOp((Nx, Ny), tr_nominal, tr_dfc_stitched , BlochHighOrder("110"); Nblocks=Nblocks, fieldmap=Matrix(B0map), grid=1);
+Op6 = HighOrderOp((Nx, Ny), tr_nominal, tr_dfc_stitched , BlochHighOrder("110"); Nblocks=Nblocks, fieldmap=Matrix(B0map).*0, grid=1);
 # 7. stitched trajectory, BlochHighOrder("111")
-Op7 = HighOrderOp((Nx, Ny), tr_nominal, tr_dfc_stitched , BlochHighOrder("111"); Nblocks=Nblocks, fieldmap=Matrix(B0map), grid=1);
+Op7 = HighOrderOp((Nx, Ny), tr_nominal, tr_dfc_stitched , BlochHighOrder("111"); Nblocks=Nblocks, fieldmap=Matrix(B0map).*0, grid=1);
 # 8. standard trajectory, BlochHighOrder("111")
-Op8 = HighOrderOp((Nx, Ny), tr_nominal, tr_dfc_standard , BlochHighOrder("111"); Nblocks=Nblocks, fieldmap=Matrix(B0map), grid=1);
+Op8 = HighOrderOp((Nx, Ny), tr_nominal, tr_dfc_standard , BlochHighOrder("111"); Nblocks=Nblocks, fieldmap=Matrix(B0map).*0, grid=1);
 Ops = [Op1, Op2, Op3, Op4, Op5, Op6, Op7, Op8];
 
 
 imgs = Array{T,3}(undef, length(Ops), Nx, Ny);
-titles = ["w/o ΔB₀, stitched: 000",
-          "w/o ΔB₀, stitched: 110",
-          "w/o ΔB₀, stitched: 111",
-          "w/o ΔB₀, standard: 111",
-          "w/  ΔB₀, stitched: 000",
-          "w/  ΔB₀, stitched: 110",
-          "w/  ΔB₀, stitched: 111",
-          "w/  ΔB₀, standard: 111",];
+labels = [ "wB0_nominal",  "wB0_stitched_110",  "wB0_stitched_111",  "wB0_standard_111",
+          "woB0_nominal", "woB0_stitched_110", "woB0_stitched_111", "woB0_standard_111",];
+
 for idx in eachindex(Ops)
     Op = DiagOp(Ops[idx], numChan) ∘ S 
     recParams[:encodingOps] = reshape([Op], 1,1);
     @time rec = abs.(reconstruction(acqData, recParams).data[:,:]);
     imgs[idx, :, :] = rotl90(rec);
-    plt_image(rotl90(rec); title=titles[idx])
+    plt_image(rotl90(rec); title=labels[idx])
 end
 
 
@@ -183,4 +178,4 @@ x_ref = rotl90(x_ref);
 headmask = brain_phantom2D_reference(phantom; ss=simtype.ss, location=0.8, key=:headmask , target_fov=(150, 150), target_resolution=(1,1));
 headmask = rotl90(headmask);
 
-MAT.matwrite(dir*"/fully_snr10_$(solver)_$(iter)_$(regularization)_$(λ).mat", Dict("imgs"=>imgs, "titles"=>titles, "csm"=>csm, "signal"=>data, "B0map"=>B0map, "x_ref"=>x_ref, "headmask"=>headmask))
+MAT.matwrite(dir*"/fully_snr10_$(solver)_$(iter)_$(reg)_$(λ).mat", Dict("imgs"=>imgs, "labels"=>labels, "csm"=>csm, "signal"=>data, "B0map"=>B0map, "x_ref"=>x_ref, "headmask"=>headmask))

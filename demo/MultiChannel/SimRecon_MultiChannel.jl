@@ -159,15 +159,15 @@ tr_ksphaStandard = Trajectory(K_dfc_adc_standard'[:,:], acqData.traj[1].numProfi
 ########################################################################
 # SENSE
 ########################################################################
-solver = "admm"; reg = "TV"; iter = 50; λ = 1e-4;
-solver = "cgnr"; reg = "L2"; iter = 50; λ = 1e-3;
+solver = "admm"; regularization = "TV"; iter = 50; λ = 1e-4;
+solver = "cgnr"; regularization = "L2"; iter = 50; λ = 1e-3;
 
 T = Float64;
 recParams = Dict{Symbol,Any}()
 recParams[:reconSize]        = (Nx, Ny)
 recParams[:densityWeighting] = true
 recParams[:reco] = "multiCoil"
-recParams[:regularization] = reg  # ["L2", "L1", "L21", "TV", "LLR", "Positive", "Proj", "Nuclear"]
+recParams[:regularization] = regularization  # ["L2", "L1", "L21", "TV", "LLR", "Positive", "Proj", "Nuclear"]
 recParams[:λ] = λ
 recParams[:iterations] = iter
 recParams[:solver] = solver
@@ -180,8 +180,8 @@ fig = plt_image(rotl90(abs.(rec)); vminp=0, vmaxp=99.9)
 #############################################################################
 # HighOrderOp, the extended signal model for high-order terms
 #############################################################################
-solver = "admm"; reg = "TV"; iter = 50; λ = 1e-4;
-solver = "cgnr"; reg = "L2"; iter = 30; λ = 1e-3;
+solver = "admm"; regularization = "TV"; iter = 50; λ = 1e-4;
+solver = "cgnr"; regularization = "L2"; iter = 30; λ = 1e-3;
 
 recParams = Dict{Symbol,Any}(); #recParams = merge(defaultRecoParams(), recParams)
 recParams[:reconSize] = (Nx, Ny)  # 150, 150
@@ -244,3 +244,21 @@ for idx in eachindex(Ops)
     imgs[idx, :, :] = rotl90(rec);
     plt_image(rotl90(rec); title=labels[idx])
 end
+
+
+
+#############################################################################
+# Save the results
+#############################################################################
+# ΔB₀ map
+B0map = brain_phantom2D_reference(phantom; ss=ss, location=0.65, target_fov=(200, 200), target_resolution=(1,1), B0type=:quadratic,key=:Δw, maxOffresonance=maxOffresonance); 
+B0map = rotl90(B0map);
+
+x_ref = brain_phantom2D_reference(phantom; ss=ss, location=0.65, key=:ρ, target_fov=(200, 200), target_resolution=(1,1));
+x_ref = rotl90(x_ref);
+
+headmask = brain_phantom2D_reference(phantom; ss=ss, location=0.65, key=:headmask , target_fov=(200, 200), target_resolution=(1,1));
+headmask = rotl90(headmask);
+
+MAT.matwrite("$(@__DIR__)/demo/MultiChannel/snr$(snr)_$(solver)_$(iter)_$(regularization)_$(λ).mat", 
+            Dict("imgs"=>imgs, "labels"=>labels, "csm"=>csm, "signal"=>data, "B0map"=>B0map, "x_ref"=>x_ref, "headmask"=>headmask))
