@@ -9,17 +9,17 @@ function brain_phantom2D_reference(
     B0type::Symbol=:fat,           # load B0 map
     B0_file::Symbol=:B0,
     maxOffresonance::Float64=125., # max off-resonance
-    target_fov=(150, 150), 
-    target_resolution=(1,1))
+    target_fov=(150, 150),         # [mm] target FOV
+    target_resolution=(1,1))       # [mm] target resolution
 
     @assert key in [:ρ, :T2, :T2s, :T1, :Δw, :raw, :headmask, :brainmask] "key must be ρ, T2, T2s, T1, Δw, raw, headmask or brainmask"
     @assert B0type in [:real, :fat, :quadratic] "B0type must be one of the following: :real, :fat, :quadratic"
     @assert 0 <= location <= 1 "location must be between 0 and 1"
 
-    Δx = Δy = objbrain.x
+    Δx, Δy = [objbrain.x, objbrain.y] .* ss;   # phantom resoultion, original resolution multiplied by undersampling factor ss.
     fov_x, fov_y = target_fov
     res_x, res_y = target_resolution
-    center_range = (Int64(ceil(fov_x / (Δx * ss))), Int64(ceil(fov_y / (Δy * ss)))) 
+    center_range = (Int64(ceil(fov_x / (Δx))), Int64(ceil(fov_y / (Δy)))) 
     target_size = (Int64(ceil(fov_x / res_x)), Int64(ceil(fov_y / res_y)))
 
     class, loc = load_phantom_mat(objbrain; axis=axis, ss=ss, location=location)
@@ -62,10 +62,11 @@ function brain_phantom2D_reference(
         (class.==232)*0 .+ #DURA
         (class.==255)*0 #MARROW
     end
-    M, N = size(img)
+    M, N = size(img)     # matrix size of the phantom mat
 
     @info "PhantomReference" key=key axis=axis location=location obj_size=(M, N) center_range=center_range target_fov=target_fov target_size=target_size
-    img = img[get_center_range(M, center_range[1]), get_center_range(N, center_range[2])]
+    # img = img[get_center_range(M, center_range[1]), get_center_range(N, center_range[2])]
+    img = get_center_crop(img, center_range[1], center_range[2])
     img = imresize(img, target_size)
     return Matrix(img')
 end

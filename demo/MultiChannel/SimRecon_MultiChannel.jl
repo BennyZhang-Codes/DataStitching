@@ -9,13 +9,13 @@ import RegularizedLeastSquares: SolverInfo
 #        sequence and dynamic field data.
 #########################################################################################
 
-seq_file = "$(@__DIR__)/demo/MultiChannel/xw_sp2d_7T-1mm-200-r4-noSync-fa90.seq"   # *.seq file is the pulseq's sequence file
+seq_file = "$(@__DIR__)/demo/MultiChannel/xw_sp2d_7T-1mm-200-r3-noSync-fa90.seq"   # *.seq file is the pulseq's sequence file
 # under-sampling factor: R = 4
 # inplane resolution: 1 mm x 1 mm
 # FOV: 200 mm x 200 mm
 # readout duration: 29 ms
 
-dfc_file = "$(@__DIR__)/demo/MultiChannel/xw_sp2d_7T-1mm-200-r4.mat"   # *.mat file contains the dynamic field data from both stitching method and the standard method.
+dfc_file = "$(@__DIR__)/demo/MultiChannel/xw_sp2d_7T-1mm-200-r3.mat"   # *.mat file contains the dynamic field data from both stitching method and the standard method.
 # The dynamic field data is stored in the *.mat file with the following keys:
 #= 
 "dt"                     [s], time interval between two time points.
@@ -67,21 +67,21 @@ plot_seq(hoseqStandard)
 # settings for Simulation
 B0 = true     # turn on B0
 T2 = false    # turn off T2
-ss = 3        # set phantom down-sample factor to 5
-BHO = BlochHighOrder("000", true, true)                          # ["111"] turn on all order terms of dynamic field change. turn on Δw_excitation, Δw_precession
-phantom = BrainPhantom(prefix="brain3D724", x=0.2, y=0.2, z=0.2) # setting for Phantom: decide which phantom file to use, loading phantom from src/phantom/mat folder
-maxOffresonance = 0.                                            # set the maximum off-resonance frequency in Hz for quadratic B0 map
+ss = 1        # set phantom down-sample factor to 5
+BHO = BlochHighOrder("111", true, true)                          # ["111"] turn on all order terms of dynamic field change. turn on Δw_excitation, Δw_precession
+phantom = BrainPhantom(prefix="brain3D", x=0.2, y=0.2, z=0.2) # setting for Phantom: decide which phantom file to use, loading phantom from src/phantom/mat folder
+maxOffresonance = 100.                                            # set the maximum off-resonance frequency in Hz for quadratic B0 map
 
 # setting the coil sensitivity used in the simulation
 csmtype= :birdcage;          # a simulated birdcage coil-sensitivity
-nCoil=8;                     # 8-channel
+nCoil=9;                     # 8-channel
 
 # 1. sequence
 plot_seq(hoseqStitched)
 Nx=Ny=200;     # matrix size for recon
 
 # 2. phantom
-obj = brain_hophantom2D(phantom; ss=ss, location=0.8, B0type=:quadratic, maxOffresonance=maxOffresonance, csmtype=csmtype, nCoil=nCoil)
+obj = brain_hophantom2D(phantom; ss=ss, location=0.65, B0type=:quadratic, maxOffresonance=maxOffresonance, csmtype=csmtype, nCoil=nCoil)
 obj.Δw .= B0 ? obj.Δw : obj.Δw * 0;     # set Δw to 0 if B0=false
 obj.T2 .= T2 ? obj.T2 : obj.T2 * Inf;   # cancel T2 relaxiation
 # plot_phantom_map(obj, :ρ)
@@ -93,16 +93,17 @@ sim_params = KomaMRICore.default_sim_params();
 sim_params["sim_method"]  = BHO;      # using "BlochHighOrder" for simulation with high-order terms
 sim_params["return_type"] = "mat";    # setting with "mat", return the signal data for all channel
 sim_params["precision"]   = "f64";
+sim_params["Nblocks"] = 1000;
 
 # 4. simulate
 signal = simulate(obj, hoseqStitched, sys; sim_params);          
 raw = signal_to_raw_data(signal, hoseqStitched, :nominal; sim_params=copy(sim_params));
 img_nufft = recon_2d(raw, Nx=Nx, Ny=Ny);
 fig_sos = plt_image(rotl90(sqrt.(sum(img_nufft.^2; dims=3))[:,:,1]); width=4, height=4)
-fig_cha = plt_images(permutedims(mapslices(rotl90, img_nufft,dims=[1,2]), [3, 1, 2]),width=8, height=4)
+fig_cha = plt_images(permutedims(mapslices(rotl90, img_nufft,dims=[1,2]), [3, 1, 2]),width=4, height=4)
 
 # 5. Adding noise to signal data
-snr = 10;
+snr = 15;
 data = signal[:,:,1];
 nSample, nCha = size(data);
 
@@ -110,10 +111,10 @@ signalAmpl = sum(abs.(data), dims=1)/ nSample;
 data = data + signalAmpl/snr .* ( randn(size(data))+ 1im*randn(size(data)));
 
 # show the effect of noise
-raw = signal_to_raw_data(reshape(data, (nSample, nCha, 1)), hoseq_stitched, :nominal; sim_params=copy(sim_params));
+raw = signal_to_raw_data(reshape(data, (nSample, nCha, 1)), hoseqStitched, :nominal; sim_params=copy(sim_params));
 img_nufft = recon_2d(raw, Nx=Nx, Ny=Ny);
 fig_sos = plt_image(rotl90(sqrt.(sum(img_nufft.^2; dims=3))[:,:,1]); width=4, height=4)
-fig_cha = plt_images(permutedims(mapslices(rotl90, img_nufft,dims=[1,2]), [3, 1, 2]),width=8, height=4)
+fig_cha = plt_images(permutedims(mapslices(rotl90, img_nufft,dims=[1,2]), [3, 1, 2]),width=4, height=4)
 
 #########################################################################################
 # 3. Reconstruction with HighOrderOp
@@ -132,33 +133,36 @@ for c = 1:nCoil
     sensitivity[:,:,1,c] = transpose(coil[:,:,c])
 end
 csm = permutedims(mapslices(rotl90, abs.(sensitivity[:,:,1,:]), dims=[1,2]), [3, 1, 2]);
-fig_csm = plt_images(csm,width=8, height=4)
+fig_csm = plt_images(csm,width=4, height=4)
 
 # ΔB₀ map (the same as the one used for simulation), we will use this map in reconstruction
-B0map = brain_phantom2D_reference(phantom; ss=ss, location=0.8, target_fov=(200, 200), target_resolution=(1,1),
+B0map = brain_phantom2D_reference(phantom; ss=ss, location=0.65, target_fov=(200, 200), target_resolution=(1,1),
                                    B0type=:quadratic,key=:Δw, maxOffresonance=maxOffresonance); 
 fig_b0map = plt_image(rotl90(B0map))
 
 # Proton-density map (reference)
-x_ref = brain_phantom2D_reference(phantom; ss=ss, location=0.8, key=:ρ, target_fov=(200, 200), target_resolution=(1,1));
+x_ref = brain_phantom2D_reference(phantom; ss=ss, location=0.65, key=:ρ, target_fov=(200, 200), target_resolution=(1,1));
 fig_ref = plt_image(rotl90(x_ref))
 
 # get the k coefficients for the nominal (x,y,z) and the stitching measurement (up to second order)
 _, K_nominal_adc, _, K_dfc_adc_stitched = get_kspace(hoseqStitched; Δt=1);
+_,             _, _, K_dfc_adc_standard = get_kspace(hoseqStandard; Δt=1);
+
 times = KomaMRIBase.get_adc_sampling_times(hoseqStitched.SEQ);
 
 # create the trajectories for the nominal and the stitching measurement
 tr_nominal      = Trajectory(   K_nominal_adc'[1:3,:], acqData.traj[1].numProfiles, acqData.traj[1].numSamplingPerProfile; circular=false, times=times);
-tr_dfc_stitched = Trajectory(K_dfc_adc_stitched'[:,:], acqData.traj[1].numProfiles, acqData.traj[1].numSamplingPerProfile; circular=false, times=times);
-
+tr_ksphaStitched = Trajectory(K_dfc_adc_stitched'[:,:], acqData.traj[1].numProfiles, acqData.traj[1].numSamplingPerProfile; circular=false, times=times);
+tr_ksphaStandard = Trajectory(K_dfc_adc_standard'[:,:], acqData.traj[1].numProfiles, acqData.traj[1].numSamplingPerProfile; circular=false, times=times);
 
 
 ########################################################################
 # SENSE
 ########################################################################
-solver = "admm"; reg = "TV"; iter = 100; λ = 1e-4;
-# solver = "cgnr"; reg = "L2"; iter = 20; λ = 1e-3;
+solver = "admm"; reg = "TV"; iter = 50; λ = 1e-4;
+solver = "cgnr"; reg = "L2"; iter = 50; λ = 1e-3;
 
+T = Float64;
 recParams = Dict{Symbol,Any}()
 recParams[:reconSize]        = (Nx, Ny)
 recParams[:densityWeighting] = true
@@ -176,10 +180,8 @@ fig = plt_image(rotl90(abs.(rec)); vminp=0, vmaxp=99.9)
 #############################################################################
 # HighOrderOp, the extended signal model for high-order terms
 #############################################################################
-solver = "admm";
-regularization = "TV";
-λ = 1.e-4;
-iter=20;
+solver = "admm"; reg = "TV"; iter = 50; λ = 1e-4;
+solver = "cgnr"; reg = "L2"; iter = 30; λ = 1e-3;
 
 recParams = Dict{Symbol,Any}(); #recParams = merge(defaultRecoParams(), recParams)
 recParams[:reconSize] = (Nx, Ny)  # 150, 150
@@ -198,9 +200,47 @@ senseMapsUnCorr = decorrelateSenseMaps(L_inv, senseMaps, numChan);
 smaps = senseMaps[:,:,1,:];
 S = SensitivityOp(reshape(ComplexF64.(smaps),:,numChan),1)
 
-HOOp = HighOrderOp((Nx, Ny), tr_nominal, tr_dfc_stitched , BlochHighOrder("111"); Nblocks=1, grid=1, verbose=true);  # , fieldmap=Matrix(B0map), 
-Op = DiagOp(HOOp, numChan) ∘ S 
-recParams[:encodingOps] = reshape([Op], 1,1);
-@time rec = abs.(reconstruction(acqData, recParams).data[:,:]);
+# HOOp = HighOrderOp((Nx, Ny), tr_nominal, tr_dfc_stitched , BlochHighOrder("111"); Nblocks=5, fieldmap=Matrix(B0map), grid=1, verbose=true);  # 
+# Op = DiagOp(HOOp, numChan) ∘ S 
+# recParams[:encodingOps] = reshape([Op], 1,1);
+# @time rec = abs.(reconstruction(acqData, recParams).data[:,:]);
+# plt_image(rotl90(rec))
 
-plt_image(rotl90(rec))
+
+
+
+Nblocks=5;
+##### with ΔB₀
+# 1. nominal trajectory, BlochHighOrder("000")
+Op1 = HighOrderOp((Nx, Ny), tr_nominal, tr_ksphaStitched , BlochHighOrder("000"); Nblocks=Nblocks, fieldmap=Matrix(B0map), grid=1);
+# 2. stitched trajectory, BlochHighOrder("110")
+Op2 = HighOrderOp((Nx, Ny), tr_nominal, tr_ksphaStitched , BlochHighOrder("110"); Nblocks=Nblocks, fieldmap=Matrix(B0map), grid=1);
+# 3. stitched trajectory, BlochHighOrder("111")
+Op3 = HighOrderOp((Nx, Ny), tr_nominal, tr_ksphaStitched , BlochHighOrder("111"); Nblocks=Nblocks, fieldmap=Matrix(B0map), grid=1);
+# 4. standard trajectory, BlochHighOrder("111")
+Op4 = HighOrderOp((Nx, Ny), tr_nominal, tr_ksphaStandard , BlochHighOrder("111"); Nblocks=Nblocks, fieldmap=Matrix(B0map), grid=1);
+
+
+##### w/o ΔB₀
+# 5. nominal trajectory, BlochHighOrder("000")
+Op5 = HighOrderOp((Nx, Ny), tr_nominal, tr_ksphaStitched , BlochHighOrder("000"); Nblocks=Nblocks, fieldmap=Matrix(B0map).*0, grid=1);
+# 6. stitched trajectory, BlochHighOrder("110")
+Op6 = HighOrderOp((Nx, Ny), tr_nominal, tr_ksphaStitched , BlochHighOrder("110"); Nblocks=Nblocks, fieldmap=Matrix(B0map).*0, grid=1);
+# 7. stitched trajectory, BlochHighOrder("111")
+Op7 = HighOrderOp((Nx, Ny), tr_nominal, tr_ksphaStitched , BlochHighOrder("111"); Nblocks=Nblocks, fieldmap=Matrix(B0map).*0, grid=1);
+# 8. standard trajectory, BlochHighOrder("111")
+Op8 = HighOrderOp((Nx, Ny), tr_nominal, tr_ksphaStandard , BlochHighOrder("111"); Nblocks=Nblocks, fieldmap=Matrix(B0map).*0, grid=1);
+
+Ops = [Op1, Op2, Op3, Op4, Op5, Op6, Op7, Op8];
+
+
+imgs = Array{T,3}(undef, length(Ops), Nx, Ny);
+labels = [ "wB0_nominal",  "wB0_stitched_110",  "wB0_stitched_111",  "wB0_standard_111",
+          "woB0_nominal", "woB0_stitched_110", "woB0_stitched_111", "woB0_standard_111",];
+for idx in eachindex(Ops)
+    Op = DiagOp(Ops[idx], numChan) ∘ S 
+    recParams[:encodingOps] = reshape([Op], 1,1);
+    @time rec = abs.(reconstruction(acqData, recParams).data[:,:]);
+    imgs[idx, :, :] = rotl90(rec);
+    plt_image(rotl90(rec); title=labels[idx])
+end
