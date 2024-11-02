@@ -11,11 +11,14 @@ B_{z}(t)=\sum_{l}b_l(t)h_l(\boldsymbol{r}) + \frac{\Delta\omega(\boldsymbol{r})}
 $$
 
 where $b_l(t)$ are the fields derived from the field dynamics for spherical harmonic basis functions $h_l(\boldsymbol{r})$. $l$ is the index denotes different spherical harmonic terms, $\Delta\omega(\boldsymbol{r})$ is the off-resonance field, $\gamma$ is the gyromagnetic ratio, and $\boldsymbol{r}$ is the position vector.
-
 For image reconstruction, we implemented an extended signal encoding model based on **MRIReco.jl**. The measured or simulated MRI signal $s$ received in the coil $p$ at time $t$ can be describe by the model as follows:
 
 $$
-{s}_p(t)={\sum_n}{c}_p\left({\boldsymbol r}_n\right)m\left({\boldsymbol r}_n\right){e}^{i{\sum_{l}}{k}_l\left({t} \right){h}_l\left({\boldsymbol r}_n\right)}{e}^{i\Delta \omega \left({\boldsymbol r}_n\right){t}},
+{s}_p(t)={\sum_n}{c}_p\left({\boldsymbol r}_n\right)m\left({\boldsymbol r}_n\right) {e}^{i \phi}{e}^{i\Delta \omega \left({\boldsymbol r}_n\right){t}}
+$$
+
+$$
+\phi = {\sum_{l}}{k}_l\left({t} \right){h}_l\left({\boldsymbol r}_n\right)
 $$
 
 where $k_l(t)$ are the coefficients measured by NMR probes and $m$ represents magnetization. Using this model, images can be reconstructed with measured field dynamics and static off-resonance by iterative SENSE algorithm.
