@@ -4,6 +4,22 @@ This is a Julia toolbox for MR simulation that can incorporate dynamic field cha
 This is an extension of KomaMRI.jl (https://github.com/JuliaHealth/KomaMRI.jl), a Julia package for highly efficient MR simulations.
 You may run the [demos](https://github.com/BennyZhang-Codes/KomaHighOrder/blob/master/demo), to grab an idea of how this toolbox can be used to simulate MRI signals given a pulseq sequence and dynamic field changes measured using a field camera.
 
+To enable the sequence simulation with higher spatial order terms of time-resolved field dynamics, we extended **KomaMRI.jl**  by including the fields up to second order in the calculation of $B_{z}$:
+
+$$
+B_{z}(t)=\sum_{l}b_l(t)h_l(\boldsymbol{r}) + \frac{\Delta\omega(\boldsymbol{r})}{\gamma},
+$$
+
+where $b_l(t)$ are the fields derived from the field dynamics for spherical harmonic basis functions $h_l(\boldsymbol{r})$. $l$ is the index denotes different spherical harmonic terms, $\Delta\omega(\boldsymbol{r})$ is the off-resonance field, $\gamma$ is the gyromagnetic ratio, and $\boldsymbol{r}$ is the position vector.
+
+For image reconstruction, we implemented an extended signal encoding model based on **MRIReco.jl**. The measured or simulated MRI signal $s$ received in the coil $p$ at time $t$ can be describe by the model as follows:
+
+$$
+{s}_p(t)={\sum_n}{c}_p\left({\boldsymbol r}_n\right)m\left({\boldsymbol r}_n\right){e}^{i{\sum_{l}}{k}_l\left({t} \right){h}_l\left({\boldsymbol r}_n\right)}{e}^{i\Delta \omega \left({\boldsymbol r}_n\right){t}},
+$$
+
+where $k_l(t)$ are the coefficients measured by NMR probes and $m$ represents magnetization. Using this model, images can be reconstructed with measured field dynamics and static off-resonance by iterative SENSE algorithm.
+
 demos:
 
 1. [Sim and Recon for single-channel](https://github.com/BennyZhang-Codes/KomaHighOrder/tree/master/demo/SingleChannel): Simulation and reconstruction of a fully-sampled single-shot spiral sequence (1 mm resolution) [[.seq file]](https://github.com/BennyZhang-Codes/KomaHighOrder/blob/master/demo/SingleChannel/1mm_R1.seq) with field dynamics and ΔB₀. Reconstruction is based on a extended signal encoding model, which includes the field dynamics (up to second-order) and off-resonance.
