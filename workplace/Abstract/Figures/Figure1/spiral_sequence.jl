@@ -50,11 +50,14 @@ matplotlib.rc("mathtext", default="regular")
 matplotlib.rc("figure", dpi=200)
 matplotlib.rc("font", family="Arial")
 matplotlib.rcParams["mathtext.default"]
-figure_width       = 6/2.54
-figure_height      = 2.3/2.54
-linewidth          = 0.5
+# figure_width       = 6/2.54
+# figure_height      = 2.3/2.54
+figure_width       = 8/2.54
+figure_height      = 3/2.54
+linewidth          = 0.75
 ticklength         = 1.5
 fontsize_legend    = 7
+fontsize_legend    = 10
 fontsize_label     = 6
 fontsize_ticklabel = 4
 fontsize_subfigure = 8
@@ -93,5 +96,5 @@ ax.legend(loc="upper left", bbox_to_anchor=(0, 1), fontsize=fontsize_legend, lab
 ax.set_ylim(-70, 70)
 
 fig.tight_layout(pad=0)
-fig.savefig("$(outpath)/Fig_sequence_r$(r).png", dpi=300, bbox_inches="tight", transparent=true, pad_inches=0)
-fig.savefig("$(outpath)/Fig_sequence_r$(r).svg", dpi=300, bbox_inches="tight", transparent=true, pad_inches=0)
+fig.savefig("$(outpath)/Fig_sequence_r$(r)_8x3.png", dpi=300, bbox_inches="tight", transparent=true, pad_inches=0)
+fig.savefig("$(outpath)/Fig_sequence_r$(r)_8x3.svg", dpi=300, bbox_inches="tight", transparent=true, pad_inches=0)
