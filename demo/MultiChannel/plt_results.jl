@@ -15,7 +15,13 @@ results = MAT.matread(mat_file);
 "signal"   => [a.u.] Signal data, simulated signal
 "labels"   => Image labels
 =#
-
+csm      = results["csm"];
+B0map    = results["B0map"];
+headmask = results["headmask"];
+x_ref    = results["x_ref"];
+imgs     = results["imgs"];
+signal   = results["signal"];
+labels   = results["labels"];
 
 x, y = size(headmask);
 headcountour = zeros(x, y);
@@ -34,17 +40,11 @@ end
 img_headcountour = cat(headcountour, headcountour, headcountour, α; dims=3);  # with alpha channel
 img_headref = cat(x_ref, x_ref, x_ref, headmask; dims=3);  # with alpha channel
 
-csm      = results["csm"];
-B0map    = results["B0map"];
-headmask = results["headmask"];
-x_ref    = results["x_ref"];
-imgs     = results["imgs"];
-signal   = results["signal"];
-labels   = results["labels"];
+
 
 matplotlib.rc("mathtext", default="regular")
 matplotlib.rc("figure", dpi=100)
-matplotlib.rc("font", family="Arial")    # "Times New Roman"
+# matplotlib.rc("font", family="Arial")    # "Times New Roman"
 matplotlib.rcParams["mathtext.default"]
 figure_width       = 5/2.54
 figure_height      = 5/2.54
@@ -61,8 +61,6 @@ color_label        = "#000000"
 
 vmaxp              = 99;
 vminp              = 1;
-
-
 
 
 
@@ -83,6 +81,7 @@ for idx = 1 : nImg
     end
     vmin, vmax = quantile(img[:], vminp/100), quantile(img[:], vmaxp/100)
     ax.imshow(img, cmap="gray", vmin=vmin, vmax=vmax)
+    ax.set_title(label, fontsize=fontsize_label, color=color_label)
     fig.tight_layout(pad=0)
     # fig.savefig("$(outpath)/img_$(idx).png", dpi=300, transparent=true)
 end
@@ -101,7 +100,7 @@ end
 ai = ax.imshow(B0map, cmap="jet")#, interpolation="gaussian") # "bilinear", "spline36", "gaussian"
 # ax.imshow(img_headref, cmap="gray", alpha=0.1)
 ax.imshow(img_headcountour, cmap="gray", alpha=1)
-# ax.set_title("Off-resonance", fontsize=fontsize_label, color=color_label)
+ax.set_title("ΔB₀ map", fontsize=fontsize_label, color=color_label)
 divider = mpl_axes_grid1.make_axes_locatable(ax)
 cax = divider.append_axes("right", size="5%", pad=0.02)
 cax.set_title("[Hz]", fontsize=fontsize_ticklabel, color=color_label, pad=pad_label)
@@ -131,7 +130,7 @@ end
 ax.imshow(x_ref, cmap="gray") # "bilinear", "spline36", "gaussian"
 divider = mpl_axes_grid1.make_axes_locatable(ax)
 cax = divider.append_axes("right", size="5%", pad=0.02)
-# ax.set_title("Proton density", fontsize=fontsize_label, color=color_label)
+ax.set_title("Proton density", fontsize=fontsize_label, color=color_label)
 cax.set_title("[a.u.]", fontsize=fontsize_ticklabel, color=color_label, pad=pad_label)
 cb = fig.colorbar(plt.cm.ScalarMappable(cmap=cm_gray_ref, norm=norm), cax=cax, drawedges=true)
 cb.minorticks_off()
@@ -149,35 +148,22 @@ fig.tight_layout(pad=0)
 #############################################################################
 # plot signal in each channel
 #############################################################################
-nSample, nCha = size(data);
-for cha = 1 : nCha
-    matplotlib.rc("mathtext", default="regular")
-    matplotlib.rc("figure", dpi=100)
-    matplotlib.rc("font", family="Times New Roman")
-    matplotlib.rcParams["mathtext.default"]
-    figure_width       = 3.5/2.54
-    figure_height      = 1.8/2.54
-    linewidth          = 0.5
-    ticklength         = 1.5
-    fontsize_legend    = 5
-    fontsize_label     = 6
-    fontsize_ticklabel = 4
-    fontsize_subfigure = 8
-    pad_labeltick      = 2
-    pad_label          = 2
-    color_facecolor    = "#ffffff"
-    color_label        = "#000000"
-    fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(figure_width, figure_height), facecolor=color_facecolor)
+figure_width       = 12/2.54
+figure_height      = 6/2.54
 
-    ax.tick_params(axis="both", bottom=false, top=false, left=false, right=false, labelbottom=false, labeltop=false, labelleft=false, labelright=false)
-    for spine in ax.spines  # "left", "right", "bottom", "top"
-        ax.spines[spine].set_color(color_label)
-        ax.spines[spine].set_visible(false)
-    end
-    ax.set_facecolor(color_facecolor)
-    ax.plot(abs.(data[:, cha]), linewidth=0.5, color="C$(cha%9)")
-    fig.tight_layout(pad=0)
-
-    # fig.savefig("$(outpath)/Fig_signal_r$(r)_cha$(cha).png", dpi=300, bbox_inches="tight", transparent=true, pad_inches=0)
-    # fig.savefig("$(outpath)/Fig_signal_r$(r)_cha$(cha).svg", dpi=300, bbox_inches="tight", transparent=true, pad_inches=0)
+nSample, nCha = size(signal);
+fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(figure_width, figure_height), facecolor=color_facecolor)
+ax.tick_params(axis="both", bottom=false, top=false, left=false, right=false, labelbottom=false, labeltop=false, labelleft=false, labelright=false)
+for spine in ax.spines  # "left", "right", "bottom", "top"
+    ax.spines[spine].set_color(color_label)
+    ax.spines[spine].set_visible(false)
 end
+ax.set_facecolor(color_facecolor)
+fig.tight_layout(pad=0)
+for cha = 1 : nCha
+    ax.plot(abs.(signal[:, cha]), linewidth=0.5, color="C$(cha%9)", label="Channel $(cha)")
+end
+ax.legend(fontsize=fontsize_legend, labelcolor=color_label, ncols=3, 
+    loc="upper right", bbox_to_anchor=(1,1),
+    frameon=false, handlelength=1, handletextpad=0.5, columnspacing=1,labelspacing=0.2)
+fig.tight_layout(pad=0)
