@@ -39,7 +39,8 @@ function plt_image(
     fontsize_title     = 10       ,
     color_facecolor    = "#ffffff",
     )
-    fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(width, height), facecolor=color_facecolor)
+    nX, nY = size(img)
+    fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(width/2.53999863, (nY/nX)*height/2.53999863), facecolor=color_facecolor)
 	fig.suptitle(title, fontsize=fontsize_title)
     ax.imshow(img, cmap=cmap, vmin=quantile(reshape(img, :), vminp/100), vmax=quantile(reshape(img, :), vmaxp/100))
     ax.axis("off")
@@ -53,11 +54,12 @@ end
 
 # Arguments
 - `imgs`: (`::Array{<:Real, 3}`) `[nFrame, nX, nY]`, image array to be plotted
+- `dim`: (`::Int`) dimension along which to plot the images
 
 # Keywords
 - `title`: (`::String`, `=""`) figure's suptitle
-- `width`: (`::Real`, `=5`) figure's width
-- `height`: (`::Real`, `=5`) figure's height
+- `width`: (`::Real`, `=2`) figure's width (unit in minimeters)
+- `height`: (`::Real`, `=2`) figure's height (unit in minimeters)
 - `vmaxp`: (`::Real`, `=100`) percentile of maximum value to be used for window width/ window level
 - `vminp`: (`::Real`, `=0`) percentile of minimum value to be used for window width/ window level
 - `cmap`: (`::String`, `="gray"`) colormap to be used for plotting
@@ -77,17 +79,25 @@ julia> fig.savefig("123.png",bbox_inches="tight", pad_inches=0, transparent=true
 """
 function plt_images(
     imgs::AbstractArray{<:Real, 3};
+    dim                = 1        ,
     nRow               = nothing  ,
     nCol               = nothing  ,
     title              = ""       ,
-    width              = 5        ,
-    height             = 5        ,
+    width              = 2        ,
+    height             = 2        ,
     vmaxp              = 100      ,
     vminp              = 0        ,
     cmap               = "gray"   ,
     fontsize_title     = 10       ,
     color_facecolor    = "#ffffff",
     )
+    @assert dim in [1, 2, 3] "dim of image sequence should be 1, 2, or 3"
+    if dim == 2
+        imgs = permutedims(imgs, [2, 1, 3])
+    elseif dim == 3
+        imgs = permutedims(imgs, [3, 1, 2])
+    end
+
     nFrame, nX, nY = size(imgs)
     if nRow === nothing || nCol === nothing
         nRow, nCol = get_factors(nFrame)
@@ -95,7 +105,7 @@ function plt_images(
 
     vmin, vmax = quantile(reshape(imgs, :), vminp/100), quantile(reshape(imgs, :), vmaxp/100)
 
-    fig, axs = plt.subplots(nrows=nRow, ncols=nCol, figsize=(width, height), facecolor=color_facecolor)
+    fig, axs = plt.subplots(nrows=nRow, ncols=nCol, figsize=(width*nCol/2.53999863, (nX/nY)*height*nRow/2.53999863), facecolor=color_facecolor)
 	axs = reshape(axs, nRow, nCol) # to keep axs as a 2D array
     
     fig.suptitle(title, fontsize=fontsize_title)

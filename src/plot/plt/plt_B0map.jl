@@ -48,7 +48,7 @@ function plt_B0map(
     color_label        = "#cccccc",
     )
 
-    fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(width, height), facecolor=color_facecolor)
+    fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(width/2.53999863, height/2.53999863), facecolor=color_facecolor)
     fig.suptitle(title, fontsize=fontsize_title)
     ax.axis("off")
     ai = ax.imshow(b0map, cmap=cmap, vmin=vmin, vmax=vmax)
