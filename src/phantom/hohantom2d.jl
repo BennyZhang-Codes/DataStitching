@@ -1,20 +1,24 @@
 
 function brain_hophantom2D(
-    objbrain::BrainPhantom;        # PhantomType
-    axis::String="axial",          # orientation
-    ss::Int64=5,                   # undersample
-    location::Float64=0.5,         # relative location in the Z-axis
+    objbrain::BrainPhantom         ;  # PhantomType
+    axis::String        = "axial"  ,  # orientation
+    ss::Int64           = 5        ,  # undersample
+    location::Float64   = 0.5      ,  # relative location in the Z-axis
 
-    B0type::Symbol=:fat,          # load B0 map
-    B0_file::Symbol=:B0,           # determines the *.mat file of the B0 map
-    maxOffresonance::Float64=125., # for quadraticFieldmap
+    db0_type::Symbol    = :fat     ,  # load B0 map
+    db0_file::Symbol    = :B0      ,  # determines the *.mat file of the B0 map
+    db0_max::Float64    = 125.     ,  # for quadraticFieldmap
 
-    csmtype::Symbol =:fan,         # coil type
-    nCoil::Int64    =1,            # number of partitions (split in fan shape)
-    overlap::Real   =0,            # overlap between fan coils, for csm_Fan_binary
-    relative_radius::Real=1.5,     # relative radius of the coil, for csm_Birdcage
-    ) :: HO_Phantom
-    @assert B0type in [:real, :fat, :quadratic] "B0type must be one of the following: :real, :fat, :quadratic"
+    csm_type::Symbol    = :fan     ,  # coil type
+    csm_nCoil::Int64    = 1        ,  # number of partitions (split in fan shape)
+    csm_nRow            = nothing  ,
+    csm_nCol            = nothing  ,
+    csm_overlap::Real   = 0        ,  # overlap between fan coils, for csm_Fan_binary
+    csm_radius::Real    = 1.5      ,  # relative radius of the coil, for csm_Birdcage
+
+    verbose::Bool       = false    ,
+) :: HO_Phantom
+    @assert db0_type in [:real, :fat, :quadratic] "db0_type must be one of the following: :real, :fat, :quadratic"
 
     class, loc = load_phantom_mat(objbrain; axis=axis, ss=ss, location=location)
     # Define spin position vectors
@@ -30,26 +34,27 @@ function brain_hophantom2D(
     T1, T2, T2s, ρ = SpinProperty_1p5T(class)
 
     # Define B0map vectors
-    if B0type == :real    
-        fieldmap = load_B0map(B0_file; axis=axis, ss=1, location=location)
+    if db0_type == :real    
+        fieldmap = load_B0map(db0_file; axis=axis, ss=1, location=location)
         fieldmap = imresize(fieldmap, size(class))
         Δw = fieldmap*2π
-    elseif B0type == :fat
+    elseif db0_type == :fat
         Δw_fat = -220*2π
         Δw = (class.==93 )*Δw_fat .+ #FAT1
              (class.==209)*Δw_fat    #FAT2
-    elseif B0type == :quadratic
-        fieldmap = quadraticFieldmap(size(class)...,maxOffresonance)[:,:,1]
+    elseif db0_type == :quadratic
+        fieldmap = quadraticFieldmap(size(class)...,db0_max)[:,:,1]
         Δw = fieldmap*2π
     end
 
     # Define Coil-Sensitivity Map (CSM) vectors
-    csm = load_csm(csmtype, M, N, nCoil; overlap=overlap, relative_radius=relative_radius)
-    _,_,nCoil = size(csm)
+    csm = load_csm(csm_type, M, N, csm_nCoil; overlap=csm_overlap, 
+        relative_radius=csm_radius, nRow=csm_nRow, nCol=csm_nCol, verbose=verbose)
+    _,_,csm_nCoil = size(csm)
 
     # Define and return the Phantom struct
     obj = HO_Phantom{Float64}(
-        name = "brain2D_$(axis)_ss$(ss)_$(M)x$(N)_loc$(location)-$(loc)_Cha$(nCoil)",
+        name = "brain2D_$(axis)_ss$(ss)_$(M)x$(N)_loc$(location)-$(loc)_Cha$(csm_nCoil)",
 		x   =    y[ρ.!=0],
 		y   =    x[ρ.!=0],
 		z   =  0*x[ρ.!=0],

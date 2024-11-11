@@ -35,14 +35,21 @@ function plt_image(
     height             = 5        ,
     vmaxp              = 100      ,
     vminp              = 0        ,
+    vmax               = nothing  ,
+    vmin               = nothing  ,
     cmap               = "gray"   ,
     fontsize_title     = 10       ,
     color_facecolor    = "#ffffff",
     )
     nX, nY = size(img)
+    if vmax === nothing || vmin === nothing
+        vmax=quantile(reshape(img, :), vmaxp/100)
+        vmin=quantile(reshape(img, :), vminp/100)
+    end
+
     fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(width/2.53999863, (nY/nX)*height/2.53999863), facecolor=color_facecolor)
 	fig.suptitle(title, fontsize=fontsize_title)
-    ax.imshow(img, cmap=cmap, vmin=quantile(reshape(img, :), vminp/100), vmax=quantile(reshape(img, :), vmaxp/100))
+    ax.imshow(img, cmap=cmap, vmin=vmin, vmax=vmax)
     ax.axis("off")
     fig.tight_layout(pad=0, h_pad=0, w_pad=0)
     return fig
@@ -87,6 +94,8 @@ function plt_images(
     height             = 2        ,
     vmaxp              = 100      ,
     vminp              = 0        ,
+    vmax               = nothing  ,
+    vmin               = nothing  ,
     cmap               = "gray"   ,
     fontsize_title     = 10       ,
     color_facecolor    = "#ffffff",
@@ -102,9 +111,10 @@ function plt_images(
     if nRow === nothing || nCol === nothing
         nRow, nCol = get_factors(nFrame)
     end
-
-    vmin, vmax = quantile(reshape(imgs, :), vminp/100), quantile(reshape(imgs, :), vmaxp/100)
-
+    if vmax === nothing || vmin === nothing
+        vmin, vmax = quantile(reshape(imgs, :), vminp/100), quantile(reshape(imgs, :), vmaxp/100)
+    end
+    
     fig, axs = plt.subplots(nrows=nRow, ncols=nCol, figsize=(width*nCol/2.53999863, (nX/nY)*height*nRow/2.53999863), facecolor=color_facecolor)
 	axs = reshape(axs, nRow, nCol) # to keep axs as a 2D array
     
