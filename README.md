@@ -4,6 +4,10 @@ This is a Julia toolbox for MR simulation that can incorporate dynamic field cha
 This is an extension of KomaMRI.jl (https://github.com/JuliaHealth/KomaMRI.jl), a Julia package for highly efficient MR simulations.
 You may run the [demos](https://github.com/BennyZhang-Codes/KomaHighOrder/blob/master/demo), to grab an idea of how this toolbox can be used to simulate MRI signals given a pulseq sequence and dynamic field changes measured using a field camera.
 
+If you use the toolbox, please consider citing the following abstract:
+
+Zhang, Z., Auerbach, E. J., Bratch, A., Grant, A. N., Zhuo, Y., He, S., Chen, L., Ugurbil, K., Wu, X. "A stitching method for dynamic field monitoring using NMR probes", 2024 ISMRM, Singapore
+
 ## Methods
 To enable the sequence simulation with higher spatial order terms of time-resolved field dynamics, we extended **KomaMRI.jl**  by including the fields up to second order in the calculation of $B_{z}$:
 
@@ -30,10 +34,12 @@ where $k_l(t)$ are the coefficients measured by NMR probes and $m$ represents ma
  4. [Multi-echo Gradient Echo (ME-GRE)](https://github.com/BennyZhang-Codes/KomaHighOrder/blob/master/demo/Muti-echo_GRE): estimating ΔB₀ map (MRIFieldmaps.jl) and coil-sensitivity map (ESPIRiT) from the ME-GRE data in the [ISMRMRD](https://github.com/ismrmrd/ismrmrd) format. Additionally, the ME-GRE sequence can be modified within the [source code](https://github.com/BennyZhang-Codes/KomaHighOrder/blob/master/demo/Muti-echo_GRE/pulseq) ([Pulseq](https://github.com/pulseq/pulseq), MATLAB version).
 
 
-
-If you use the toolbox, please consider citing the following abstract:
-
-Zhang, Z., Auerbach, E. J., Bratch, A., Grant, A. N., Zhuo, Y., He, S., Chen, L., Ugurbil, K., Wu, X. "A stitching method for dynamic field monitoring using NMR probes", 2024 ISMRM, Singapore
+### Required dependencies:
+- `Julia` 1.9.4
+- `KomaMRI` 0.8.0
+- `MRIReco` 0.8.0
+- `MRIFieldmaps` 0.0.3
+- `PyPlot` 2.11.5
 
 ### Copyright & License Notice
 
