@@ -1,19 +1,33 @@
 
 
 function brain_phantom2D_reference(
-    objbrain::BrainPhantom; 
-    axis="axial", 
-    ss::Int64=3, 
-    location::Float64=0.8, 
-    key::Symbol=:ρ, 
-    B0type::Symbol=:fat,           # load B0 map
-    B0_file::Symbol=:B0,
-    maxOffresonance::Float64=125., # max off-resonance
-    target_fov=(150, 150),         # [mm] target FOV
-    target_resolution=(1,1))       # [mm] target resolution
+    objbrain::BrainPhantom        ; 
+    axis              = "axial"   , 
+    ss::Int64         = 3         , 
+    location::Float64 = 0.8       , 
+    key::Symbol       = :ρ        , 
+    target_fov        = (150, 150),  # [mm] target FOV
+    target_resolution = (1,1)     ,  # [mm] target resolution
+
+
+    db0_type::Symbol  = :fat      ,  # load B0 map
+    db0_file::Symbol  = :B0       ,  # determines the *.mat file of the B0 map
+    db0_max::Float64  = 125.      ,  # for quadraticFieldmap
+
+    csm_type::Symbol  = :fan      ,  # coil type
+    csm_nCoil::Int64  = 1         ,  # number of partitions (split in fan shape)
+    csm_nRow          = nothing   ,
+    csm_nCol          = nothing   ,
+    csm_overlap::Real = 0         ,  # overlap between fan coils, for csm_Fan_binary
+    csm_radius::Real  = 1.5       ,  # relative radius of the coil, for csm_Birdcage
+
+    verbose::Bool     = false     ,
+)
+
+
 
     @assert key in [:ρ, :T2, :T2s, :T1, :Δw, :raw, :headmask, :brainmask] "key must be ρ, T2, T2s, T1, Δw, raw, headmask or brainmask"
-    @assert B0type in [:real, :fat, :quadratic] "B0type must be one of the following: :real, :fat, :quadratic"
+    @assert db0_type in [:real, :fat, :quadratic] "db0_type must be one of the following: :real, :fat, :quadratic"
     @assert 0 <= location <= 1 "location must be between 0 and 1"
 
     Δx, Δy = [objbrain.x, objbrain.y] .* ss;   # phantom resoultion, original resolution multiplied by undersampling factor ss.
@@ -25,6 +39,8 @@ function brain_phantom2D_reference(
     class, loc = load_phantom_mat(objbrain; axis=axis, ss=ss, location=location)
     T1, T2, T2s, ρ = SpinProperty_1p5T(class)
 
+    M, N = size(class)     # matrix size of the phantom mat
+
     if key == :ρ
         img = ρ
     elseif key == :T2
@@ -33,17 +49,6 @@ function brain_phantom2D_reference(
         img = T2s
     elseif key == :T1
         img = T1
-    elseif key == :Δw
-        if B0type == :real
-            B0map = load_B0map(B0_file; axis=axis, ss=1, location=location)
-            img = imresize(B0map, size(class))
-        elseif B0type == :fat
-            Δw_fat = γ * 1.5 * (-3.45) * 1e-6  # Hz
-            img = (class.==93)*Δw_fat .+ #FAT1 
-                (class.==209)*Δw_fat    #FAT2
-        elseif B0type == :quadratic
-            img = quadraticFieldmap(size(class)...,maxOffresonance)[:,:,1]
-        end
     elseif key == :raw
         img = class
     elseif key == :headmask
@@ -61,8 +66,22 @@ function brain_phantom2D_reference(
         (class.==209)*0 .+ #FAT2
         (class.==232)*0 .+ #DURA
         (class.==255)*0 #MARROW
+    elseif key == :Δw
+        if db0_type == :real
+            B0map = load_B0map(db0_file; axis=axis, ss=1, location=location)
+            img = imresize(B0map, size(class))
+        elseif db0_type == :fat
+            Δw_fat = γ * 1.5 * (-3.45) * 1e-6  # Hz
+            img = (class.==93)*Δw_fat .+ #FAT1 
+                (class.==209)*Δw_fat    #FAT2
+        elseif db0_type == :quadratic
+            img = quadraticFieldmap(size(class)...,db0_max)[:,:,1]
+        end
+    elseif key == :csm
+        img = load_csm(csm_type, M, N, csm_nCoil; overlap=csm_overlap, 
+            relative_radius=csm_relative_radius, nRow=csm_nRow, nCol=csm_nCol, verbose=verbose)
     end
-    M, N = size(img)     # matrix size of the phantom mat
+
 
     @info "PhantomReference" key=key axis=axis location=location obj_size=(M, N) center_range=center_range target_fov=target_fov target_size=target_size
     # img = img[get_center_range(M, center_range[1]), get_center_range(N, center_range[2])]
