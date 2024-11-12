@@ -3,28 +3,37 @@ using MRIReco
 using MAT
 import RegularizedLeastSquares: SolverInfo
 using ImageDistances
+
+outpath = "$(@__DIR__)/Figures/Fig5/out"; if ispath(outpath) == false mkpath(outpath) end     # output directory
 ############################################################################################## 
 # Setup
 ############################################################################################## 
 simtype = SimType(B0=true, T2=false, ss=5)                       # turn on B0, turn off T2, set phantom subsampling to 5
 BHO = BlochHighOrder("111", true, true)                          # turn on all order terms of dynamic field change, turn on Δw_excitation, Δw_precession
 phantom = BrainPhantom(prefix="brain3D724", x=0.2, y=0.2, z=0.2) # decide which phantom file to use
-maxOffresonance = 200.                                           # set maximum off-resonance frequency in Hz for quadratic B0 map
+location = 0.8;
 Nx = Ny = 150;
 
-solver = "admm";
-regularization = "TV";
-λ = 1.e-4;
-iter=20;
+# setting the coil sensitivity used in the simulation
+csm_type  = :fan;      # a simulated birdcage coil-sensitivity
+csm_nCoil = 1;         # 1-channel
+csm_nRow  = 1;
+csm_nCol  = 1;
 
-dir = "Figures/Fig5/out"; if ispath(dir) == false mkpath(dir) end     # output directory
+db0_type  = :quadratic;     
+db0_max   = :200.;            # set the maximum off-resonance frequency in Hz for quadratic B0 map
+
+
+solver = "admm"; regularization = "TV"; λ = 1.e-4; iter=20;
 
 # 1. sequence
-hoseq_stitched = demo_hoseq(dfc_method=:Stitched)[4:end]   # :Stitched
-hoseq_standard = demo_hoseq(dfc_method=:Standard)[4:end]   # :Standard
+hoseq_stitched = load_hoseq(dfc_method=:Stitched)[4:end]   # :Stitched
+hoseq_standard = load_hoseq(dfc_method=:Standard)[4:end]   # :Standard
 
 # 2. phantom
-obj = brain_hophantom2D(phantom; ss=simtype.ss, location=0.8, B0type=:quadratic, maxOffresonance=maxOffresonance)
+obj = brain_hophantom2D(phantom; ss=ss, location=location, 
+                        csm_type=csm_type, csm_nCoil=csm_nCoil, csm_nRow=csm_nRow, csm_nCol=csm_nCol, 
+                        db0_type=db0_type, db0_max=db0_max); 
 obj.Δw .= simtype.B0 ? obj.Δw : obj.Δw * 0;     # γ*1.5 T*(-3.45 ppm)*1e-6 * 2π
 obj.T2 .= simtype.T2 ? obj.T2 : obj.T2 * Inf;   # cancel T2 relaxiation
 
@@ -42,12 +51,15 @@ img_nufft = recon_2d(raw);
 fig_nufft = plt_image(rotl90(img_nufft); title="Sim: $(BHO.name), Δw: [-$maxOffresonance,$maxOffresonance] Hz")
 # savefig(p_image, dir*"/quadraticB0map_$(maxOffresonance)_reconNUFFT.svg", width=550,height=500,format="svg")
 
-# ΔB₀ map
-B0map = brain_phantom2D_reference(phantom; ss=simtype.ss, location=0.8, target_fov=(150, 150), target_resolution=(1,1),
-                                   B0type=:quadratic,key=:Δw, maxOffresonance=maxOffresonance); 
-fig_b0map = plt_image(rotl90(B0map), title="B0map [-$maxOffresonance, $maxOffresonance] Hz")
-x_ref = brain_phantom2D_reference(phantom; ss=simtype.ss, location=0.8, key=:ρ, target_fov=(150, 150), target_resolution=(1,1));
+# ΔB₀ map (the same as the one used for simulation), we will use this map in reconstruction
+B0map = brain_phantom2D_reference(phantom, :Δw, (150., 150.), (1., 1.); location=location, ss=ss, db0_type=db0_type, db0_max=db0_max);
+fig_b0map = plt_B0map(rotl90(B0map))
 
+# Proton-density map (reference)
+x_ref = brain_phantom2D_reference(phantom, :ρ, (150., 150.), (1., 1.); location=location, ss=ss);
+fig_ref = plt_image(rotl90(x_ref))
+
+# 5. reconstruction
 acqData = AcquisitionData(raw, BHO; sim_params=sim_params);
 acqData.traj[1].circular = false;
 
@@ -95,7 +107,7 @@ Op8 = HighOrderOp((Nx, Ny), tr_nominal, tr_dfc_standard , BlochHighOrder("111");
 Ops = [Op1, Op2, Op3, Op4, Op5, Op6, Op7, Op8];
 
 imgs = Array{Float32,3}(undef, length(Ops), Nx, Ny);
-titles = ["w/o ΔB₀, stitched: 000",
+labels = ["w/o ΔB₀, stitched: 000",
           "w/o ΔB₀, stitched: 110",
           "w/o ΔB₀, stitched: 111",
           "w/o ΔB₀, standard: 111",
@@ -107,7 +119,7 @@ for idx in eachindex(Ops)
     recParams[:encodingOps] = reshape([Ops[idx]], 1,1);
     @time rec = abs.(reconstruction(acqData, recParams).data[:,:]);
     imgs[idx, :, :] = rotl90(rec);
-    plt_image(rotl90(rec); title=titles[idx])
+    plt_image(rotl90(rec); title=labels[idx])
 end
 
-MAT.matwrite(dir*"/fully_$(solver)_$(iter)_$(regularization)_$(λ).mat", Dict("imgs"=>imgs, "titles"=>titles))
+MAT.matwrite("$(outpath)/fully_$(solver)_$(iter)_$(regularization)_$(λ).mat", Dict("imgs"=>imgs, "labels"=>labels))

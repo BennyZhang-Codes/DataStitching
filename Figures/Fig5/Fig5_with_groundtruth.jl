@@ -1,31 +1,32 @@
-include("Figures/Fig_preset.jl");
+include("$(@__DIR__)/Figures/plt_preset.jl");
 using MAT
 import Statistics: quantile
 
-dir = "Figures/Fig5/out"; if ispath(dir) == false mkpath(dir) end     # output directory
+outpath = "$(@__DIR__)/Figures/Fig5/out"; if ispath(outpath) == false mkpath(outpath) end     # output directory
 
 ###### load images reconstructed by different considerations of the extended signal model 
-solver = "admm";
-regularization = "TV";
-λ = 1.e-4;
-iter=20;
+solver = "admm"; regularization = "TV"; λ = 1.e-4; iter=20;
 matfile = "fully_$(solver)_$(iter)_$(regularization)_$(λ)"
-imgs = MAT.matread("$(dir)/$(matfile).mat")["imgs"];
+imgs = MAT.matread("$(outpath)/$(matfile).mat")["imgs"];
 nFrame, nX, nY = size(imgs)
 
 ###### get the reference images
 simtype = SimType(B0=true, T2=false, ss=5);
 phantom = BrainPhantom(prefix="brain3D724", x=0.2, y=0.2, z=0.2); # decide which phantom file to use
-maxOffresonance = 200.;        
+location = 0.8
+db0_type = :quadratic; 
+db0_max = 200.;      
 # ΔB₀ map
-B0map = brain_phantom2D_reference(phantom; ss=simtype.ss, location=0.8, target_fov=(150, 150), target_resolution=(1,1), B0type=:quadratic,key=:Δw, maxOffresonance=maxOffresonance); 
+B0map = brain_phantom2D_reference(phantom, :Δw, (150., 150.), (1., 1.); location=location, ss=simtype.ss, db0_type=db0_type, db0_max=db0_max);
 B0map = rotl90(B0map);
 
-x_ref = brain_phantom2D_reference(phantom; ss=simtype.ss, location=0.8, key=:ρ, target_fov=(150, 150), target_resolution=(1,1));
+x_ref = brain_phantom2D_reference(phantom, :ρ, (150., 150.), (1., 1.); location=location, ss=simtype.ss);
 x_ref = rotl90(x_ref);
 
-headmask = brain_phantom2D_reference(phantom; ss=simtype.ss, location=0.8, key=:headmask , target_fov=(150, 150), target_resolution=(1,1));
+headmask = brain_phantom2D_reference(phantom, :headmask, (150., 150.), (1., 1.); location=location, ss=simtype.ss);
 headmask = rotl90(headmask);
+
+
 x, y = size(headmask);
 headcountour = zeros(x, y);
 α = zeros(x, y);
@@ -126,6 +127,6 @@ fig.text(0, 1, "(a)", ha="left", va="baseline", fontsize=fontsize_subfigure, col
 fig.text(0.95*sum(width_ratios[1:2]) / sum(width_ratios) + 0, 1, "(b)", ha="right", va="baseline", fontsize=fontsize_subfigure, color=color_label)
 
 fig.subplots_adjust(left=0.025, right=0.975, bottom=0.025, top=0.975, wspace=0, hspace=0)
-fig.savefig("$(dir)/Fig5_GT_$(matfile).png", dpi=300, bbox_inches="tight")
+fig.savefig("$(outpath)/Fig5_GT_$(matfile).png", dpi=300, bbox_inches="tight")
 
 

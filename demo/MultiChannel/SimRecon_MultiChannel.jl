@@ -144,7 +144,7 @@ fig_csm = plt_images(csm; dim=3, nRow=csm_nRow, nCol=csm_nCol)
 
 # ΔB₀ map (the same as the one used for simulation), we will use this map in reconstruction
 B0map = brain_phantom2D_reference(phantom, :Δw, (200., 200.), (1., 1.); location=location, ss=ss, db0_type=db0_type, db0_max=db0_max);
-fig_b0map = plt_image(rotl90(B0map))
+fig_b0map = plt_B0map(rotl90(B0map))
 
 # Proton-density map (reference)
 x_ref = brain_phantom2D_reference(phantom, :ρ, (200., 200.), (1., 1.); location=location, ss=ss);
