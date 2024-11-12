@@ -1,4 +1,5 @@
 .vscode/
 /Figures/out
+/workplace/Parallel_Imaging/debug/out
 /Figures/debug/out
 debug.ipynb
