@@ -14,6 +14,8 @@
 - `height`: (`::Real`, `=5`) figure's height
 - `vmaxp`: (`::Real`, `=100`) percentile of maximum value to be used for window width/ window level
 - `vminp`: (`::Real`, `=0`) percentile of minimum value to be used for window width/ window level
+- `vmax`: (`::Real`, `=nothing`) maximum value to be used for window width/ window level
+- `vmin`: (`::Real`, `=nothing`) minimum value to be used for window width/ window level
 - `cmap`: (`::String`, `="gray"`) colormap to be used for plotting
 - `fontsize_title`: (`::Integer`, `=10`) font size of the title
 - `color_facecolor`: (`::String`, `="#ffffff"`) background color of the figure
@@ -69,6 +71,8 @@ end
 - `height`: (`::Real`, `=2`) figure's height (unit in minimeters)
 - `vmaxp`: (`::Real`, `=100`) percentile of maximum value to be used for window width/ window level
 - `vminp`: (`::Real`, `=0`) percentile of minimum value to be used for window width/ window level
+- `vmax`: (`::Real`, `=nothing`) maximum value to be used for window width/ window level
+- `vmin`: (`::Real`, `=nothing`) minimum value to be used for window width/ window level
 - `cmap`: (`::String`, `="gray"`) colormap to be used for plotting
 - `fontsize_title`: (`::Integer`, `=10`) font size of the title
 - `color_facecolor`: (`::String`, `="#ffffff"`) background color of the figure

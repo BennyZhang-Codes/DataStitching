@@ -1,18 +1,17 @@
 
 
 function brain_phantom2D_reference(
-    objbrain::BrainPhantom        ; 
+    objbrain::BrainPhantom        ,
+    key::Symbol                   ,
+    target_fov::Tuple{T,T}        ,  # [mm] target FOV
+    target_res::Tuple{T,T}        ;  # [mm] target resolution
     axis              = "axial"   , 
     ss::Int64         = 3         , 
-    location::Float64 = 0.8       , 
-    key::Symbol       = :ρ        , 
-    target_fov        = (150, 150),  # [mm] target FOV
-    target_resolution = (1,1)     ,  # [mm] target resolution
-
+    location::T       = 0.8       , 
 
     db0_type::Symbol  = :fat      ,  # load B0 map
     db0_file::Symbol  = :B0       ,  # determines the *.mat file of the B0 map
-    db0_max::Float64  = 125.      ,  # for quadraticFieldmap
+    db0_max::T        = 125.      ,  # for quadraticFieldmap
 
     csm_type::Symbol  = :fan      ,  # coil type
     csm_nCoil::Int64  = 1         ,  # number of partitions (split in fan shape)
@@ -22,17 +21,17 @@ function brain_phantom2D_reference(
     csm_radius::Real  = 1.5       ,  # relative radius of the coil, for csm_Birdcage
 
     verbose::Bool     = false     ,
-)
+) where {T<:Float64}
 
 
 
-    @assert key in [:ρ, :T2, :T2s, :T1, :Δw, :raw, :headmask, :brainmask] "key must be ρ, T2, T2s, T1, Δw, raw, headmask or brainmask"
+    @assert key in [:ρ, :T2, :T2s, :T1, :raw, :headmask, :brainmask, :Δw, :csm] "key must be ρ, T2, T2s, T1, Δw, raw, headmask or brainmask"
     @assert db0_type in [:real, :fat, :quadratic] "db0_type must be one of the following: :real, :fat, :quadratic"
     @assert 0 <= location <= 1 "location must be between 0 and 1"
 
     Δx, Δy = [objbrain.x, objbrain.y] .* ss;   # phantom resoultion, original resolution multiplied by undersampling factor ss.
     fov_x, fov_y = target_fov
-    res_x, res_y = target_resolution
+    res_x, res_y = target_res
     center_range = (Int64(ceil(fov_x / (Δx))), Int64(ceil(fov_y / (Δy)))) 
     target_size = (Int64(ceil(fov_x / res_x)), Int64(ceil(fov_y / res_y)))
 
@@ -79,7 +78,7 @@ function brain_phantom2D_reference(
         end
     elseif key == :csm
         img = load_csm(csm_type, M, N, csm_nCoil; overlap=csm_overlap, 
-            relative_radius=csm_relative_radius, nRow=csm_nRow, nCol=csm_nCol, verbose=verbose)
+            relative_radius=csm_radius, nRow=csm_nRow, nCol=csm_nCol, verbose=verbose)
     end
 
 
