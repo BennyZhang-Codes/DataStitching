@@ -2,32 +2,21 @@ include("Figures/Fig_preset.jl");
 using MAT
 import Statistics: quantile
 
-dir = "workplace/Abstract/Simulation/SingleChannel/out"; if ispath(dir) == false mkpath(dir) end     # output directory
-
+outpath = "$(@__DIR__)/Abstract/Simulation/SingleChannel/out"; if ispath(outpath) == false mkpath(outpath) end     # output directory
 ###### load images reconstructed by different considerations of the extended signal model 
-solver = "admm";
-regularization = "TV";
-λ = 1.e-4;
-iter=20;
+solver = "admm"; regularization = "TV"; λ = 1.e-4; iter=20;
 matfile = "fully_$(solver)_$(iter)_$(regularization)_$(λ)"
-imgs = MAT.matread("$(dir)/$(matfile).mat")["imgs"];
+mat = MAT.matread("$(outpath)/$(matfile).mat");
+
+"imgs"=>imgs, "lables"=>lables, "B0map"=>B0map, "x_ref"=>x_ref, "headmask"=>headmask
+imgs   = mat["imgs"]
+labels = mat["labels"]
+B0map  = mat["B0map"]
+x_ref  = mat["x_ref"]
+headmask = mat["headmask"]
 nFrame, nX, nY = size(imgs)
 
 ###### get the reference images
-simtype = SimType(B0=true, T2=false, ss=5);
-phantom = BrainPhantom(prefix="brain3D724", x=0.2, y=0.2, z=0.2); # decide which phantom file to use
-maxOffresonance = 200.;        
-# ΔB₀ map
-B0map = brain_phantom2D_reference(phantom; ss=simtype.ss, location=0.8, target_fov=(150, 150), target_resolution=(1,1), B0type=:quadratic,key=:Δw, maxOffresonance=maxOffresonance); 
-B0map = rotl90(B0map);
-
-x_ref = brain_phantom2D_reference(phantom; ss=simtype.ss, location=0.8, key=:ρ, target_fov=(150, 150), target_resolution=(1,1));
-x_ref = rotl90(x_ref);
-
-headmask = brain_phantom2D_reference(phantom; ss=simtype.ss, location=0.8, key=:headmask , target_fov=(150, 150), target_resolution=(1,1));
-headmask = rotl90(headmask);
-
-
 x, y = size(headmask);
 headcountour = zeros(x, y);
 α = zeros(x, y);
@@ -46,9 +35,32 @@ img_headcountour = cat(headcountour, headcountour, headcountour, α; dims=3);  #
 img_headref = cat(x_ref, x_ref, x_ref, headmask; dims=3);  # with alpha channel
 
 
+using PyPlot, PyCall
+mpl_axes_grid1 = pyimport("mpl_toolkits.axes_grid1")
+mtransforms = PyPlot.plt.matplotlib.transforms
+mcolors = matplotlib.colors
 
-figure_width       = 5/2.54
-figure_height      = 5/2.54
+matplotlib.rc("mathtext", default="regular");
+matplotlib.rc("figure", dpi=200);
+matplotlib.rc("font", family="Arial");
+matplotlib.rcParams["mathtext.default"];
+figure_width       = 5/2.54;
+figure_height      = 5/2.54;
+vmaxp              = 99;
+vminp              = 1;
+cmap               = "gray";
+fontsize_legend    = 5;
+fontsize_label     = 6;
+fontsize_subfigure = 8;
+fontsize_ticklabel = 4;
+linewidth          = 0.5;
+ticklength         = 1.5;
+pad_label          = 2;
+pad_labeltick      = 2;
+color_facecolor    = "#ffffff";
+color_label        = "#000000";
+color_subfigure    = "#ffffff";
+
 vmaxp              = 99;
 vminp              = 1;
 
@@ -75,7 +87,7 @@ cb.ax.tick_params(color=color_label, labelcolor=color_label, labelsize=fontsize_
 cb.outline.set_visible(false)
 cb.update_ticks()
 fig.tight_layout(pad=0)
-fig.savefig("$(dir)/B0map.png", dpi=300, transparent=true)
+fig.savefig("$(outpath)/B0map.png", dpi=300, transparent=true)
 
 
 ########################################################################
@@ -112,11 +124,7 @@ cb.outline.set_linewidth(linewidth)
 cb.dividers.set_color(color_label)
 cb.dividers.set_linewidth(linewidth)
 fig.tight_layout(pad=0)
-fig.savefig("$(dir)/ProtonDensity.png", dpi=300, transparent=true)
-
-
-titles  = ["nominal", "stitching 110", "stitching 111", "conventional 111"]
-
+fig.savefig("$(outpath)/ProtonDensity.png", dpi=300, transparent=true)
 
 for idx = 1 : nFrame
     img = imgs[idx,:,:]
@@ -130,7 +138,7 @@ for idx = 1 : nFrame
     vmin, vmax = quantile(img[:], vminp/100), quantile(img[:], vmaxp/100)
     ax.imshow(img, cmap=cmap, vmin=vmin, vmax=vmax)
     fig.tight_layout(pad=0)
-    fig.savefig("$(dir)/recon_$(idx).png", dpi=300, transparent=true)
+    fig.savefig("$(outpath)/recon_$(idx).png", dpi=300, transparent=true)
 end
 
 

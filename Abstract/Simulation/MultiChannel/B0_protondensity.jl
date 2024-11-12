@@ -3,22 +3,24 @@ using MAT
 import Statistics: quantile
 
 
-path = "workplace/Abstract/Simulation/MultiChannel/out"; if ispath(outpath) == false mkpath(outpath) end
+outpath = "$(@__DIR__)/Abstract/Simulation/MultiChannel/out"; if ispath(outpath) == false mkpath(outpath) end     # output directory
 
 ###### get the reference images
 simtype = SimType(B0=true, T2=false, ss=5);
+location = 0.8;
 phantom = BrainPhantom(prefix="brain3D724", x=0.2, y=0.2, z=0.2); # decide which phantom file to use
-maxOffresonance = 100.;        
+
+db0_type = :quadratic;
+db0_max = 100.;        
 # ΔB₀ map
-B0map = brain_phantom2D_reference(phantom; ss=simtype.ss, location=0.8, target_fov=(150, 150), target_resolution=(1,1), B0type=:quadratic,key=:Δw, maxOffresonance=maxOffresonance); 
+B0map = brain_phantom2D_reference(phantom, :Δw, (150., 150.), (1., 1.); location=location, ss=simtype.ss, db0_type=db0_type, db0_max=db0_max);
 B0map = rotl90(B0map);
 
-x_ref = brain_phantom2D_reference(phantom; ss=simtype.ss, location=0.8, key=:ρ, target_fov=(150, 150), target_resolution=(1,1));
+x_ref = brain_phantom2D_reference(phantom, :ρ, (150., 150.), (1., 1.); location=location, ss=simtype.ss);
 x_ref = rotl90(x_ref);
 
-headmask = brain_phantom2D_reference(phantom; ss=simtype.ss, location=0.8, key=:headmask , target_fov=(150, 150), target_resolution=(1,1));
+headmask = brain_phantom2D_reference(phantom, :headmask, (150., 150.), (1., 1.); location=location, ss=simtype.ss);
 headmask = rotl90(headmask);
-
 
 x, y = size(headmask);
 headcountour = zeros(x, y);

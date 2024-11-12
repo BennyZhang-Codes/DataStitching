@@ -55,7 +55,7 @@ function plt_B0map(
     cb = fig.colorbar(ai)
     cb.ax.tick_params(color=color_label, labelcolor=color_label, labelsize=fontsize_ticklabel,length=ticklength, width=linewidth, pad=pad_labeltick)
     cb.outline.set_visible(false)
-    cb.set_label("B₀ [Hz]", color=color_label, size=fontsize_ticklabel)
+    cb.set_label("ΔB₀ [Hz]", color=color_label, size=fontsize_ticklabel)
     cb.update_ticks()
     fig.tight_layout(pad=0, h_pad=0, w_pad=0)
     return fig

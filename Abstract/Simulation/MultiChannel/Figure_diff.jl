@@ -2,15 +2,12 @@ include("Figures/Fig_preset.jl");
 using MAT
 import Statistics: quantile
 
-path = "workplace/Abstract/Simulation/MultiChannel/out"; if ispath(dir) == false mkpath(dir) end     # output directory
-
-
-###### load images reconstructed by different considerations of the extended signal model 
-
+path = "$(@__DIR__)/Abstract/Simulation/MultiChannel/out"; if ispath(path) == false mkpath(path) end     # output directory
 outpath = "$(path)/diff"; if ispath(outpath) == false mkpath(outpath) end
+###### load images reconstructed by different considerations of the extended signal model 
 imgs       = MAT.matread("$(path)/fully_wonoise_admm_20_TV_0.0001.mat")["imgs"];
 imgs_noise = MAT.matread("$(path)/fully_snr10_admm_20_TV_0.0001.mat")["imgs"];
-labels = MAT.matread("$(path)/fully_snr10_admm_20_TV_0.0001.mat")["titles"];
+labels = MAT.matread("$(path)/fully_snr10_admm_20_TV_0.0001.mat")["labels"];
 
 
 figure_width       = 5/2.54

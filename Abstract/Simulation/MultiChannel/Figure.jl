@@ -2,11 +2,11 @@ include("Figures/Fig_preset.jl");
 using MAT
 import Statistics: quantile
 
-path = "workplace/Abstract/Simulation/MultiChannel/out"; if ispath(path) == false mkpath(path) end     # output directory
-[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15]
-###### load images reconstructed by different considerations of the extended signal model 
+
 matfile = "fully_snr10_admm_20_TV_0.0001"
-outpath = "$(path)/" * matfile; if ispath(outpath) == false mkpath(outpath) end
+path = "$(@__DIR__)/Abstract/Simulation/MultiChannel/out"; if ispath(path) == false mkpath(path) end     # output directory
+outpath = "$(outpath)/$(matfile)"; if ispath(outpath) == false mkpath(outpath) end     # output directory)";
+###### load images reconstructed by different considerations of the extended signal model 
 imgs = MAT.matread("$(path)/$(matfile).mat")["imgs"];
 labels = MAT.matread("$(path)/$(matfile).mat")["titles"];
 
@@ -75,16 +75,6 @@ for scale = [1,2,3]
     fig.tight_layout(pad=0)
     fig.savefig("$(outpath)/wB0_diff_111_scale$(scale).png", dpi=300, transparent=true)
 end
-    
-    
-
-
-
-
-
-
-
-
 
 #############################################################################
 # plot signal in each channel

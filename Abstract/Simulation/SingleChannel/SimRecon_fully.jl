@@ -3,25 +3,33 @@ using MRIReco
 using MAT
 import RegularizedLeastSquares: SolverInfo
 using ImageDistances
+
+outpath = "$(@__DIR__)/Abstract/Simulation/SingleChannel/out"; if ispath(outpath) == false mkpath(outpath) end     # output directory
 ############################################################################################## 
 # Setup
 ############################################################################################## 
 simtype = SimType(B0=true, T2=false, ss=5)                       # turn on B0, turn off T2, set phantom subsampling to 5
 BHO = BlochHighOrder("111", true, true)                          # turn on all order terms of dynamic field change, turn on Δw_excitation, Δw_precession
 phantom = BrainPhantom(prefix="brain3D724", x=0.2, y=0.2, z=0.2) # decide which phantom file to use
-maxOffresonance = 100.                                           # set maximum off-resonance frequency in Hz for quadratic B0 map
 Nx = Ny = 150;
+# settings for phantom
+csm_type  = :fan;      # a simulated birdcage coil-sensitivity
+csm_nCoil = 1;         # only 1-channel
+csm_nRow  = 1;
+csm_nCol  = 1;
 
+db0_type  = :quadratic;     
+db0_max   = :100.;
 
-
-dir = "workplace/Abstract/Simulation/out"; if ispath(dir) == false mkpath(dir) end     # output directory
 
 # 1. sequence
 hoseq_stitched = load_hoseq(dfc_method=:Stitched)[4:end]   # :Stitched
 hoseq_standard = load_hoseq(dfc_method=:Standard)[4:end]   # :Standard
 
 # 2. phantom
-obj = brain_hophantom2D(phantom; ss=simtype.ss, location=0.8, B0type=:quadratic, maxOffresonance=maxOffresonance)
+obj = brain_hophantom2D(phantom; ss=simtype.ss, location=location, 
+                        csm_type=csm_type, csm_nCoil=csm_nCoil, csm_nRow=csm_nRow, csm_nCol=csm_nCol, 
+                        db0_type=db0_type, db0_max=db0_max); 
 obj.Δw .= simtype.B0 ? obj.Δw : obj.Δw * 0;     # γ*1.5 T*(-3.45 ppm)*1e-6 * 2π
 obj.T2 .= simtype.T2 ? obj.T2 : obj.T2 * Inf;   # cancel T2 relaxiation
 
@@ -37,13 +45,27 @@ signal = simulate(obj, hoseq_stitched, sys; sim_params);
 raw = signal_to_raw_data(signal, hoseq_stitched, :nominal; sim_params=copy(sim_params));
 img_nufft = recon_2d(raw);
 fig_nufft = plt_image(rotl90(img_nufft); title="Sim: $(BHO.name), Δw: [-$maxOffresonance,$maxOffresonance] Hz")
-# savefig(p_image, dir*"/quadraticB0map_$(maxOffresonance)_reconNUFFT.svg", width=550,height=500,format="svg")
 
+# 5. Adding noise to signal data
+snr = 10;
+data = signal[:,:,1];
+nSample, nCha = size(data);
+
+signalAmpl = sum(abs.(data), dims=1)/ nSample;
+data = data + signalAmpl/snr .* ( randn(size(data))+ 1im*randn(size(data)));
+
+# show the effect of noise
+raw = signal_to_raw_data(reshape(data, (nSample, nCha, 1)), hoseqStitched, :nominal; sim_params=copy(sim_params));
+img_nufft = recon_2d(raw);
+fig_nufft = plt_image(rotl90(img_nufft))
+
+
+# 6. get ΔB₀ map and reference image
 # ΔB₀ map
-B0map = brain_phantom2D_reference(phantom; ss=simtype.ss, location=0.8, target_fov=(150, 150), target_resolution=(1,1),
-                                   B0type=:quadratic,key=:Δw, maxOffresonance=maxOffresonance); 
-fig_b0map = plt_image(rotl90(B0map), title="B0map [-$maxOffresonance, $maxOffresonance] Hz")
-x_ref = brain_phantom2D_reference(phantom; ss=simtype.ss, location=0.8, key=:ρ, target_fov=(150, 150), target_resolution=(1,1));
+B0map = brain_phantom2D_reference(phantom, :Δw, (150., 150.), (1., 1.); location=location, ss=simtype.ss, db0_type=db0_type, db0_max=db0_max);
+plt_B0map(rotl90(B0map))
+x_ref = brain_phantom2D_reference(phantom, :ρ, (150., 150.), (1., 1.); location=location, ss=simtype.ss);
+plt_image(rotl90(x_ref))
 
 acqData = AcquisitionData(raw, BHO; sim_params=sim_params);
 acqData.traj[1].circular = false;
@@ -57,10 +79,8 @@ tr_nominal          = Trajectory(   K_nominal_adc'[1:3,:], acqData.traj[1].numPr
 tr_dfc_stitched     = Trajectory(K_dfc_adc_stitched'[:,:], acqData.traj[1].numProfiles, acqData.traj[1].numSamplingPerProfile; circular=false, times=times);
 tr_dfc_standard     = Trajectory(K_dfc_adc_standard'[:,:], acqData.traj[1].numProfiles, acqData.traj[1].numSamplingPerProfile; circular=false, times=times);
 
-solver = "cgnr";
-regularization = "L2";
-λ = 1.e-3;
-iter=20;
+# 7. reconstruction parameters
+solver = "cgnr"; regularization = "L2"; λ = 1.e-3; iter=20;
 
 recParams = Dict{Symbol,Any}(); #recParams = merge(defaultRecoParams(), recParams)
 recParams[:reconSize] = (Nx, Ny)  # 150, 150
@@ -97,7 +117,7 @@ Ops = [Op1, Op2, Op3, Op4, Op5, Op6, Op7, Op8];
 
 
 imgs = Array{Float32,3}(undef, length(Ops), Nx, Ny);
-titles = ["w/o ΔB₀, stitched: 000",
+labels = ["w/o ΔB₀, stitched: 000",
           "w/o ΔB₀, stitched: 110",
           "w/o ΔB₀, stitched: 111",
           "w/o ΔB₀, standard: 111",
@@ -109,18 +129,18 @@ for idx in eachindex(Ops)
     recParams[:encodingOps] = reshape([Ops[idx]], 1,1);
     @time rec = abs.(reconstruction(acqData, recParams).data[:,:]);
     imgs[idx, :, :] = rotl90(rec);
-    plt_image(rotl90(rec); title=titles[idx])
+    plt_image(rotl90(rec); title=labels[idx])
 end
 
 
 # ΔB₀ map
-B0map = brain_phantom2D_reference(phantom; ss=simtype.ss, location=0.8, target_fov=(150, 150), target_resolution=(1,1), B0type=:quadratic,key=:Δw, maxOffresonance=maxOffresonance); 
+B0map = brain_phantom2D_reference(phantom, :Δw, (150., 150.), (1., 1.); location=location, ss=simtype.ss, db0_type=db0_type, db0_max=db0_max);
 B0map = rotl90(B0map);
 
-x_ref = brain_phantom2D_reference(phantom; ss=simtype.ss, location=0.8, key=:ρ, target_fov=(150, 150), target_resolution=(1,1));
+x_ref = brain_phantom2D_reference(phantom, :ρ, (150., 150.), (1., 1.); location=location, ss=simtype.ss);
 x_ref = rotl90(x_ref);
 
-headmask = brain_phantom2D_reference(phantom; ss=simtype.ss, location=0.8, key=:headmask , target_fov=(150, 150), target_resolution=(1,1));
+headmask = brain_phantom2D_reference(phantom, :headmask, (150., 150.), (1., 1.); location=location, ss=simtype.ss);
 headmask = rotl90(headmask);
 
-MAT.matwrite(dir*"/fully_$(solver)_$(iter)_$(regularization)_$(λ).mat", Dict("imgs"=>imgs, "titles"=>titles, "B0map"=>B0map, "x_ref"=>x_ref, "headmask"=>headmask))
+MAT.matwrite("$(outpath)/fully_$(solver)_$(iter)_$(regularization)_$(λ).mat", Dict("imgs"=>imgs, "labels"=>labels, "B0map"=>B0map, "x_ref"=>x_ref, "headmask"=>headmask))
