@@ -66,16 +66,26 @@ plot_seq(hoseqStandard)
 B0 = true     # turn on B0
 T2 = false    # turn off T2
 ss = 5        # set phantom down-sample factor to 5
+location = 0.8
 BHO = BlochHighOrder("111", true, true)                          # ["111"] turn on all order terms of dynamic field change. turn on Δw_excitation, Δw_precession
 phantom = BrainPhantom(prefix="brain3D724", x=0.2, y=0.2, z=0.2) # setting for Phantom: decide which phantom file to use, loading phantom from src/phantom/mat folder
-maxOffresonance = 50.                                            # set the maximum off-resonance frequency in Hz for quadratic B0 map
+# settings for phantom
+csm_type  = :fan;      # a simulated birdcage coil-sensitivity
+csm_nCoil = 1;         # only 1-channel
+csm_nRow  = 1;
+csm_nCol  = 1;
+
+db0_type  = :quadratic;     
+db0_max   = :100.;
 
 # 1. sequence
 plot_seq(hoseqStitched)
 Nx=Ny=150;     # matrix size for recon
 
 # 2. phantom
-obj = brain_hophantom2D(phantom; ss=ss, location=0.8, B0type=:quadratic, maxOffresonance=maxOffresonance)
+obj = brain_hophantom2D(phantom; ss=ss, location=location, 
+                        csm_type=csm_type, csm_nCoil=csm_nCoil, csm_nRow=csm_nRow, csm_nCol=csm_nCol, 
+                        db0_type=db0_type, db0_max=db0_max); 
 obj.Δw .= B0 ? obj.Δw : obj.Δw * 0;     # γ*1.5 T*(-3.45 ppm)*1e-6 * 2π
 obj.T2 .= T2 ? obj.T2 : obj.T2 * Inf;   # cancel T2 relaxiation
 
@@ -92,6 +102,18 @@ raw = signal_to_raw_data(signal, hoseqStitched, :nominal; sim_params=copy(sim_pa
 img_nufft = recon_2d(raw);      
 fig_nufft = plt_image(rotl90(img_nufft))
 
+# 5. Adding noise to signal data
+snr = 15;
+data = signal[:,:,1];
+nSample, nCha = size(data);
+
+signalAmpl = sum(abs.(data), dims=1)/ nSample;
+data = data + signalAmpl/snr .* ( randn(size(data))+ 1im*randn(size(data)));
+
+# show the effect of noise
+raw = signal_to_raw_data(reshape(data, (nSample, nCha, 1)), hoseqStitched, :nominal; sim_params=copy(sim_params));
+img_nufft = recon_2d(raw);
+fig_nufft = plt_image(rotl90(img_nufft))
 
 #########################################################################################
 # 3. Reconstruction with HighOrderOp
@@ -100,11 +122,10 @@ fig_nufft = plt_image(rotl90(img_nufft))
 #     c. reconstruct the signal with the encoding operator
 #########################################################################################
 # ΔB₀ map (the same as the one used for simulation), we will use this map in reconstruction
-B0map = brain_phantom2D_reference(phantom; ss=ss, location=0.8, target_fov=(150, 150), target_resolution=(1,1),
-                                   B0type=:quadratic,key=:Δw, maxOffresonance=maxOffresonance); 
+B0map = brain_phantom2D_reference(phantom, :Δw, (150., 150.), (1., 1.); location=location, ss=ss, db0_type=db0_type, db0_max=db0_max);
 fig_b0map = plt_image(rotl90(B0map))
 # Proton-density map (reference)
-x_ref = brain_phantom2D_reference(phantom; ss=ss, location=0.8, key=:ρ, target_fov=(150, 150), target_resolution=(1,1));
+x_ref = brain_phantom2D_reference(phantom, :ρ, (150., 150.), (1., 1.); location=location, ss=ss);
 fig_ref = plt_image(rotl90(x_ref))
 
 acqData = AcquisitionData(raw, BHO; sim_params=sim_params);
@@ -118,18 +139,25 @@ times = KomaMRIBase.get_adc_sampling_times(hoseqStitched.SEQ);
 tr_nominal      = Trajectory(   K_nominal_adc'[1:3,:], acqData.traj[1].numProfiles, acqData.traj[1].numSamplingPerProfile; circular=false, times=times);
 tr_dfc_stitched = Trajectory(K_dfc_adc_stitched'[:,:], acqData.traj[1].numProfiles, acqData.traj[1].numSamplingPerProfile; circular=false, times=times);
 
+
+#############################################################################
+# HighOrderOp, the extended signal model for high-order terms
+#############################################################################
 # Construct the encoding operator (HighOrderOp)
 Op = HighOrderOp((Nx, Ny), tr_nominal, tr_dfc_stitched , BlochHighOrder("111"); Nblocks=9, fieldmap=Matrix(B0map), grid=1);
 
 # Reconstruction parameters
+solver = "admm"; regularization = "TV"; iter = 50; λ = 1e-4;
+solver = "cgnr"; regularization = "L2"; iter = 50; λ = 1e-3;
+
 recParams = Dict{Symbol,Any}(); #recParams = merge(defaultRecoParams(), recParams)
 recParams[:reconSize] = (Nx, Ny)  # 150, 150
 recParams[:densityWeighting] = true
 recParams[:reco] = "standard"
-recParams[:regularization] = "L2"  # ["L2", "L1", "L21", "TV", "LLR", "Positive", "Proj", "Nuclear"]
-recParams[:λ] = 1.e-3
-recParams[:iterations] = 20
-recParams[:solver] = "cgnr"  # "cgnr", "admm"
+recParams[:regularization] = regularization  # ["L2", "L1", "L21", "TV", "LLR", "Positive", "Proj", "Nuclear"]
+recParams[:λ] = λ
+recParams[:iterations] = iter
+recParams[:solver] = solver  # "cgnr", "admm"
 recParams[:solverInfo] = SolverInfo(vec(ComplexF32.(x_ref)), store_solutions=true);
 recParams[:encodingOps] = reshape([Op], 1,1);
 

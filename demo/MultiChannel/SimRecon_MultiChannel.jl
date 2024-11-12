@@ -68,20 +68,28 @@ plot_seq(hoseqStandard)
 B0 = true     # turn on B0
 T2 = false    # turn off T2
 ss = 1        # set phantom down-sample factor to 5
+location = 0.65
 BHO = BlochHighOrder("111", true, true)                          # ["111"] turn on all order terms of dynamic field change. turn on Δw_excitation, Δw_precession
-phantom = BrainPhantom(prefix="brain3D", x=0.2, y=0.2, z=0.2) # setting for Phantom: decide which phantom file to use, loading phantom from src/phantom/mat folder
-maxOffresonance = 100.                                            # set the maximum off-resonance frequency in Hz for quadratic B0 map
-
+phantom = BrainPhantom(prefix="brain3D", x=0.2, y=0.2, z=0.2) # setting for Phantom: decide which phantom file to use, loading phantom from src/phantom/mat folder                                
 # setting the coil sensitivity used in the simulation
-csmtype= :birdcage;          # a simulated birdcage coil-sensitivity
-nCoil=9;                     # 8-channel
+csm_type  = :birdcage;      # a simulated birdcage coil-sensitivity
+csm_nCoil = 9;              # 9-channel
+csm_nRow  = 3;
+csm_nCol  = 3;
+
+db0_type  = :quadratic;     
+db0_max   = :100.;            # set the maximum off-resonance frequency in Hz for quadratic B0 map
+
+
 
 # 1. sequence
 plot_seq(hoseqStitched)
 Nx=Ny=200;     # matrix size for recon
 
 # 2. phantom
-obj = brain_hophantom2D(phantom; ss=ss, location=0.65, B0type=:quadratic, maxOffresonance=maxOffresonance, csmtype=csmtype, nCoil=nCoil)
+obj = brain_hophantom2D(phantom; ss=ss, location=location, 
+                        csm_type=csm_type, csm_nCoil=csm_nCoil, csm_nRow=csm_nRow, csm_nCol=csm_nCol, 
+                        db0_type=db0_type, db0_max=db0_max); 
 obj.Δw .= B0 ? obj.Δw : obj.Δw * 0;     # set Δw to 0 if B0=false
 obj.T2 .= T2 ? obj.T2 : obj.T2 * Inf;   # cancel T2 relaxiation
 # plot_phantom_map(obj, :ρ)
@@ -99,8 +107,8 @@ sim_params["Nblocks"] = 1000;
 signal = simulate(obj, hoseqStitched, sys; sim_params);          
 raw = signal_to_raw_data(signal, hoseqStitched, :nominal; sim_params=copy(sim_params));
 img_nufft = recon_2d(raw, Nx=Nx, Ny=Ny);
-fig_sos = plt_image(rotl90(sqrt.(sum(img_nufft.^2; dims=3))[:,:,1]); width=4, height=4)
-fig_cha = plt_images(permutedims(mapslices(rotl90, img_nufft,dims=[1,2]), [3, 1, 2]),width=4, height=4)
+fig_sos = plt_image(rotl90(sqrt.(sum(img_nufft.^2; dims=3))[:,:,1]))
+fig_cha = plt_images(mapslices(rotl90, img_nufft,dims=[1,2]); dim=3, nRow= csm_nRow, nCol=csm_nCol)
 
 # 5. Adding noise to signal data
 snr = 15;
@@ -113,9 +121,8 @@ data = data + signalAmpl/snr .* ( randn(size(data))+ 1im*randn(size(data)));
 # show the effect of noise
 raw = signal_to_raw_data(reshape(data, (nSample, nCha, 1)), hoseqStitched, :nominal; sim_params=copy(sim_params));
 img_nufft = recon_2d(raw, Nx=Nx, Ny=Ny);
-fig_sos = plt_image(rotl90(sqrt.(sum(img_nufft.^2; dims=3))[:,:,1]); width=4, height=4)
-fig_cha = plt_images(permutedims(mapslices(rotl90, img_nufft,dims=[1,2]), [3, 1, 2]),width=4, height=4)
-
+fig_sos = plt_image(rotl90(sqrt.(sum(img_nufft.^2; dims=3))[:,:,1]))
+fig_cha = plt_images(mapslices(rotl90, img_nufft,dims=[1,2]); dim=3, nRow= csm_nRow, nCol=csm_nCol)
 #########################################################################################
 # 3. Reconstruction with HighOrderOp
 #     a. obtain the ΔB₀ map
@@ -126,22 +133,21 @@ acqData = AcquisitionData(raw, BHO; sim_params=sim_params);
 acqData.traj[1].circular = false;
 
 # Coil-Sensitivity Map
-coil = csm_Birdcage(217, 181, nCoil, verbose=true);
+coil = csm_Birdcage(217, 181, csm_nCoil, verbose=true);
 coil = get_center_crop(coil, Nx, Ny);
-sensitivity = Array{ComplexF32,4}(undef, Nx, Ny, 1, nCoil);
-for c = 1:nCoil
+sensitivity = Array{ComplexF32,4}(undef, Nx, Ny, 1, csm_nCoil);
+for c = 1:csm_nCoil
     sensitivity[:,:,1,c] = transpose(coil[:,:,c])
 end
-csm = permutedims(mapslices(rotl90, abs.(sensitivity[:,:,1,:]), dims=[1,2]), [3, 1, 2]);
-fig_csm = plt_images(csm,width=4, height=4)
+csm = mapslices(rotl90, abs.(sensitivity[:,:,1,:]), dims=[1,2]);
+fig_csm = plt_images(csm; dim=3, nRow=csm_nRow, nCol=csm_nCol)
 
 # ΔB₀ map (the same as the one used for simulation), we will use this map in reconstruction
-B0map = brain_phantom2D_reference(phantom; ss=ss, location=0.65, target_fov=(200, 200), target_resolution=(1,1),
-                                   B0type=:quadratic,key=:Δw, maxOffresonance=maxOffresonance); 
+B0map = brain_phantom2D_reference(phantom, :Δw, (200., 200.), (1., 1.); location=location, ss=ss, db0_type=db0_type, db0_max=db0_max);
 fig_b0map = plt_image(rotl90(B0map))
 
 # Proton-density map (reference)
-x_ref = brain_phantom2D_reference(phantom; ss=ss, location=0.65, key=:ρ, target_fov=(200, 200), target_resolution=(1,1));
+x_ref = brain_phantom2D_reference(phantom, :ρ, (200., 200.), (1., 1.); location=location, ss=ss);
 fig_ref = plt_image(rotl90(x_ref))
 
 # get the k coefficients for the nominal (x,y,z) and the stitching measurement (up to second order)
@@ -172,7 +178,7 @@ recParams[:λ] = λ
 recParams[:iterations] = iter
 recParams[:solver] = solver
 recParams[:oversamplingFactor] = 2
-recParams[:senseMaps] = Complex{T}.(reshape(sensitivity, Nx, Ny, 1, nCoil));
+recParams[:senseMaps] = Complex{T}.(reshape(sensitivity, Nx, Ny, 1, csm_nCoil));
 @time rec = reconstruction(acqData, recParams).data[:,:];
 fig = plt_image(rotl90(abs.(rec)); vminp=0, vmaxp=99.9)  
 
@@ -192,7 +198,7 @@ recParams[:λ] = λ
 recParams[:iterations] = iter
 recParams[:solver] = solver
 # recParams[:solverInfo] = SolverInfo(vec(Complex{T}.(x_ref)), store_solutions=true);
-recParams[:senseMaps]          = Complex{T}.(reshape(sensitivity, Nx, Ny, 1, nCoil));
+recParams[:senseMaps]          = Complex{T}.(reshape(sensitivity, Nx, Ny, 1, csm_nCoil));
 
 numContr, numChan = MRIReco.numContrasts(acqData), MRIReco.numChannels(acqData);
 reconSize, weights, L_inv, sparseTrafo, reg, normalize, encOps, solvername, senseMaps = MRIReco.setupIterativeReco(acqData, recParams);
@@ -251,13 +257,13 @@ end
 # Save the results
 #############################################################################
 # ΔB₀ map
-B0map = brain_phantom2D_reference(phantom; ss=ss, location=0.65, target_fov=(200, 200), target_resolution=(1,1), B0type=:quadratic,key=:Δw, maxOffresonance=maxOffresonance); 
+B0map = brain_phantom2D_reference(phantom, :Δw, (200., 200.), (1., 1.); location=location, ss=ss, db0_type=db0_type, db0_max=db0_max);
 B0map = rotl90(B0map);
 
-x_ref = brain_phantom2D_reference(phantom; ss=ss, location=0.65, key=:ρ, target_fov=(200, 200), target_resolution=(1,1));
+x_ref = brain_phantom2D_reference(phantom, :ρ, (200., 200.), (1., 1.); location=location, ss=ss);
 x_ref = rotl90(x_ref);
 
-headmask = brain_phantom2D_reference(phantom; ss=ss, location=0.65, key=:headmask , target_fov=(200, 200), target_resolution=(1,1));
+headmask = brain_phantom2D_reference(phantom, :headmask, (200., 200.), (1., 1.); location=location, ss=ss);
 headmask = rotl90(headmask);
 
 MAT.matwrite("$(@__DIR__)/demo/MultiChannel/snr$(snr)_$(solver)_$(iter)_$(regularization)_$(λ).mat", 
