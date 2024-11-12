@@ -2,15 +2,12 @@ using PyPlot
 using MAT
 import Statistics: quantile
 
-dir = "Figures/Fig5"; if ispath(dir) == false mkpath(dir) end     # output directory
-solver = "admm";
-regularization = "TV";
-λ = 1.e-4;
-iter=20;
+outpath = "$(@__DIR__)/Figures/Fig5/out"; if ispath(outpath) == false mkpath(outpath) end     # output directory
+solver = "admm"; regularization = "TV"; λ = 1.e-4; iter=20;
 
 matfile = "fully_$(solver)_$(iter)_$(regularization)_$(λ)"
 
-imgs = MAT.matread("$(dir)/$(matfile).mat")["imgs"];
+imgs = MAT.matread("$(outpath)/$(matfile).mat")["imgs"];
 nFrame, nX, nY = size(imgs)
 
 
@@ -64,7 +61,7 @@ axs[2,4].set_title("conventional 111" , fontsize=fontsize_label, color=color_lab
 
 # fig.tight_layout(pad=0, w_pad=0, h_pad=0)
 fig.subplots_adjust(left=0, right=1, bottom=0, top=1, wspace=0, hspace=0)
-fig.savefig("$(dir)/Fig5_$(matfile).png", dpi=300, bbox_inches="tight")
+fig.savefig("$(outpath)/Fig5_$(matfile).png", dpi=300, bbox_inches="tight")
 
 
 
@@ -72,8 +69,8 @@ fig.savefig("$(dir)/Fig5_$(matfile).png", dpi=300, bbox_inches="tight")
 
 ############
 
-imgs_cgnr = MAT.matread("$(dir)/recon_fully_sampled_cgnr_100_L2_1e-9.mat")["imgs"];
-imgs_admm = MAT.matread("$(dir)/recon_fully_sampled_admm_20_TV_1e-4.mat")["imgs"];
+imgs_cgnr = MAT.matread("$(outpath)/recon_fully_sampled_cgnr_100_L2_1e-9.mat")["imgs"];
+imgs_admm = MAT.matread("$(outpath)/recon_fully_sampled_admm_20_TV_1e-4.mat")["imgs"];
 imgs = cat(imgs_cgnr, imgs_admm, dims=1)
 nFrame, nX, nY = size(imgs)
 nRow = 2
@@ -117,4 +114,4 @@ axs[1,5].set_title("w/ ΔB₀\nconventional 111" , fontsize=fontsize_label, colo
 
 fig.tight_layout(w_pad=0, h_pad=0, pad=0)
 
-fig.savefig("$(dir)/recon_fully_sampled.png", dpi=300, bbox_inches="tight")
+fig.savefig("$(outpath)/recon_fully_sampled.png", dpi=300, bbox_inches="tight")

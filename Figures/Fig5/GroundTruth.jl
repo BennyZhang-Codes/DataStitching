@@ -1,6 +1,6 @@
 using KomaHighOrder
 
-dir = "Figures/Fig5/out"; if ispath(dir) == false mkpath(dir) end
+outpath = "$(@__DIR__)/Figures/Fig5/out"; if ispath(outpath) == false mkpath(outpath) end     # output directory
 
 simtype = SimType(B0=true, T2=false, ss=5)                       # turn on B0, turn off T2, set phantom subsampling to 5
 BHO = BlochHighOrder("111", true, true)                          # turn on all order terms of dynamic field change, turn on Δw_excitation, Δw_precession
@@ -48,7 +48,7 @@ axs[2].imshow(B0map, cmap="jet")
 axs[2].imshow(img_headcountour, cmap="gray")
 axs[4].imshow(img_headcountour, cmap="gray")
 fig.tight_layout(pad=0, w_pad=0, h_pad=0)
-fig.savefig("$(dir)/Fig5_groundtruth.png", dpi=300, bbox_inches="tight")
+fig.savefig("$(outpath)/Fig5_groundtruth.png", dpi=300, bbox_inches="tight")
 
 
 
@@ -78,7 +78,7 @@ end
 axs[1].imshow(img_headref, cmap="gray", alpha=0.1)
 axs[2].imshow(img_headcountour, cmap="gray", alpha=1)
 fig.tight_layout(pad=0, w_pad=0, h_pad=0)
-fig.savefig("$(dir)/Fig5_groundtruth_dB0.png", dpi=300, bbox_inches="tight")
+fig.savefig("$(outpath)/Fig5_groundtruth_dB0.png", dpi=300, bbox_inches="tight")
 
 
 
@@ -114,4 +114,4 @@ cb.dividers.set_linewidth(linewidth)
 # cb.update_ticks()
 
 fig.tight_layout(pad=0, w_pad=0, h_pad=0)
-fig.savefig("$(dir)/Fig5_groundtruth_rho.png", dpi=300, bbox_inches="tight")
+fig.savefig("$(outpath)/Fig5_groundtruth_rho.png", dpi=300, bbox_inches="tight")
