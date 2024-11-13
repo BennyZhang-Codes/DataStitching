@@ -5,6 +5,7 @@ include("Real_32cha.jl")
 include("Fan.jl")
 include("Rect.jl")
 include("Ring.jl")
+include("Gaussian.jl")
 
 export csm_Birdcage
 export csm_Real_32cha
@@ -12,8 +13,9 @@ export csm_Fan_binary
 export csm_Rect_binary
 export csm_Rect_gaussian
 export csm_Ring_binary
-
-
+export csm_Gaussian_grid
+csm_list = [:fan, :ring, :rect, :rect_gaussian, :birdcage, :real_32cha, :gaussian_grid]
+export csm_list
 
 function load_csm(
     type::Symbol                    , 
@@ -26,9 +28,11 @@ function load_csm(
     relative_radius::Real = 1.5     ,  # relative radius of the coil, for csm_Birdcage
     verbose::Bool         = false
 )
-    @assert type in [:fan, :rect, :rect_gaussian, :birdcage, :real_32cha] "type must be one of the following: :fan, :rect, :rect_gaussian, :birdcage, :real_32cha"
+    @assert type in csm_list "type must be one of the following: $(csm_list)"
     if type == :fan
         csm = csm_Fan_binary(nX, nY, nCoil; overlap=overlap, verbose=verbose)
+    elseif type == :ring
+        csm = csm_Ring_binary(nX, nY, nCoil; overlap=overlap, verbose=verbose)
     elseif type == :rect
         csm = csm_Rect_binary(nX, nY, nCoil; verbose=verbose, nRow=nRow, nCol=nCol)
     elseif type == :rect_gaussian
@@ -37,6 +41,8 @@ function load_csm(
         csm = csm_Birdcage(nX, nY, nCoil; relative_radius=Float64(relative_radius), verbose=verbose)
     elseif type == :real_32cha
         csm = csm_Real_32cha(nX, nY; verbose=verbose)
+    elseif type == :gaussian_grid
+        csm = csm_Gaussian_grid(nX, nY, nCoil; relative_radius=Float64(relative_radius), nRow=nRow, nCol=nCol, verbose=verbose)
     end
     return csm
 end
