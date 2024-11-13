@@ -1,7 +1,7 @@
 using Test
 using KomaHighOrder
 import KomaHighOrder: load_csm
-nX    = 150
+nX    = 200
 nY    = 200
 nCoil = 18
 nRow  = 3
@@ -41,6 +41,12 @@ verbose = true
         @test size(csm) == (nX, nY, 32)
         @test typeof(csm) <: AbstractArray{<:Number,3}
         plt_images(abs.(csm); dim=3, nRow=4, nCol=8, title="csm_Real_32cha")
+    end
+    @testset "csm_Gaussian_grid" begin
+        csm = load_csm(:gaussian_grid, nX, nY, nCoil; nRow=nRow, nCol=nCol, overlap=overlap, relative_radius=relative_radius, verbose=verbose)
+        @test size(csm) == (nX, nY, nCoil)
+        @test typeof(csm) <: AbstractArray{<:Number,3}
+        plt_images(abs.(csm); dim=3, nRow=nRow, nCol=nCol, title="csm_Gaussian_grid")
     end
 end
 
