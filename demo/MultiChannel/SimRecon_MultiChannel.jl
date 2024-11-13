@@ -206,7 +206,7 @@ senseMapsUnCorr = decorrelateSenseMaps(L_inv, senseMaps, numChan);
 smaps = senseMaps[:,:,1,:];
 S = SensitivityOp(reshape(ComplexF64.(smaps),:,numChan),1)
 
-# HOOp = HighOrderOp((Nx, Ny), tr_nominal, tr_dfc_stitched , BlochHighOrder("111"); Nblocks=5, fieldmap=Matrix(B0map), grid=1, verbose=true);  # 
+# HOOp = HighOrderOp((Nx, Ny), tr_nominal, tr_ksphaStitched , BlochHighOrder("111"); Nblocks=5, fieldmap=Matrix(B0map), grid=1, verbose=true);  # 
 # Op = DiagOp(HOOp, numChan) ∘ S 
 # recParams[:encodingOps] = reshape([Op], 1,1);
 # @time rec = abs.(reconstruction(acqData, recParams).data[:,:]);

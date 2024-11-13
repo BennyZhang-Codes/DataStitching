@@ -1,12 +1,11 @@
 using KomaHighOrder, MRIReco
 import KomaHighOrder.MRIBase: rawdata
 import RegularizedLeastSquares: SolverInfo
-path     = "Figures/debug/out/R10_reduced_SENSE_CS"; if ispath(path) == false mkpath(path) end     # output directory
-
+outpath     = "$(@__DIR__)/workplace/Parallel_Imaging/debug/out/R10_reduced_SENSE_CS"; if ispath(outpath) == false mkpath(outpath) end     # output directory
 ##############################################################################################
 # Setup
 ##############################################################################################
-T = Float32;
+T = Float64;
 R = 30
 matrix_origin = 500
 matrix_target = 150
@@ -15,17 +14,24 @@ Nx = Ny = matrix_target
 shape = (Nx, Ny);
 
 simtype  = SimType(B0=false, T2=false, ss=5)
-csmtype= :real_32cha; nCoil=32; nrows=4; ncols=8;
-maxOffresonance = 0.   
+BHO      = BlochHighOrder("000", true, true)                          # turn on all order terms of dynamic field change, turn on Δw_excitation, Δw_precession
+phantom  = BrainPhantom(prefix="brain3D724", x=0.2, y=0.2, z=0.2) # decide which phantom file to use
+location = 0.8
 
-BHO = BlochHighOrder("000", true, true)                          # turn on all order terms of dynamic field change, turn on Δw_excitation, Δw_precession
-phantom = BrainPhantom(prefix="brain3D724", x=0.2, y=0.2, z=0.2) # decide which phantom file to use
+# settings for phantom
+csm_type  = :real_32cha;      # a simulated birdcage coil-sensitivity
+csm_nCoil = 32;              # 8-channel
+csm_nRow  = 4;
+csm_nCol  = 8;
 
-fileprefix = "spiral_R$(R)_nCoil$(nCoil)"
+db0_type  = :quadratic;     
+db0_max   = :0.;
+
+fileprefix = "spiral_R$(R)_nCoil$(csm_nCoil)"
 
 
 ##### 1. sequence
-seq = load_seq(seqname="demo", r=R)
+seq = load_seq(seqname="spiral", r=R)
 hoseq = HO_Sequence(seq)
 
 # hoseq = demo_hoseq(dfc_method=:Stitched, r=R)[4:end]   # :Stitched
@@ -33,10 +39,12 @@ hoseq.SEQ.GR[1:2,8] = hoseq.SEQ.GR[1:2,8] * grad_scale
 plot_seq(hoseq)
 _, k_nominal, _, _ = get_kspace(hoseq; Δt=1);
 fig_traj = plt_traj(k_nominal'; color_label="#CCCCCC")
-fig_traj.savefig("$(path)/$(fileprefix)-traj.png", dpi=300, bbox_inches="tight", pad_inches=0, transparent=true)
+fig_traj.savefig("$(outpath)/$(fileprefix)-traj.png", dpi=300, bbox_inches="tight", pad_inches=0, transparent=true)
 
 ##### 2. phantom
-obj = brain_hophantom2D(phantom; ss=simtype.ss, location=0.8, csmtype=csmtype, nCoil=nCoil, B0type=:quadratic, maxOffresonance=maxOffresonance); 
+obj = brain_hophantom2D(phantom; ss=simtype.ss, location=location, 
+                        csm_type=csm_type, csm_nCoil=csm_nCoil, csm_nRow=csm_nRow, csm_nCol=csm_nCol, 
+                        db0_type=db0_type, db0_max=db0_max);
 obj.Δw .= simtype.B0 ? obj.Δw : obj.Δw * 0; # γ*1.5*(-3.45)*1e-6 * 2π
 obj.T2 .= simtype.T2 ? obj.T2 : obj.T2 * Inf; # TODO: fix the bug: gre 
 
@@ -53,78 +61,62 @@ signal = simulate(obj, hoseq, sys; sim_params);
 raw = signal_to_raw_data(signal, hoseq, :nominal; sim_params=copy(sim_params));
 img_nufft = recon_2d(raw, Nx=Nx, Ny=Ny);
 
-fig_sos = plt_image(rotl90(sqrt.(sum(img_nufft.^2; dims=3))[:,:,1]); width=12/2.54, height=12/2.54)
-fig_cha = plt_images(permutedims(mapslices(rotl90, img_nufft,dims=[1,2]), [3, 1, 2]),width=10, height=5)
+fig_sos = plt_image(rotl90(sqrt.(sum(img_nufft.^2; dims=3))[:,:,1]))
+fig_cha = plt_images(mapslices(rotl90, img_nufft,dims=[1,2]); dim=3, nRow=csm_nRow, nCol=csm_nCol)
 
-fig_sos.savefig("$(path)/$(fileprefix)-nufft_SOS.png", dpi=300, bbox_inches="tight", pad_inches=0)
-fig_cha.savefig("$(path)/$(fileprefix)-nufft.png"    , dpi=300, bbox_inches="tight", pad_inches=0)
+fig_sos.savefig("$(outpath)/$(fileprefix)-nufft_SOS.png", dpi=300, bbox_inches="tight", pad_inches=0)
+fig_cha.savefig("$(outpath)/$(fileprefix)-nufft.png"    , dpi=300, bbox_inches="tight", pad_inches=0)
 
 
 ##### 5. plot trajectory
-acqData = AcquisitionData(raw); # raw = RawAcquisitionData(mrd);
+acqData = AcquisitionData(raw, BHO; sim_params=sim_params); # raw = RawAcquisitionData(mrd);
 acqData.traj[1].circular = false;
 
 
 #############################################################################
 # recon with the coil sensitivities as the same used in the simulation
 #############################################################################
-coil = csmtype == :real_32cha ? csm_Real_32cha(217, 181) : csm_Birdcage(217, 181, nCoil, relative_radius=1.5);
+coil = csm_type == :real_32cha ? csm_Real_32cha(217, 181) : csm_Birdcage(217, 181, csm_nCoil, relative_radius=1.5);
 # coil = csm_Rect_binary(217, 181, nCoil, verbose=true)
 coil = get_center_crop(coil, Nx, Ny);
 
-
-sensitivity = Array{ComplexF32,4}(undef, Nx, Ny, 1, nCoil);
-for c = 1:nCoil
+sensitivity = Array{ComplexF32,4}(undef, Nx, Ny, 1, csm_nCoil);
+for c = 1:csm_nCoil
     sensitivity[:,:,1,c] = transpose(coil[:,:,c])
 end
 
-fig_csm = plt_images(permutedims(mapslices(rotl90, abs.(sensitivity[:,:,1,:]), dims=[1,2]), [3, 1, 2]),width=10, height=5)
-fig_csm.savefig("$(path)/$(fileprefix)-csm.png"    , dpi=300, bbox_inches="tight", pad_inches=0)
+fig_csm = plt_images(mapslices(rotl90, abs.(sensitivity[:,:,1,:]), dims=[1,2]); dim=3)
+fig_csm.savefig("$(outpath)/$(fileprefix)-csm.png"    , dpi=300, bbox_inches="tight", pad_inches=0)
 
 
-
-x_ref = brain_phantom2D_reference(BrainPhantom(); ss=simtype.ss, location=0.8, key=:ρ, target_fov=(150, 150), target_resolution=(1,1));
-
+x_ref = brain_phantom2D_reference(phantom, :ρ, (150., 150.), (1.,1.); location=location, ss=simtype.ss);
 
 
-solver = "admm"
-reg = "TV"
-iter = 1000
-λ = 1e-7
+solver = "admm"; regularization = "TV"; iter = 100; λ = 1e-7
 LSParams = Dict{Symbol,Any}()
 LSParams[:reconSize]          = (Nx, Ny)
 LSParams[:densityWeighting]   = true
 LSParams[:reco]               = "multiCoil"
-LSParams[:regularization]     = reg  # ["L2", "L1", "L21", "TV", "LLR", "Positive", "Proj", "Nuclear"]
+LSParams[:regularization]     = regularization  # ["L2", "L1", "L21", "TV", "LLR", "Positive", "Proj", "Nuclear"]
 LSParams[:λ]                  = λ
 LSParams[:iterations]         = iter
 LSParams[:solver]             = solver
 LSParams[:relTol]             = 0.0
 LSParams[:oversamplingFactor] = 2
 LSParams[:toeplitz]           = false
-LSParams[:senseMaps]          = Complex{T}.(reshape(sensitivity, Nx, Ny, 1, nCha));
-LSParams[:solverInfo]         = SolverInfo(vec(ComplexF64.(x_ref)), store_solutions=true);
+LSParams[:senseMaps]          = Complex{T}.(reshape(sensitivity, Nx, Ny, 1, csm_nCoil));
+# LSParams[:solverInfo]         = SolverInfo(ComplexF64.(x_ref), store_solutions=true);
 @time rec = abs.(reconstruction(acqData, LSParams).data[:,:]);
 fig = plt_image(rotl90(rec))
-fig.savefig("$(path)/$(raw.params["protocolName"])_SENSE_$(solver)_$(reg)_$(iter)_$(λ).png", dpi=300, bbox_inches="tight", pad_inches=0)
-solverinfo = LSParams[:solverInfo];
-x_iters = solverinfo.x_iter[2:end];
-size(x_iters)
+fig.savefig("$(outpath)/$(raw.params["protocolName"])_SENSE_$(solver)_$(regularization)_$(iter)_$(λ).png", dpi=300, bbox_inches="tight", pad_inches=0)
+# solverinfo = LSParams[:solverInfo];
+# x_iters = solverinfo.x_iter[2:end];
+# size(x_iters)
 
 
 # L1-Wavelet regularized CS reconstruction
-cs_solver = "admm"
-cs_reg    = "L1"
-cs_sparse = "Wavelet"
-cs_λ      = 1.e-6
-cs_iter   = 3000
-
-cs_solver = "fista"
-cs_reg    = "L1"
-cs_sparse = "Wavelet"
-cs_λ      = 1.e-6
-cs_iter   = 10000
-
+cs_solver = "admm" ; cs_reg = "L1"; cs_sparse = "Wavelet"; cs_λ = 1.e-6; cs_iter = 3000
+cs_solver = "fista"; cs_reg = "L1"; cs_sparse = "Wavelet"; cs_λ = 1.e-6; cs_iter = 10000
 
 CSParams = Dict{Symbol, Any}()
 CSParams[:reconSize]          = (Nx, Ny)
@@ -142,12 +134,12 @@ CSParams[:tolInner]           = 1.e-9
 CSParams[:adaptRho]           = true
 CSParams[:iterationsInner]    = 100
 CSParams[:oversamplingFactor] = 2
-CSParams[:senseMaps]          = Complex{T}.(reshape(sensitivity, Nx, Ny, 1, nCha));
+CSParams[:senseMaps]          = Complex{T}.(reshape(sensitivity, Nx, Ny, 1, csm_nCha));
 CSParams[:normalizeReg]       = true
 CSParams[:solverInfo]         = SolverInfo(vec(ComplexF64.(x_ref)), store_solutions=true);
 @time rec = abs.(reconstruction(acqData, CSParams).data[:,:]);
 fig = plt_image(rotl90(rec))
-fig.savefig("$(path)/$(raw.params["protocolName"])_CS_$(cs_solver)_$(cs_reg)_$(cs_sparse)_$(cs_iter)_$(cs_λ).png", dpi=300, bbox_inches="tight", pad_inches=0)
+fig.savefig("$(outpath)/$(raw.params["protocolName"])_CS_$(cs_solver)_$(cs_reg)_$(cs_sparse)_$(cs_iter)_$(cs_λ).png", dpi=300, bbox_inches="tight", pad_inches=0)
 solverinfo = CSParams[:solverInfo];
 x_iters = solverinfo.x_iter[2:end];
 size(x_iters)

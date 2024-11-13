@@ -9,9 +9,10 @@ outpath = "$(@__DIR__)/workplace/Parallel_Imaging/debug/out/"; if ispath(outpath
 # Setup
 ############################################################################################## 
 T = Float64;
-simtype = SimType(B0=false, T2=false, ss=12)                     # turn on B0, turn off T2, set phantom subsampling to 5
-BHO = BlochHighOrder("000", true, true)                          # turn on all order terms of dynamic field change, turn on Δw_excitation, Δw_precession
-phantom = BrainPhantom(prefix="brain3D724", x=0.2, y=0.2, z=0.2) # decide which phantom file to use
+simtype  = SimType(B0=false, T2=false, ss=12)                     # turn on B0, turn off T2, set phantom subsampling to 5
+BHO      = BlochHighOrder("000", true, true)                          # turn on all order terms of dynamic field change, turn on Δw_excitation, Δw_precession
+phantom  = BrainPhantom(prefix="brain3D724", x=0.2, y=0.2, z=0.2) # decide which phantom file to use
+location = 0.8;
 
 # settings for phantom
 csm_type  = :real_32cha;      # a simulated birdcage coil-sensitivity
@@ -41,7 +42,7 @@ p_seq = plot_seq(hoseq_stitched)
 # PlotlyJS.savefig(p_seq,  "$(dir)/R30_hoseq.svg", width=1000, height=400, format="svg")
 
 # 2. phantom
-obj = brain_hophantom2D(phantom; ss=simtype.ss, location=0.8, 
+obj = brain_hophantom2D(phantom; ss=simtype.ss, location=location, 
                         csm_type=csm_type, csm_nCoil=csm_nCoil, csm_nRow=csm_nRow, csm_nCol=csm_nCol, 
                         db0_type=db0_type, db0_max=db0_max); 
 obj.Δw .= simtype.B0 ? obj.Δw : obj.Δw * 0;     # γ*1.5 T*(-3.45 ppm)*1e-6 * 2π

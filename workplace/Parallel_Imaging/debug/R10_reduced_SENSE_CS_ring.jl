@@ -1,7 +1,7 @@
 using KomaHighOrder, MRIReco
 import KomaHighOrder.MRIBase: rawdata
 import RegularizedLeastSquares: SolverInfo
-outpath = "$(@__DIR__)/workplace/Parallel_Imaging/debug/out/R10_reduced_SENSE_rect"; if ispath(outpath) == false mkpath(outpath) end     # output directory
+outpath = "$(@__DIR__)/workplace/Parallel_Imaging/debug/out/R10_reduced_SENSE_ring"; if ispath(outpath) == false mkpath(outpath) end     # output directory
 ##############################################################################################
 # Setup
 ##############################################################################################
@@ -19,10 +19,10 @@ phantom  = BrainPhantom(prefix="brain3D724", x=0.2, y=0.2, z=0.2) # decide which
 location = 0.8
 
 # settings for phantom
-csm_type  = :rect;      # a simulated birdcage coil-sensitivity
-csm_nCoil = 400;              # 8-channel
-csm_nRow  = 20;
-csm_nCol  = 20;
+csm_type  = :ring;      # a simulated birdcage coil-sensitivity
+csm_nCoil = 40;              # 8-channel
+csm_nRow  = 5;
+csm_nCol  = 8;
 
 db0_type  = :quadratic;     
 db0_max   = :0.;
@@ -60,7 +60,6 @@ sim_params["sim_method"] = BHO;
 sim_params["gpu"] = true;
 sim_params["return_type"]="mat";
 sim_params["precision"]   = "f64"
-sim_params["Nblocks"] = 1000;
 
 ##### 4. simulate
 signal = simulate(obj, hoseq, sys; sim_params);
@@ -85,8 +84,8 @@ acqData.traj[1].circular = false;
 #############################################################################
 # recon with the coil sensitivities as the same used in the simulation
 #############################################################################
-# coil = csmtype == :real_32cha ? csm_Real_32cha(217, 181) : csm_Birdcage(217, 181, csm_nCoil, relative_radius=1.5);
-coil = csm_Rect_binary(217, 181, csm_nCoil, verbose=true);
+
+coil = csm_Ring_binary(217, 181, csm_nCoil, verbose=true);
 coil = get_center_crop(coil, Nx, Ny);
 sensitivity = reshape(permutedims(coil, (2,1,3)), Nx, Ny, 1, csm_nCoil);
 fig_csm = plt_images(mapslices(rotl90, abs.(sensitivity[:,:,1,:]), dims=[1,2]); dim=3, nRow=csm_nRow, nCol=csm_nCol)

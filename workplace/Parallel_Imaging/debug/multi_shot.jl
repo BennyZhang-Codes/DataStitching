@@ -1,6 +1,6 @@
 using KomaHighOrder, PyPlot
 
-path = "Figures/debug/out/multi_shot_0.1"; if ispath(path) == false mkpath(path) end     # output directory
+outpath = "$(@__DIR__)/workplace/Parallel_Imaging/debug/out/multi_shot_0.1"; if ispath(outpath) == false mkpath(outpath) end     # output directory
 fileprefix = "spiral_R30"
 ##############################################################################################
 # Setup
@@ -14,7 +14,7 @@ grad_scale    = 1/(matrix_origin/matrix_target)
 
 
 
-seq = load_seq(seqname="demo", r=R)[4:end]
+seq = load_seq(seqname="spiral", r=R)[4:end]
 hoseq = HO_Sequence(seq)
 
 seq_delayTR = Sequence([seq.GR[3, end] Grad(0,0); seq.GR[3, end] Grad(0,0); Grad(0,10) Grad(0,0)])
@@ -66,13 +66,21 @@ fig_traj.savefig("$(path)/$(fileprefix)_$(nInterleaves)shot_traj.png", dpi=300, 
 
 
 simtype  = SimType(B0=false, T2=false, ss=1)
-csmtype= :fan; nCoil = 1; nrows=4; ncols=8;
-maxOffresonance = 0.
 BHO = BlochHighOrder("000", true, true)                          # turn on all order terms of dynamic field change, turn on Δw_excitation, Δw_precession
 phantom = BrainPhantom(prefix="brain3D724", x=0.1, y=0.1, z=0.2) # decide which phantom file to use
 ##### 2. phantom
-obj = brain_hophantom2D(phantom; ss=simtype.ss, location=0.8, csmtype=csmtype, nCoil=nCoil, B0type=:quadratic, maxOffresonance=maxOffresonance); 
-obj.Δw .= simtype.B0 ? obj.Δw : obj.Δw * 0; # γ*1.5*(-3.45)*1e-6 * 2π
+# setting the coil sensitivity used in the simulation
+csm_type  = :fan;      # a simulated birdcage coil-sensitivity
+csm_nCoil = 1;         # 1-channel
+csm_nRow  = 1;
+csm_nCol  = 1;
+
+db0_type  = :quadratic;     
+db0_max   = :0.;            # set the maximum off-resonance frequency in Hz for quadratic B0 map
+
+obj = brain_hophantom2D(phantom; ss=simtype.ss, location=location, 
+                        csm_type=csm_type, csm_nCoil=csm_nCoil, csm_nRow=csm_nRow, csm_nCol=csm_nCol, 
+                        db0_type=db0_type, db0_max=db0_max); obj.Δw .= simtype.B0 ? obj.Δw : obj.Δw * 0; # γ*1.5*(-3.45)*1e-6 * 2π
 obj.T2 .= simtype.T2 ? obj.T2 : obj.T2 * Inf; # TODO: fix the bug: gre 
 
 ##### 3. scanner & sim_params
@@ -94,7 +102,7 @@ end
 raw = signal_to_raw_data(signal, HO_Sequence(seq_ms), :nominal; sim_params=copy(sim_params));
 img_nufft = recon_2d(raw, Nx=Nx, Ny=Ny);
 
-fig = plt_image(rotl90(sqrt.(sum(img_nufft.^2; dims=3))[:,:,1]); width=12/2.54, height=12/2.54)
+fig = plt_image(rotl90(sqrt.(sum(img_nufft.^2; dims=3))[:,:,1]))
 fig.savefig("$(path)/$(fileprefix)_$(nInterleaves)shot_nufft.png", dpi=300, bbox_inches="tight", pad_inches=0, transparent=true)
 
 
@@ -134,5 +142,5 @@ ax.plot(real.(signal[:]))
 ax.set_ylabel("Signal [a.u.]", fontsize=fontsize_label, color=color_label)
 # ax.set_xlabel("Samples", fontsize=fontsize_label, color=color_label)
 fig.tight_layout()
-fig.savefig("$(path)/$(fileprefix)_$(nInterleaves)shot_signal.png", dpi=300, bbox_inches="tight", pad_inches=0, transparent=true)
+fig.savefig("$(outpath)/$(fileprefix)_$(nInterleaves)shot_signal.png", dpi=300, bbox_inches="tight", pad_inches=0, transparent=true)
 
