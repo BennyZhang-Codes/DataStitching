@@ -1,14 +1,14 @@
 
 
 """
-    mask = csm_Fan_binary(Nx::Int64, Ny::Int64, nCoil::Int64; overlap::Real=1, verbose::Bool=false)
+    mask = csm_Fan_binary(nX::Int64, nY::Int64, nCoil::Int64; overlap::Real=1, verbose::Bool=false)
 
 # Description
     get fan-shaped csm with arbitrary overlap.
 
 # Arguments
-- `Nx`: (`::Int64`) 
-- `Ny`: (`::Int64`) 
+- `nX`: (`::Int64`) 
+- `nY`: (`::Int64`) 
 - `nCoil`: (`::Int64`) 
 
 # Keywords
@@ -16,7 +16,7 @@
 - `verbose`: (`::Real`) print information (default: false)
 
 # Returns
-- `mask`: (`::Array{Float64, 3}`) mask (Nx, Ny, nCoil)
+- `mask`: (`::Array{Float64, 3}`) mask (nX, nY, nCoil)
 
 # Examples
 ```julia-repl
@@ -24,20 +24,20 @@ julia> mask = csm_Fan_binary(100, 100, 6; overlap=0.2)
 julia> plot_imgs_subplots(mask, 2, 3)
 ```
 """
-function csm_Fan_binary(Nx::Int64, Ny::Int64, nCoil::Int64; overlap::Real=0.5, verbose::Bool=false)
+function csm_Fan_binary(nX::Int64, nY::Int64, nCoil::Int64; overlap::Real=0.5, verbose::Bool=false)
     if verbose
-        @info "fan-shaped binary sensitivity" Nx=Nx Ny=Ny nCoil=nCoil overlap=overlap
+        @info "fan-shaped binary sensitivity" nX=nX nY=nY nCoil=nCoil overlap=overlap
     end
-    m_x = (1:1:Nx) .* ones(1, Ny)
-    m_y = ones(Nx) .* (1:1:Ny)'
+    m_x = (1:1:nX) .* ones(1, nY)
+    m_y = ones(nX) .* (1:1:nY)'
 
-    Δx = vec(m_x) .- (Nx/2)
-    Δy = vec(m_y) .- (Ny/2)
+    Δx = vec(m_x) .- (nX/2)
+    Δy = vec(m_y) .- (nY/2)
 
-    ϕ = reshape(angle.(Δx .+ Δy*im), (Nx, Ny))     # split cartesien grids by angle ϕ
+    ϕ = reshape(angle.(Δx .+ Δy*im), (nX, nY))     # split cartesien grids by angle ϕ
     # plot_image(ϕ; zmin=-pi)
 
-    mask = zeros(Nx, Ny, nCoil)
+    mask = zeros(nX, nY, nCoil)
     for i = 1:nCoil
         angle_rad = collect(-pi:2pi/nCoil:pi)[i]
         m = mask[:,:,i]
