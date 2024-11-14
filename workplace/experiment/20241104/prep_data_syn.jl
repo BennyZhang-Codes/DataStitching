@@ -17,8 +17,8 @@ Notes: directory structure:
 
 
 path         = "/home/jyzhang/Desktop/pulseq/20241104_ABDL/"
-gre_seq_file = "$(path)/seq/gres6e_fov200_400_tr25_fa10_bw833.seq" 
-gre_mrd_file = "$(path)/mrd/meas_MID00128_FID53016_pulseq_v0_gres6_0p5_standard.mrd"
+gre_seq_file = "$(path)/seq/gres6e_fov200_200_tr25_fa10_bw556.seq" 
+gre_mrd_file = "$(path)/mrd/meas_MID00117_FID53005_pulseq_v0_gres6_1p0_standard.mrd"
 
 if ispath("$(path)/syn") == false mkpath("$(path)/syn") end
 
@@ -33,6 +33,7 @@ gre_imgs = CoilCombineSOS(abs.(gre_imgs), 1);
 gre_imgs = permutedims(gre_imgs, [3,1,2]);
 fig = plt_images(gre_imgs,width=7.5, height=5, vminp=0, vmaxp=99)
 fig.savefig("$(path)/syn/$(basename(gre_mrd_file)[1:end-4])_sos.png", dpi=300, bbox_inches="tight", pad_inches=0)
+MAT.matwrite("$(path)/syn/gres6e_1p0.mat", Dict("gre_imgs" => gre_imgs))
 
 ############
 # espirit

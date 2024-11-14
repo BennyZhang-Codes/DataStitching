@@ -1,8 +1,8 @@
 nX = 150
-nY = 100 
-nCoil =20
-nRow = 2
-nCol = 10
+nY = 150 
+nCoil =25
+nRow = 5
+nCol = 5
 relative_radius = 1
 verbose = false
 
@@ -37,7 +37,7 @@ for bx in 1:nRow
         x = meanX[bx]
         y = meanY[by]
         # Apply the bias term if bx is even
-        if bx % 2 == 0
+        if by % 2 == 0
             x += nX/rX/nRow/2
         end
         # Compute the Gaussian distribution values for each X and Y coordinate

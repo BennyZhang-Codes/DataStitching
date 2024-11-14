@@ -38,7 +38,7 @@ function csm_Gaussian_grid(
             x = meanX[bx]
             y = meanY[by]
             # Apply the bias term if bx is even
-            if bx % 2 == 0
+            if by % 2 == 0
                 x += nX/rX/nRow/2
             end
             # Compute the Gaussian distribution values for each X and Y coordinate
