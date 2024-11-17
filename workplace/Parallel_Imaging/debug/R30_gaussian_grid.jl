@@ -1,29 +1,29 @@
 using KomaHighOrder, MRIReco
 import KomaHighOrder.MRIBase: rawdata
 import RegularizedLeastSquares: SolverInfo
-outpath = "$(@__DIR__)/workplace/Parallel_Imaging/debug/out/R10_reduced_SENSE_gaussian_grid"; if ispath(outpath) == false mkpath(outpath) end     # output directory
+outpath = "$(@__DIR__)/workplace/Parallel_Imaging/debug/out/R30_reduced_SENSE_gaussian_grid_pha_lin"; if ispath(outpath) == false mkpath(outpath) end     # output directory
 ##############################################################################################
 # Setup
 ##############################################################################################
 T = Float64;
 R = 30
 matrix_origin = 500
-matrix_target = 150
+matrix_target = 500
 grad_scale    = 1/(matrix_origin/matrix_target)
 Nx = Ny = matrix_target
 shape = (Nx, Ny);
 
-simtype  = SimType(B0=false, T2=false, ss=5)
+simtype  = SimType(B0=false, T2=false, ss=3)
 BHO      = BlochHighOrder("000", true, true)                          # turn on all order terms of dynamic field change, turn on Δw_excitation, Δw_precession
-phantom  = BrainPhantom(prefix="brain3D724", x=0.2, y=0.2, z=0.2) # decide which phantom file to use
+phantom  = BrainPhantom(prefix="brain3D724", x=0.1, y=0.1, z=0.2) # decide which phantom file to use
 location = 0.8
 
 # settings for phantom
 csm_type  = :gaussian_grid;      # a simulated birdcage coil-sensitivity
-csm_nCoil = 100;              # 8-channel
-csm_nRow  = 10;
-csm_nCol  = 10;
-csm_radius = 0.1;
+csm_nCoil = 1600;              # 8-channel
+csm_nRow  = 40;
+csm_nCol  = 40;
+csm_radius = 1.5;
 
 db0_type  = :quadratic;     
 db0_max   = :0.;
@@ -41,7 +41,7 @@ hoseq = HO_Sequence(seq)
 
 # hoseq = demo_hoseq(dfc_method=:Stitched, r=R)[4:end]   # :Stitched
 hoseq.SEQ.GR[1:2,8] = hoseq.SEQ.GR[1:2,8] * grad_scale
-plot_seq(hoseq)
+# plot_seq(hoseq)
 
 _, k_nominal, _, _ = get_kspace(hoseq; Δt=1);
 fig_traj = plt_traj(k_nominal'; color_label="#CCCCCC")
@@ -68,22 +68,22 @@ raw = signal_to_raw_data(signal, hoseq, :nominal; sim_params=copy(sim_params));
 img_nufft = recon_2d(raw, Nx=Nx, Ny=Ny);
 
 fig_sos = plt_image(rotl90(sqrt.(sum(img_nufft.^2; dims=3))[:,:,1]))
-fig_cha = plt_images(mapslices(rotl90, img_nufft,dims=[1,2]); dim=3, nRow=csm_nRow, nCol=csm_nCol)
+#fig_cha = plt_images(mapslices(rotl90, img_nufft,dims=[1,2]); dim=3, nRow=csm_nRow, nCol=csm_nCol)
 
-coil = csm_Gaussian_grid(217, 181, csm_nCoil; nRow=csm_nRow, nCol=csm_nCol, relative_radius=csm_radius, verbose=true);
+coil = csm_Gaussian_grid(724, 604, csm_nCoil; nRow=csm_nRow, nCol=csm_nCol, relative_radius=csm_radius, verbose=true);
 coil = get_center_crop(coil, Nx, Ny);
 sensitivity = reshape(permutedims(coil, (2,1,3)), Nx, Ny, 1, csm_nCoil);
-fig_csm = plt_images(mapslices(rotl90, abs.(sensitivity[:,:,1,:]), dims=[1,2]); dim=3, nRow=csm_nRow, nCol=csm_nCol)
+#fig_csm = plt_images(mapslices(rotl90, abs.(sensitivity[:,:,1,:]), dims=[1,2]); dim=3, nRow=csm_nRow, nCol=csm_nCol)
 
 smap = permutedims(sensitivity, [1,2,4,3])[:,:,:,1];# (nY, nX, nCha, 1)
-yik_sos = sum(conj(smap) .* img_nufft; dims=3)[:,:,1]; # coil combine
+yik_sos = sum(abs.(conj(smap) .* img_nufft); dims=3)[:,:,1]; # coil combine
 fig_coilcombine = plt_image(rotl90(abs.(yik_sos)))
 
-fig_coilcombine.savefig("$(outpath)/$(fileprefix)-nufft_coilcombine.png", dpi=300, bbox_inches="tight", pad_inches=0)
-fig_csm.savefig("$(outpath)/$(fileprefix)-csm.png", dpi=300, bbox_inches="tight", pad_inches=0)
+#fig_coilcombine.savefig("$(outpath)/$(fileprefix)-nufft_coilcombine.png", dpi=300, bbox_inches="tight", pad_inches=0)
+#fig_csm.savefig("$(outpath)/$(fileprefix)-csm.png", dpi=300, bbox_inches="tight", pad_inches=0)
 
-fig_sos.savefig("$(outpath)/$(fileprefix)-nufft_SOS.png", dpi=300, bbox_inches="tight", pad_inches=0)
-fig_cha.savefig("$(outpath)/$(fileprefix)-nufft.png"    , dpi=300, bbox_inches="tight", pad_inches=0)
+#fig_sos.savefig("$(outpath)/$(fileprefix)-nufft_SOS.png", dpi=300, bbox_inches="tight", pad_inches=0)
+#fig_cha.savefig("$(outpath)/$(fileprefix)-nufft.png"    , dpi=300, bbox_inches="tight", pad_inches=0)
 
 
 #############################################################################
@@ -92,12 +92,12 @@ fig_cha.savefig("$(outpath)/$(fileprefix)-nufft.png"    , dpi=300, bbox_inches="
 acqData = AcquisitionData(raw, BHO; sim_params=sim_params); # raw = RawAcquisitionData(mrd);
 acqData.traj[1].circular = false;
 
-x_ref = brain_phantom2D_reference(phantom, :ρ, (150., 150.), (0.3,0.3); location=location, ss=simtype.ss);
-fig_ref = plt_image(rotl90(x_ref))
-fig_ref.savefig("$(outpath)/Reference.png", dpi=300, bbox_inches="tight", pad_inches=0)
+# x_ref = brain_phantom2D_reference(phantom, :ρ, (150., 150.), (0.3,0.3); location=location, ss=simtype.ss);
+# fig_ref = plt_image(rotl90(x_ref))
+# fig_ref.savefig("$(outpath)/Reference.png", dpi=300, bbox_inches="tight", pad_inches=0)
 
-solver = "admm"; regularization = "TV"; iter = 20; λ = 1e-4
-# solver = "cgnr"; regularization = "L2"; iter = 20; λ = 1e-3
+# solver = "admm"; regularization = "TV"; iter = 20; λ = 1e-4
+solver = "cgnr"; regularization = "L2"; iter = 20; λ = 1e-3
 LSParams = Dict{Symbol,Any}()
 LSParams[:reconSize]          = (Nx, Ny)
 LSParams[:densityWeighting]   = true
