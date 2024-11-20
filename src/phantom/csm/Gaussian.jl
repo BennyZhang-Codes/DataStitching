@@ -4,7 +4,7 @@ function csm_Gaussian_grid(
     nCoil::Int64;     
     nRow=nothing,
     nCol=nothing,
-    relative_radius::Float64=1.,
+    relative_radius::Real=1.,
     verbose::Bool=false)
 
     if nRow === nothing || nCol === nothing
@@ -17,39 +17,39 @@ function csm_Gaussian_grid(
         @info "Gaussian grid sensitivity" nX=nX nY=nY nRow=nRow nCol=nCol relative_radius=relative_radius
     end
 
-    rX = nX/nRow/2 * relative_radius
-    rY = nY/nCol/2 * relative_radius
 
+    rX = nX/nRow/2
+    rY = nY/nCol/2
+    
     # Create the X and Y meshes
-    X = collect(range(1,nX/rX,nX)) .* ones(1, nY)
-    Y = ones(nX) .* collect(range(1,nY/rY,nY))'
-
-    # Define the mean point coordinates for each BX BY box
-    meanX = collect(range(1,nX/rX,nRow))
-    meanY = collect(range(1,nY/rY,nCol))
-
-    # Initialize the Z matrix with zeros
-    out = zeros((nX, nY, nRow*nCol));
-    # Define the covariance matrix
-    cov = [1 0.5; 0.5 1]
+    centerX = collect(range(rX, nX-rX, nRow));
+    centerY = collect(range(rY, nY-rY, nCol));
+    
+    X = collect(range(0.5,nX-0.5,nX)) .* ones(1, nY);
+    Y = ones(nX) .* collect(range(0.5, nY-0.5,nY))';
+    
+    sigma = 3
+    r_x = relative_radius*nX/nRow/2/sigma
+    r_y = relative_radius*nY/nCol/2/sigma
+    
+    out = zeros(ComplexF64, (nX, nY, nCoil));
     # Compute the Gaussian distribution for each BX BY box
     for bx in 1:nRow
         for by in 1:nCol
-            x = meanX[bx]
-            y = meanY[by]
-            # Apply the bias term if bx is even
-            if by % 2 == 0
-                x += nX/rX/nRow/2
-            end
-            # Compute the Gaussian distribution values for each X and Y coordinate
-            out[:, :, (bx-1)*nCol+by] = exp.(-((X .- x).^2 + (Y .- y).^2) ./ (2 * cov[1, 1]))
+            x = centerX[bx]
+            y = centerY[by]
+    
+            mag = exp.(-(((X .- x)/r_x).^2 + ((Y .- y)/r_y).^2) ./ 2)
+            pha = angle.((X .-  x) .+ im*(Y .- y))
+            #pha = sqrt.((X.-x).^2 .+ (Y.-y).^2)./minimum([nX/nRow/2, nY/nCol/2]).^2 .* π
+    
+            real = cos.(pha) .* mag
+            imag = sin.(pha) .* mag
+            out[:, :, (bx-1)*nCol+by] = (real .+ imag*im)
+            # out[:, :, (bx-1)*nCol+by] = mag .* exp.(im.*(bx*π+by*π))
         end
     end
-    norm = sqrt.(sum(abs.(out) .^ 2, dims=3))
-    out = out./ norm
+    norm = sqrt.(sum(abs.(out) .^ 2, dims=3));
+    out = out./ norm;    
     return out
 end
-
-
-
-

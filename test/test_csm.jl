@@ -6,6 +6,7 @@ nY    = 200
 nCoil = 18
 nRow  = 3
 nCol  = 6
+nBlock = 3
 overlap = 1      
 relative_radius = 1.5 
 verbose = true
@@ -47,6 +48,12 @@ verbose = true
         @test size(csm) == (nX, nY, nCoil)
         @test typeof(csm) <: AbstractArray{<:Number,3}
         plt_images(abs.(csm); dim=3, nRow=nRow, nCol=nCol, title="csm_Gaussian_grid")
+    end
+    @testset "csm_Gaussian_grid_block" begin
+        csm = load_csm(:gaussian_grid_block, nX, nY, nCoil; nRow=nRow, nCol=nCol, nBlock=nBlock, relative_radius=relative_radius, verbose=verbose)
+        @test size(csm) == (nX, nY, nCoil)
+        @test typeof(csm) <: AbstractArray{<:Number,3}
+        plt_images(abs.(csm); dim=3, nRow=nRow, nCol=nCol, title="csm_Gaussian_grid_block")
     end
 end
 
