@@ -4,8 +4,8 @@ sh = SphericalHarmonics()
 
 r=1
 # gre_file     = "$(path)/syn/" * [f for f in readdir("$(path)/syn") if occursin(r"^syn.*gre.*mat$", f)][1]
-seq_file = "$(@__DIR__)/demo/Sequence/1mm_R1.seq"        # *.seq file is the pulseq's sequence file
-dfc_file = "$(@__DIR__)/demo/DynamicFields/1mm_R1.mat"   # *.mat file contains the dynamic field data from both stitching method and the standard method.
+seq_file = "$(@__DIR__)/demo/SingleChannel/1mm_R1.seq"        # *.seq file is the pulseq's sequence file
+dfc_file = "$(@__DIR__)/demo/SingleChannel/1mm_R1.mat"   # *.mat file contains the dynamic field data from both stitching method and the standard method.
 outpath = "workplace/Abstract/Figures/Figure2/out"; if ispath(outpath) == false mkpath(outpath) end
 
 print("$(@__DIR__)")

@@ -19,19 +19,12 @@ phantom  = BrainPhantom(prefix="brain3D724", x=0.1, y=0.1, z=0.2) # decide which
 location = 0.8
 
 # settings for phantom
-csm_type  = :gaussian_grid_block;      # a simulated birdcage coil-sensitivity
-csm_nCoil = 256;              # 8-channel
+csm_type  = :gaussian_grid_block;      
+csm_nCoil = 256;              
 csm_nRow  = 16;
 csm_nCol  = 16;
 csm_nBlock = 4;
 csm_radius = 5;
-
-# coil = csm_Gaussian_grid_block(217, 181, csm_nCoil; nRow=csm_nRow, nCol=csm_nCol, nBlock=csm_nBlock, relative_radius=csm_radius, verbose=true);
-# coil = get_center_crop(coil, Nx, Ny);
-# sensitivity = reshape(permutedims(coil, (2,1,3)), Nx, Ny, 1, csm_nCoil);
-# fig_csm = plt_images(mapslices(rotl90, abs.(sensitivity[:,:,1,:]), dims=[1,2]); dim=3, nRow=csm_nRow, nCol=csm_nCol)
-
-
 
 db0_type  = :quadratic;     
 db0_max   = :0.;
@@ -77,22 +70,25 @@ raw = signal_to_raw_data(signal, hoseq, :nominal; sim_params=copy(sim_params));
 img_nufft = recon_2d(raw, Nx=Nx, Ny=Ny);
 
 fig_sos = plt_image(rotl90(sqrt.(sum(img_nufft.^2; dims=3))[:,:,1]))
-# fig_cha = plt_images(mapslices(rotl90, img_nufft,dims=[1,2]); dim=3, nRow=csm_nRow, nCol=csm_nCol)
+fig_cha = plt_images(mapslices(rotl90, img_nufft,dims=[1,2]); dim=3, nRow=csm_nRow, nCol=csm_nCol)
+
+f = plt_image(mapslices(rotl90, img_nufft,dims=[1,2])[1800])
+f.savefig("$(outpath)/$(fileprefix)-nufft_cha128.png", dpi=300, bbox_inches="tight", pad_inches=0)
 
 coil = csm_Gaussian_grid_block(724, 604, csm_nCoil; nRow=csm_nRow, nCol=csm_nCol, nBlock=csm_nBlock, relative_radius=csm_radius, verbose=true);
 coil = get_center_crop(coil, Nx, Ny);
 sensitivity = reshape(permutedims(coil, (2,1,3)), Nx, Ny, 1, csm_nCoil);
-#fig_csm = plt_images(mapslices(rotl90, abs.(sensitivity[:,:,1,:]), dims=[1,2]); dim=3, nRow=csm_nRow, nCol=csm_nCol)
+fig_csm = plt_images(mapslices(rotl90, abs.(sensitivity[:,:,1,:]), dims=[1,2]); dim=3, nRow=csm_nRow, nCol=csm_nCol)
 
 smap = permutedims(sensitivity, [1,2,4,3])[:,:,:,1];# (nY, nX, nCha, 1)
 yik_sos = sum(abs.(conj(smap) .* img_nufft); dims=3)[:,:,1]; # coil combine
 fig_coilcombine = plt_image(rotl90(abs.(yik_sos)))
 
 fig_coilcombine.savefig("$(outpath)/$(fileprefix)-nufft_coilcombine.png", dpi=300, bbox_inches="tight", pad_inches=0)
-# fig_csm.savefig("$(outpath)/$(fileprefix)-csm.png", dpi=300, bbox_inches="tight", pad_inches=0)
+fig_csm.savefig("$(outpath)/$(fileprefix)-csm.png", dpi=300, bbox_inches="tight", pad_inches=0)
 
 fig_sos.savefig("$(outpath)/$(fileprefix)-nufft_SOS.png", dpi=300, bbox_inches="tight", pad_inches=0)
-# fig_cha.savefig("$(outpath)/$(fileprefix)-nufft.png"    , dpi=300, bbox_inches="tight", pad_inches=0)
+fig_cha.savefig("$(outpath)/$(fileprefix)-nufft.png"    , dpi=300, bbox_inches="tight", pad_inches=0)
 
 
 #############################################################################
