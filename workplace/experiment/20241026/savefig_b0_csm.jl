@@ -43,7 +43,7 @@ csm = permutedims(sensitivity, [2,1,4,3])[:,:,:,1];# (nX, nY, 1, nCha) => (nY, n
 fig = plt_images(permutedims(abs.(csm), [3,1,2]),width=12/2.54, height=6/2.54)  # (nCha, nY, nX)
 fig.savefig("$(outpath)/csm.png", dpi=900, transparent=true)
 fig.savefig("$(outpath)/csm.svg", dpi=900, transparent=true)
-, bbox_inches="tight", transparent=true, pad_inches=0
+# , bbox_inches="tight", transparent=true, pad_inches=0
 # fig.savefig("$(path)/syn/$(basename(gre_mrd_file)[1:end-4])_CoilSens_espirit.png", dpi=300, bbox_inches="tight", pad_inches=0)
 
 vmin, vmax = quantile(abs.(csm)[:], 0), quantile(abs.(csm)[:], 1)

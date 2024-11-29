@@ -15,7 +15,8 @@ simtype = SimType(B0=true, T2=false, ss=5);
 phantom = BrainPhantom(prefix="brain3D724", x=0.2, y=0.2, z=0.2); # decide which phantom file to use
 location = 0.8
 db0_type = :quadratic; 
-db0_max = 200.;      
+db0_max = 200.;    
+
 # ΔB₀ map
 B0map = brain_phantom2D_reference(phantom, :Δw, (150., 150.), (1., 1.); location=location, ss=simtype.ss, db0_type=db0_type, db0_max=db0_max);
 B0map = rotl90(B0map);
@@ -54,7 +55,7 @@ norm = mcolors.BoundaryNorm([-1; ρ_values] , cm_gray_ref.N)
 
 function GT_dB0(ax)
     ai = ax.imshow(B0map, cmap="jet")#, interpolation="gaussian") # "bilinear", "spline36", "gaussian"
-    ax.imshow(img_headref, cmap="gray", alpha=0.1)
+    # ax.imshow(img_headref, cmap="gray", alpha=0.1)
     ax.imshow(img_headcountour, cmap="gray", alpha=1)
     ax.set_title("Off-resonance", fontsize=fontsize_label, color=color_label)
     divider = mpl_axes_grid1.make_axes_locatable(ax)
@@ -88,16 +89,38 @@ end
 
 ###### plotting settings
 width_ratios = [0.9, 0.5, 1, 1, 1, 1]
-height = 6
+height = 5
 width = height/2*sum(width_ratios)
 @info "width = $(width), height = $(height)"
-figure_width       = width/2.54
-figure_height      = height/2.54
 
+matplotlib.rc("mathtext", default="regular");
+matplotlib.rc("figure", dpi=200);
+matplotlib.rc("font", family="Arial");
+matplotlib.rcParams["mathtext.default"];
+figure_width       = width/2.53999863
+figure_height      = height/2.53999863
+vmaxp              = 99;
+vminp              = 1;
+cmap               = "gray";
+fontsize_legend    = 7;
+fontsize_label     = 7;
+fontsize_subfigure = 9;
+fontsize_ticklabel = 5;
+
+linewidth          = 0.5;
+ticklength         = 1.5;
+
+pad_label          = 2;
+pad_label_ylabel   = 4;
+pad_labeltick      = 2;
+
+color_facecolor    = "#ffffff";
+color_label        = "#000000";
+color_subfigure    = "#ffffff";
 
 fig, axs = plt.subplots(nrows=2, ncols=6, figsize=(figure_width, figure_height), facecolor=color_facecolor, width_ratios=width_ratios)
-ylabels = ["w/o ΔB₀", "w/ ΔB₀"]
-titles  = ["nominal", "stitching 110", "stitching 111", "conventional 111"]
+ylabels = [L"w/o \ ΔB_{0}", L"w/ \ ΔB_{0}"]
+titles  = ["Nominal", "Stitched 110", "Stitched 111", "Standard 111"]
 
 idx_img = [1 2 3 4; 5 6 7 8]
 for row = 1 : 2
@@ -115,7 +138,7 @@ for row = 1 : 2
             # ax.text(0.02, 0.98, "$(Char(96+idx))", fontsize=fontsize_subfigure, color=color_subfigure, transform=ax.transAxes, ha="left", va="top")
             ax.imshow(img, cmap=cmap, vmin=vmin, vmax=vmax)
             if row == 1 ax.set_title(titles[col-2], fontsize=fontsize_label, color=color_label) end
-            if col == 3 ax.set_ylabel(ylabels[row], fontsize=fontsize_label, color=color_label, labelpad=pad_label, rotation=0, ha="right", va="center", x=0, y=0.5,) end    
+            if col == 3 ax.set_ylabel(ylabels[row], fontsize=fontsize_label, color=color_label, labelpad=pad_label_ylabel, rotation=90, ha="center", va="center", x=0.5, y=0.5) end    
         end 
 
     end
@@ -123,8 +146,8 @@ end
 GT_ρ(axs[1,1])
 GT_dB0(axs[2,1])
 
-fig.text(0, 1, "(a)", ha="left", va="baseline", fontsize=fontsize_subfigure, color=color_label)
-fig.text(0.95*sum(width_ratios[1:2]) / sum(width_ratios) + 0, 1, "(b)", ha="right", va="baseline", fontsize=fontsize_subfigure, color=color_label)
+fig.text(0, 1, "(a)", ha="left", va="bottom", fontsize=fontsize_subfigure, color=color_label)
+fig.text(0.95*sum(width_ratios[1:2]) / sum(width_ratios) + 0, 1, "(b)", ha="right", va="bottom", fontsize=fontsize_subfigure, color=color_label)
 
 fig.subplots_adjust(left=0.025, right=0.975, bottom=0.025, top=0.975, wspace=0, hspace=0)
 fig.savefig("$(outpath)/Fig5_GT_$(matfile).png", dpi=300, bbox_inches="tight")

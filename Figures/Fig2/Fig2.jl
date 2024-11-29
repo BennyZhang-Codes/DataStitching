@@ -19,26 +19,27 @@ t_adc_fully = KomaMRIBase.get_adc_sampling_times(hoseq_fully.SEQ);
 t_adc_under = KomaMRIBase.get_adc_sampling_times(hoseq_under.SEQ);
 
 dt = 1e-6
+delay = 0.0005
 a = Int64.(vec(ntStitched_fully)); a[1] += 3; e = cumsum(a); s = e .- a;
-t_trigger_fully = (s .+ 1)*dt .+ KomaMRIBase.get_block_start_times(hoseq_fully.SEQ)[5]
+t_trigger_fully = (s .+ 1)*dt .+ KomaMRIBase.get_block_start_times(hoseq_fully.SEQ)[5] .- delay
 
 a = Int64.(vec(ntStitched_under)); a[1] += 3; e = cumsum(a); s = e .- a;
-t_trigger_under = (s .+ 1)*dt .+ KomaMRIBase.get_block_start_times(hoseq_under.SEQ)[5]
+t_trigger_under = (s .+ 1)*dt .+ KomaMRIBase.get_block_start_times(hoseq_under.SEQ)[5] .- delay
 
 
 matplotlib.rc("mathtext", default="regular")
 matplotlib.rc("figure", dpi=200)
 matplotlib.rc("font", family="Arial")
 matplotlib.rcParams["mathtext.default"]
-figure_width       = 17/2.54
-figure_height      = 4/2.54
+figure_width       = 17/2.53999863
+figure_height      = 4/2.53999863
 linewidth          = 0.8
 linewidth_marker   = 0.5
 ticklength         = 1.5
-fontsize_legend    = 8
-fontsize_label     = 8
+fontsize_legend    = 7
+fontsize_label     = 7
 fontsize_ticklabel = 6
-fontsize_subfigure = 10
+fontsize_subfigure = 9
 pad_labeltick      = 2
 pad_label          = 2
 markersize_trigger = 40
@@ -101,7 +102,7 @@ orders = ["a", "b"]
 
 for col = 1:2
     order = orders[col]
-    fig.text(0+(col-1)/2, 1, "($(order))", ha="left", va="baseline", fontsize=fontsize_subfigure, color=color_label)
+    fig.text(0+(col-1)/2, 1, "($(order))", ha="left", va="center", fontsize=fontsize_subfigure, color=color_label)
 end
 fig.tight_layout(pad=0, h_pad=0.5, w_pad=0.8)
 fig.savefig("Figures/Fig2/Fig2.png", dpi=900, transparent=false, bbox_inches="tight", pad_inches=0.05)

@@ -20,30 +20,17 @@ location = 0.8
 
 # settings for phantom
 csm_type  = :gaussian_grid_block;      # a simulated birdcage coil-sensitivity
-csm_nCoil = 100;              # 8-channel
-csm_nRow  = 10;
-csm_nCol  = 10;
-csm_nBlock = 2;
-csm_radius = 5;
-
-# coil = csm_Gaussian_grid_block(217, 181, csm_nCoil; nRow=csm_nRow, nCol=csm_nCol, nBlock=csm_nBlock, relative_radius=csm_radius, verbose=true);
-# coil = get_center_crop(coil, Nx, Ny);
-# sensitivity = reshape(permutedims(coil, (2,1,3)), Nx, Ny, 1, csm_nCoil);
-# fig_csm = plt_images(mapslices(rotl90, abs.(sensitivity[:,:,1,:]), dims=[1,2]); dim=3, nRow=csm_nRow, nCol=csm_nCol)
-
-
-
-
+csm_nCoil = 16;              # 8-channel
+csm_nRow  = 4;
+csm_nCol  = 4;
+csm_nBlock = 5;
+csm_radius = 3;
 
 db0_type  = :quadratic;     
 db0_max   = :0.;
 
-# brain_phantom2D_reference(phantom, :csm, (150., 150.), (1.,1.); location=location, ss=simtype.ss,
-#                         csm_type=csm_type, csm_nCoil=csm_nCoil, csm_nRow=csm_nRow, csm_nCol=csm_nCol, 
-#                         db0_type=db0_type, db0_max=db0_max);
 
-
-fileprefix = "spiral_radius$(csm_radius)_nCoil$(csm_nCoil)"
+fileprefix = "spiral_radius$(csm_radius)_nCoil$(csm_nCoil)_nBlock$(csm_nBlock)"
 
 ##### 1. sequence
 seq = load_seq(seqname="spiral", r=R)
@@ -79,7 +66,7 @@ raw = signal_to_raw_data(signal, hoseq, :nominal; sim_params=copy(sim_params));
 img_nufft = recon_2d(raw, Nx=Nx, Ny=Ny);
 
 fig_sos = plt_image(rotl90(sqrt.(sum(img_nufft.^2; dims=3))[:,:,1]))
-# fig_cha = plt_images(mapslices(rotl90, img_nufft,dims=[1,2]); dim=3, nRow=csm_nRow, nCol=csm_nCol)
+fig_cha = plt_images(mapslices(rotl90, img_nufft,dims=[1,2]); dim=3, nRow=csm_nRow, nCol=csm_nCol)
 
 coil = csm_Gaussian_grid_block(217, 181, csm_nCoil; nRow=csm_nRow, nCol=csm_nCol, nBlock=csm_nBlock, relative_radius=csm_radius, verbose=true);
 coil = get_center_crop(coil, Nx, Ny);
@@ -93,7 +80,7 @@ fig_coilcombine = plt_image(rotl90(abs.(yik_sos)))
 fig_coilcombine.savefig("$(outpath)/$(fileprefix)-nufft_coilcombine.png", dpi=300, bbox_inches="tight", pad_inches=0)
 # fig_csm.savefig("$(outpath)/$(fileprefix)-csm.png", dpi=300, bbox_inches="tight", pad_inches=0)
 
-fig_sos.savefig("$(outpath)/$(fileprefix)-nufft_SOS.png", dpi=300, bbox_inches="tight", pad_inches=0)
+# fig_sos.savefig("$(outpath)/$(fileprefix)-nufft_SOS.png", dpi=300, bbox_inches="tight", pad_inches=0)
 # fig_cha.savefig("$(outpath)/$(fileprefix)-nufft.png"    , dpi=300, bbox_inches="tight", pad_inches=0)
 
 
@@ -107,8 +94,8 @@ acqData.traj[1].circular = false;
 # fig_ref = plt_image(rotl90(x_ref))
 # fig_ref.savefig("$(outpath)/Reference.png", dpi=300, bbox_inches="tight", pad_inches=0)
 
-# solver = "admm"; regularization = "TV"; iter = 20; λ = 1e-4
-solver = "cgnr"; regularization = "L2"; iter = 20; λ = 1e-3
+solver = "admm"; regularization = "TV"; iter = 20; λ = 5e-4
+# solver = "cgnr"; regularization = "L2"; iter = 20; λ = 1e-3
 LSParams = Dict{Symbol,Any}()
 LSParams[:reconSize]          = (Nx, Ny)
 LSParams[:densityWeighting]   = true
@@ -118,9 +105,36 @@ LSParams[:λ]                  = λ
 LSParams[:iterations]         = iter
 LSParams[:solver]             = solver
 LSParams[:relTol]             = 0.0
-LSParams[:oversamplingFactor] = 2
+# LSParams[:oversamplingFactor] = 2
 LSParams[:toeplitz]           = false
 LSParams[:senseMaps]          = Complex{T}.(reshape(sensitivity, Nx, Ny, 1, csm_nCoil));
 @time rec = abs.(reconstruction(acqData, LSParams).data[:,:]);
 fig = plt_image(rotl90(rec))
 fig.savefig("$(outpath)/$(fileprefix)_SENSE_$(solver)_$(regularization)_$(iter)_$(λ).png", dpi=300, bbox_inches="tight", pad_inches=0)
+
+
+# # L1-Wavelet regularized CS reconstruction
+# cs_solver = "admm" ; cs_reg = "L1"; cs_sparse = "Wavelet"; cs_λ = 1.e-3; cs_iter = 50
+# # cs_solver = "cgnr"; cs_reg = "L2"; cs_sparse = "Wavelet"; cs_λ = 1.e-3; cs_iter = 100
+# CSParams = Dict{Symbol, Any}()
+# CSParams[:reconSize]          = (Nx, Ny)
+# CSParams[:densityWeighting]   = true
+# CSParams[:reco]               = "multiCoil"
+# CSParams[:solver]             = cs_solver
+# CSParams[:regularization]     = cs_reg
+# CSParams[:sparseTrafo]        = cs_sparse
+# CSParams[:λ]                  = cs_λ
+# CSParams[:iterations]         = cs_iter
+# # CSParams[:ρ]                  = 0.1
+# CSParams[:absTol]             = 1.e-15
+# CSParams[:relTol]             = 1.e-9
+# CSParams[:tolInner]           = 1.e-9
+# CSParams[:adaptRho]           = true
+# CSParams[:iterationsInner]    = 100
+# CSParams[:oversamplingFactor] = 2
+# CSParams[:senseMaps]          = Complex{T}.(reshape(sensitivity, Nx, Ny, 1, csm_nCoil));
+# CSParams[:normalizeReg]       = true
+# @time rec = abs.(reconstruction(acqData, CSParams).data[:,:]);
+# fig = plt_image(rotl90(rec))
+# fig.savefig("$(outpath)/$(fileprefix)_CS_$(cs_solver)_$(cs_reg)_$(cs_sparse)_$(cs_iter)_$(cs_λ).png", dpi=300, bbox_inches="tight", pad_inches=0)
+

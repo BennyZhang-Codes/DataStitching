@@ -64,14 +64,14 @@ matplotlib.rc("mathtext", default="regular")
 matplotlib.rc("figure", dpi=200)
 matplotlib.rc("font", family="Arial")
 matplotlib.rcParams["mathtext.default"]
-figure_width       = 17/2.54
-figure_height      = 10/2.54
+figure_width       = 17.5/2.53999863
+figure_height      = 10/2.53999863
 linewidth          = 0.8
 ticklength         = 1.5
 fontsize_legend    = 7
 fontsize_label     = 7
 fontsize_ticklabel = 6
-fontsize_subfigure = 10
+fontsize_subfigure = 8
 pad_labeltick      = 2
 pad_label          = 2
 color_facecolor    = "#ffffff"
@@ -106,7 +106,7 @@ end
 
 titles = [L"G_x", L"G_y", "k-space trajectory"]
 xlabels = ["Time [ms]", "Time [ms]", L"k_x \ [rad/m]"]
-ylabels = [L"G_x \ [mT/m]", L"G_x \ [mT/m]", L"k_y \ [rad/m]"]
+ylabels = [L"G_x \ [mT/m]", L"G_y \ [mT/m]", L"k_y \ [rad/m]"]
 for row = 1:2
     for col = 1:3
         ax = axs[row,col]
@@ -195,9 +195,10 @@ orders = ["a", "b", "c", "d", "e", "f"]
 for row = 1:2
     for col = 1:3
         order = orders[3*(row-1)+col]
-        fig.text(0.01+(col-1)/3, 1-0.5*(row-1), "($(order))", ha="left", va="baseline", fontsize=fontsize_subfigure, color=color_label)
+        fig.text(0.01+(col-1)/3, 1-0.5*(row-1), "($(order))", ha="left", va="center", fontsize=fontsize_subfigure, color=color_label)
     end
 end
 
 fig.tight_layout(pad=0, h_pad=0.5, w_pad=0.1)
 fig.savefig("$(outpath)/Fig3.png", dpi=900, transparent=false, bbox_inches="tight", pad_inches=0.05)
+fig.savefig("$(outpath)/Fig3.svg", dpi=900, transparent=false, bbox_inches="tight", pad_inches=0.05)
