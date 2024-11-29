@@ -42,13 +42,13 @@ duration = 60
 TRStarts = collect(range(0,nTR*TR, nTR+1))[1:nTR]
 ReadoutStarts = TRStarts .+ TE
 # segments
-duration_segs = [25, 20, 10, 5]
+duration_segs = [15, 15, 15, 15]
 SegEnds = cumsum(duration_segs)
 SegStarts = SegEnds .- duration_segs
 # field camera
 delay = 2
 CameraStarts = SegStarts .- delay
-CameraEnds = CameraStarts .+ maximum(duration_segs) .+ delay
+CameraEnds = CameraStarts .+ maximum(duration_segs) .+ delay .+ 1
 
 # 标签
 ax.text(-8, y_G, "G", fontsize=fontsize_label, color=color_G, verticalalignment="center", horizontalalignment="right")
@@ -122,5 +122,5 @@ fig.legend(handles=[
     columnspacing=1, borderpad=0, handletextpad=0.3, handleheight=0.7, handlelength=1.5)
 fig.tight_layout()
 
-fig.savefig("$(outpath)/Fig1.png", dpi=900, transparent=false, bbox_inches="tight", pad_inches=0.05)
-fig.savefig("$(outpath)/Fig1.svg", dpi=900, transparent=false, bbox_inches="tight", pad_inches=0.05)
+fig.savefig("$(outpath)/Fig1_constant.png", dpi=900, transparent=false, bbox_inches="tight", pad_inches=0.05)
+fig.savefig("$(outpath)/Fig1_constant.svg", dpi=900, transparent=false, bbox_inches="tight", pad_inches=0.05)

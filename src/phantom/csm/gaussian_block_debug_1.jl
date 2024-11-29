@@ -11,7 +11,7 @@ nBlock = 3
 nRowall  = nRow * nBlock
 nColall  = nCol * nBlock
 
-relative_radius = 1
+relative_radius = 5
 verbose = false
 
 if nRow === nothing || nCol === nothing
@@ -40,23 +40,16 @@ BY = ones(nBlock+2) .* collect(range(1, nCol*(nBlock+1)+1, nBlock+2))';
 
 csm = zeros(ComplexF64, (nX, nY, nCoil));
 # Compute the Gaussian distribution for each BX BY box
-for row in 1:nRow
-    for col in 1:nCol
-        for i in 1:nBlock+2
-            for j in 1:nBlock+2
-                x = centerX[Int64(BX[i,j])+row-1]
-                y = centerY[Int64(BY[i,j])+col-1]
-                mag = exp.(-(((X .- x)/r_x).^2 + ((Y .- y)/r_y).^2) ./ 2)
-                # pha = angle.((X .-  x) .+ im*(Y .- y)).*0
-                # real = cos.(pha) .* mag
-                # imag = sin.(pha) .* mag
-                # out[:, :, bx, by] = (real .+ imag*im)
-                csm[:, :, (row-1)*nCol+col] += mag.+0im
-            end
-        end
-    end
+for row in 1:nRow, col in 1:nCol, i in 1:nBlock+2, j in 1:nBlock+2
+    x = centerX[Int64(BX[i,j])+row-1]
+    y = centerY[Int64(BY[i,j])+col-1]
+    mag = exp.(-(((X .- x)/r_x).^2 + ((Y .- y)/r_y).^2) ./ 2)
+    # pha = angle.((X .-  x) .+ im*(Y .- y)).*0
+    # real = cos.(pha) .* mag
+    # imag = sin.(pha) .* mag
+    # out[:, :, bx, by] = (real .+ imag*im)
+    csm[:, :, (row-1)*nCol+col] += mag.+0im
 end
-
 
 # Nthreads=Threads.nthreads()
 
