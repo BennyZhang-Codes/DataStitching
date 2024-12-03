@@ -14,7 +14,8 @@ using ThreadsX
 
 using ProgressMeter
 using Reexport
-using MRIBase
+
+using MRIReco, RegularizedLeastSquares
 @reexport using KomaMRI
 
 using FFTW: fftshift, ifftshift, fft, ifft
