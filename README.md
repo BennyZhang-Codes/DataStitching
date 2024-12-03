@@ -9,6 +9,7 @@ If you use the toolbox, please consider citing the following abstract:
 Zhang, Z., Auerbach, E. J., Bratch, A., Grant, A. N., Zhuo, Y., He, S., Chen, L., Ugurbil, K., Wu, X. "A stitching method for dynamic field monitoring using NMR probes", 2024 ISMRM, Singapore
 
 ## Methods
+
 To enable the sequence simulation with higher spatial order terms of time-resolved field dynamics, we extended **KomaMRI.jl**  by including the fields up to second order in the calculation of $B_{z}$:
 
 $$
@@ -29,15 +30,17 @@ $$
 where $k_l(t)$ are the coefficients measured by NMR probes and $m$ represents magnetization. Using this model, images can be reconstructed with measured field dynamics and static off-resonance by iterative SENSE algorithm.
 
 ## Demo
- 1. [Sim and Recon for single-channel](https://github.com/BennyZhang-Codes/KomaHighOrder/tree/master/demo/SingleChannel): Simulation and reconstruction of a fully-sampled single-shot spiral sequence (1 mm resolution) [[.seq file]](https://github.com/BennyZhang-Codes/KomaHighOrder/blob/master/demo/SingleChannel/1mm_R1.seq) with field dynamics and ΔB₀. Reconstruction is based on a extended signal encoding model, which includes the field dynamics (up to second-order) and off-resonance.
- 2. [Sim and Recon for multi-channel](https://github.com/BennyZhang-Codes/KomaHighOrder/tree/master/demo/MultiChannel): Simulation and reconstruction of a under-sampled single-shot spiral sequence (1 mm resolution, R=4) [[.seq file]](https://github.com/BennyZhang-Codes/KomaHighOrder/blob/master/demo/MultiChannel/xw_sp2d_7T-1mm-200-r4-noSync-fa90.seq) with field dynamics and ΔB₀.
- 4. [Multi-echo Gradient Echo (ME-GRE)](https://github.com/BennyZhang-Codes/KomaHighOrder/blob/master/demo/Muti-echo_GRE): estimating ΔB₀ map (MRIFieldmaps.jl) and coil-sensitivity map (ESPIRiT) from the ME-GRE data in the [ISMRMRD](https://github.com/ismrmrd/ismrmrd) format. Additionally, the ME-GRE sequence can be modified within the [source code](https://github.com/BennyZhang-Codes/KomaHighOrder/blob/master/demo/Muti-echo_GRE/pulseq) ([Pulseq](https://github.com/pulseq/pulseq), MATLAB version).
 
+1. [Sim and Recon for single-channel](https://github.com/BennyZhang-Codes/KomaHighOrder/tree/master/demo/SingleChannel): Simulation and reconstruction of a fully-sampled single-shot spiral sequence (1 mm resolution) [[.seq file]](https://github.com/BennyZhang-Codes/KomaHighOrder/blob/master/demo/SingleChannel/1mm_R1.seq) with field dynamics and ΔB₀. Reconstruction is based on a extended signal encoding model, which includes the field dynamics (up to second-order) and off-resonance.
+2. [Sim and Recon for multi-channel](https://github.com/BennyZhang-Codes/KomaHighOrder/tree/master/demo/MultiChannel): Simulation and reconstruction of a under-sampled single-shot spiral sequence (1 mm resolution, R=4) [[.seq file]](https://github.com/BennyZhang-Codes/KomaHighOrder/blob/master/demo/MultiChannel/xw_sp2d_7T-1mm-200-r4-noSync-fa90.seq) with field dynamics and ΔB₀.
+3. [Multi-echo Gradient Echo (ME-GRE)](https://github.com/BennyZhang-Codes/KomaHighOrder/blob/master/demo/Muti-echo_GRE): estimating ΔB₀ map (MRIFieldmaps.jl) and coil-sensitivity map (ESPIRiT) from the ME-GRE data in the [ISMRMRD](https://github.com/ismrmrd/ismrmrd) format. Additionally, the ME-GRE sequence can be modified within the [source code](https://github.com/BennyZhang-Codes/KomaHighOrder/blob/master/demo/Muti-echo_GRE/pulseq) ([Pulseq](https://github.com/pulseq/pulseq), MATLAB version).
 
 ### Required dependencies:
+
 - `Julia` 1.9.4
 - `KomaMRI` 0.8.0
 - `MRIReco` 0.8.0
+- `RegularizedLeastSquares` 0.10.0
 - `MRIFieldmaps` 0.0.3
 - `PyPlot` 2.11.5
 
