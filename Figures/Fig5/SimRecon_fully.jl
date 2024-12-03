@@ -8,7 +8,9 @@ outpath = "$(@__DIR__)/Figures/Fig5/out"; if ispath(outpath) == false mkpath(out
 ############################################################################################## 
 # Setup
 ############################################################################################## 
-simtype = SimType(B0=true, T2=false, ss=5)                       # turn on B0, turn off T2, set phantom subsampling to 5
+B0 = true     # turn on B0
+T2 = false    # turn off T2
+ss = 5        # set phantom down-sample factor to 5
 BHO = BlochHighOrder("111", true, true)                          # turn on all order terms of dynamic field change, turn on Δw_excitation, Δw_precession
 phantom = BrainPhantom(prefix="brain3D724", x=0.2, y=0.2, z=0.2) # decide which phantom file to use
 location = 0.8;
@@ -34,13 +36,14 @@ hoseq_standard = load_hoseq(dfc_method=:Standard)[4:end]   # :Standard
 obj = brain_hophantom2D(phantom; ss=ss, location=location, 
                         csm_type=csm_type, csm_nCoil=csm_nCoil, csm_nRow=csm_nRow, csm_nCol=csm_nCol, 
                         db0_type=db0_type, db0_max=db0_max); 
-obj.Δw .= simtype.B0 ? obj.Δw : obj.Δw * 0;     # γ*1.5 T*(-3.45 ppm)*1e-6 * 2π
-obj.T2 .= simtype.T2 ? obj.T2 : obj.T2 * Inf;   # cancel T2 relaxiation
+obj.Δw .= B0 ? obj.Δw : obj.Δw * 0;     # γ*1.5 T*(-3.45 ppm)*1e-6 * 2π
+obj.T2 .= T2 ? obj.T2 : obj.T2 * Inf;   # cancel T2 relaxiation
 
 # 3. scanner & sim_params
 sys = Scanner();
 sim_params = KomaMRICore.default_sim_params()
 sim_params["sim_method"]  = BHO;
+sim_params["gpu"] = false;
 sim_params["return_type"] = "mat";
 sim_params["precision"]   = "f64"
 
@@ -48,8 +51,8 @@ sim_params["precision"]   = "f64"
 signal = simulate(obj, hoseq_stitched, sys; sim_params);
 raw = signal_to_raw_data(signal, hoseq_stitched, :nominal; sim_params=copy(sim_params));
 img_nufft = recon_2d(raw);
-fig_nufft = plt_image(rotl90(img_nufft); title="Sim: $(BHO.name), Δw: [-$maxOffresonance,$maxOffresonance] Hz")
-# savefig(p_image, dir*"/quadraticB0map_$(maxOffresonance)_reconNUFFT.svg", width=550,height=500,format="svg")
+fig_nufft = plt_image(rotl90(img_nufft); title="Sim: $(BHO.name), Δw: [-$db0_max,$db0_max] Hz")
+# savefig(p_image, dir*"/quadraticB0map_$(db0_max)_reconNUFFT.svg", width=550,height=500,format="svg")
 
 # ΔB₀ map (the same as the one used for simulation), we will use this map in reconstruction
 B0map = brain_phantom2D_reference(phantom, :Δw, (150., 150.), (1., 1.); location=location, ss=ss, db0_type=db0_type, db0_max=db0_max);
@@ -80,7 +83,13 @@ recParams[:regularization] = regularization  # ["L2", "L1", "L21", "TV", "LLR", 
 recParams[:λ] = λ
 recParams[:iterations] = iter
 recParams[:solver] = solver
-recParams[:solverInfo] = SolverInfo(vec(ComplexF32.(x_ref)), store_solutions=true);
+# recParams[:solverInfo] = SolverInfo(vec(ComplexF32.(x_ref)), store_solutions=true);
+
+
+Op = HighOrderOp((Nx, Ny), tr_nominal, tr_dfc_stitched , BlochHighOrder("000"); Nblocks=20, fieldmap=Matrix(B0map).*0, grid=1, use_gpu=false, verbose=true);
+recParams[:encodingOps] = reshape([Op], 1,1);
+@time rec = abs.(reconstruction(acqData, recParams).data[:,:]);
+plt_image(rotl90(rec))
 
 
 
