@@ -6,6 +6,7 @@ outpath = "$(@__DIR__)/Figures/Fig6/out"; if ispath(outpath) == false mkpath(out
 
 ###### load images reconstructed by different considerations of the extended signal model 
 solver = "admm"; regularization = "TV"; λ = 1.e-4; iter=20;
+# solver = "cgnr"; regularization = "L2"; λ = 1.e-3; iter=20;
 snr=10;
 matfile  = "R30_snr$(snr)_$(solver)_$(iter)_$(regularization)_$(λ)"
 
@@ -129,7 +130,6 @@ for row = 1 : 2
             if row == 1 ax.set_title(titles[col-2], fontsize=fontsize_label, color=color_label) end
             if col == 3 ax.set_ylabel(ylabels[row], fontsize=fontsize_label, color=color_label, labelpad=pad_label_ylabel, rotation=90, ha="center", va="center", x=0.5, y=0.5) end    
         end 
-
     end
 end
 GT_ρ(axs[1,1])

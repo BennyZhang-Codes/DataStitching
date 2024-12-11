@@ -1,5 +1,11 @@
 using KomaHighOrder
 using PyPlot, LinearAlgebra
+using ProgressMeter
+using BenchmarkTools
+
+@time csm1 = csm_Gaussian_grid_block1(nX, nY, nCoil; nRow=nRow, nCol=nCol, nBlock=nBlock, relative_radius=relative_radius, verbose=false);
+@time csm2 = csm_Gaussian_grid_block1(nX, nY, nCoil, true; nRow=nRow, nCol=nCol, nBlock=nBlock, relative_radius=relative_radius, verbose=false);
+csm1 ≈ csm2
 
 nX    = 500
 nY    = 500
@@ -12,7 +18,7 @@ nRowall  = nRow * nBlock
 nColall  = nCol * nBlock
 
 relative_radius = 5
-verbose = false
+verbose = true
 
 if nRow === nothing || nCol === nothing
     nRow, nCol = get_factors(nCoil)
@@ -38,18 +44,48 @@ Y = ones(nX) .* collect(range(0.5, nY-0.5,nY))';
 BX = collect(range(1, nRow*(nBlock+1)+1, nBlock+2)) .* ones(1, nBlock+2);
 BY = ones(nBlock+2) .* collect(range(1, nCol*(nBlock+1)+1, nBlock+2))';
 
+
 csm = zeros(ComplexF64, (nX, nY, nCoil));
-# Compute the Gaussian distribution for each BX BY box
-@time for row in 1:nRow, col in 1:nCol, i in 1:nBlock+2, j in 1:nBlock+2
-    x = centerX[Int64(BX[i,j])+row-1]
-    y = centerY[Int64(BY[i,j])+col-1]
-    mag = exp.(-(((X .- x)/r_x).^2 + ((Y .- y)/r_y).^2) ./ 2)
-    # pha = angle.((X .-  x) .+ im*(Y .- y)).*0
-    # real = cos.(pha) .* mag
-    # imag = sin.(pha) .* mag
-    # out[:, :, bx, by] = (real .+ imag*im)
-    csm[:, :, (row-1)*nCol+col] += mag.+0im
+mag = zeros(ComplexF64, (nX, nY));
+
+using CUDA
+cuda_devices = [Symbol("($(i-1)$(i == 1 ? "*" : " "))") => name(d) for (i,d) = enumerate(devices())]
+
+
+use_gpu = CUDA.has_cuda() ? true : false
+if use_gpu
+    X = X |> gpu
+    Y = Y |> gpu
+    mag = mag |> gpu
 end
+progress_bar = Progress(nCoil)
+# Compute the Gaussian distribution for each BX BY box
+@time for row in 1:nRow, col in 1:nCol
+        mag = mag .* 0 
+        mag = use_gpu ? mag |> gpu : mag
+        for i in 1:nBlock+2, j in 1:nBlock+2
+            x = centerX[Int64(BX[i,j])+row-1]
+            y = centerY[Int64(BY[i,j])+col-1]
+            mag .+= exp.(-(((X .- x)/r_x).^2 + ((Y .- y)/r_y).^2) ./ 2)
+            # pha = angle.((X .-  x) .+ im*(Y .- y)).*0
+            # real = cos.(pha) .* mag
+            # imag = sin.(pha) .* mag
+            # out[:, :, bx, by] = (real .+ imag*im)
+        end
+        if use_gpu
+            mag = mag |> cpu
+        end
+        csm[:, :, (row-1)*nCol+col] += mag.+0im
+        if verbose
+            next!(progress_bar, showvalues=[(:nCoil, (row-1)*nCol+col)])
+        end
+end
+if use_gpu
+    X = X |> cpu
+    Y = Y |> cpu
+    mag = mag |> cpu
+end
+
 
 # Nthreads=Threads.nthreads()
 

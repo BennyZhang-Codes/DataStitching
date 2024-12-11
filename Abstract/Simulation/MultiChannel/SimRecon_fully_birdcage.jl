@@ -79,7 +79,8 @@ sensitivity = Array{ComplexF32,4}(undef, Nx, Ny, 1, csm_nCoil);
 for c = 1:csm_nCoil
     sensitivity[:,:,1,c] = transpose(coil[:,:,c])
 end
-fig_csm = plt_images(mapslices(rotl90, abs.(sensitivity[:,:,1,:]), dims=[1,2]); dim=3, nRow=csm_nRow, nCol=csm_nCol)
+csm = mapslices(rotl90, abs.(sensitivity[:,:,1,:]), dims=[1,2])
+fig_csm = plt_images(csm; dim=3, nRow=csm_nRow, nCol=csm_nCol)
 
 # ΔB₀ map
 B0map = brain_phantom2D_reference(phantom, :Δw, (150., 150.), (1., 1.); location=location, ss=simtype.ss, db0_type=db0_type, db0_max=db0_max);
@@ -104,7 +105,7 @@ tr_dfc_standard     = Trajectory(K_dfc_adc_standard'[:,:], acqData.traj[1].numPr
 # 4. Running reconstruction
 #############################################################################
 solver = "admm"; regularization = "TV"; λ = 1.e-4; iter=20;
-
+Δx = Δy = 1e-3;
 recParams = Dict{Symbol,Any}(); #recParams = merge(defaultRecoParams(), recParams)
 recParams[:reconSize] = (Nx, Ny)  # 150, 150
 recParams[:densityWeighting] = true
@@ -176,4 +177,4 @@ x_ref = rotl90(x_ref);
 headmask = brain_phantom2D_reference(phantom, :headmask, (150., 150.), (1., 1.); location=location, ss=simtype.ss);
 headmask = rotl90(headmask);
 
-MAT.matwrite("$(outpath)/fully_snr10_$(solver)_$(iter)_$(reg)_$(λ).mat", Dict("imgs"=>imgs, "labels"=>labels, "csm"=>csm, "signal"=>data, "B0map"=>B0map, "x_ref"=>x_ref, "headmask"=>headmask))
+MAT.matwrite("$(outpath)/fully_snr10_$(solver)_$(iter)_$(regularization)_$(λ).mat", Dict("imgs"=>imgs, "labels"=>labels, "csm"=>csm, "signal"=>data, "B0map"=>B0map, "x_ref"=>x_ref, "headmask"=>headmask))
