@@ -20,6 +20,7 @@ function brain_phantom2D_reference(
     csm_nBlock        = 3         ,
     csm_overlap::Real = 0         ,  # overlap between fan coils, for csm_Fan_binary
     csm_radius::Real  = 1.5       ,  # relative radius of the coil, for csm_Birdcage
+    csm_gpu::Bool       = false    ,  # use GPU for CSM generation
 
     verbose::Bool     = false     ,
 ) where {T<:Float64}
@@ -79,7 +80,7 @@ function brain_phantom2D_reference(
         end
     elseif key == :csm
         img = load_csm(csm_type, M, N, csm_nCoil; overlap=csm_overlap, 
-            relative_radius=csm_radius, nRow=csm_nRow, nCol=csm_nCol, nBlock=csm_nBlock, verbose=verbose)
+            relative_radius=csm_radius, nRow=csm_nRow, nCol=csm_nCol, nBlock=csm_nBlock, use_gpu=csm_gpu, verbose=verbose)
     end
 
 

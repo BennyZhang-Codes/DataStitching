@@ -28,7 +28,7 @@ function recon_HOOp(HOOp::HighOrderOp_i2, acqData::AcquisitionData, recParams::D
     E = ∘(W, HOOp, isWeighting=false)
     EᴴE = normalOperator(E)
     solver = createLinearSolver(recParams[:solver], E; AᴴA=EᴴE, reg=reg, recoParams...)
-    x = solve(solver, kdata)
+    x = solve(solver, kdata; recoParams...)
     x = reshape(x, recParams[:reconSize])
     return x
 end

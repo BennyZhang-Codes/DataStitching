@@ -30,6 +30,7 @@ function load_csm(
     nBlock                = 3       ,
     overlap::Real         = 1       ,  # overlap between fan coils, for csm_Fan_binary
     relative_radius::Real = 1.5     ,  # relative radius of the coil, for csm_Birdcage
+    use_gpu               = false   ,
     verbose::Bool         = false
 )
     @assert type in csm_list "type must be one of the following: $(csm_list)"
@@ -48,7 +49,7 @@ function load_csm(
     elseif type == :gaussian_grid
         csm = csm_Gaussian_grid(nX, nY, nCoil; relative_radius=Float64(relative_radius), nRow=nRow, nCol=nCol, verbose=verbose)
     elseif type == :gaussian_grid_block
-        csm = csm_Gaussian_grid_block(nX, nY, nCoil; relative_radius=Float64(relative_radius), nRow=nRow, nCol=nCol, nBlock=nBlock,verbose=verbose)
+        csm = csm_Gaussian_grid_block(nX, nY, nCoil, use_gpu; relative_radius=Float64(relative_radius), nRow=nRow, nCol=nCol, nBlock=nBlock,verbose=verbose)
     end
     return csm
 end

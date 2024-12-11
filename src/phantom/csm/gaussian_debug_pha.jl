@@ -62,6 +62,8 @@ out = out./ norm;
 # plt_image(angle.(out[:,:, 55]).-angle.(out[:,:,65]), vmin=-π, vmax=π)
 
 fig = plt_images(abs.(out); dim=3, nRow=nRow, nCol=nCol)
+fig.savefig("E:/skope/20241213/csm_gaussian_grid_block/gaussian_mag.png", dpi=300, transparent=true, bbox_inches="tight", pad_inches=0)
+
 fig = plt_images(angle.(out); dim=3, nRow=nRow, nCol=nCol)
 fig.savefig("E:/skope/20241213/csm_gaussian_grid_block/gaussian_pha.png", dpi=300, transparent=true, bbox_inches="tight", pad_inches=0)
 

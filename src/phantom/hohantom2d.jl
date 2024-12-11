@@ -16,6 +16,7 @@ function brain_hophantom2D(
     csm_nBlock          = 3        ,
     csm_overlap::Real   = 0        ,  # overlap between fan coils, for csm_Fan_binary
     csm_radius::Real    = 1.5      ,  # relative radius of the coil, for csm_Birdcage
+    csm_gpu::Bool       = false    ,  # use GPU for CSM generation
 
     verbose::Bool       = false    ,
 ) :: HO_Phantom
@@ -50,7 +51,7 @@ function brain_hophantom2D(
 
     # Define Coil-Sensitivity Map (CSM) vectors
     csm = load_csm(csm_type, M, N, csm_nCoil; overlap=csm_overlap, 
-        relative_radius=csm_radius, nRow=csm_nRow, nCol=csm_nCol, nBlock=csm_nBlock, verbose=verbose)
+        relative_radius=csm_radius, nRow=csm_nRow, nCol=csm_nCol, nBlock=csm_nBlock, use_gpu=csm_gpu, verbose=verbose)
     _,_,csm_nCoil = size(csm)
 
     # Define and return the Phantom struct
