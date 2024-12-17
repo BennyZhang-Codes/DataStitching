@@ -19,6 +19,7 @@
 - `cmap`: (`::String`, `="gray"`) colormap to be used for plotting
 - `fontsize_title`: (`::Integer`, `=10`) font size of the title
 - `color_facecolor`: (`::String`, `="#ffffff"`) background color of the figure
+- `color_label`: (`::String`, `="#000000"`) color of the labels
 
 # Returns
 - `Figure`: a PyObject representing the figure
@@ -42,6 +43,7 @@ function plt_image(
     cmap               = "gray"   ,
     fontsize_title     = 10       ,
     color_facecolor    = "#ffffff",
+    color_label        = "#000000",
     )
     nX, nY = size(img)
     if vmax === nothing || vmin === nothing
@@ -50,7 +52,7 @@ function plt_image(
     end
 
     fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(width/2.53999863, (nY/nX)*height/2.53999863), facecolor=color_facecolor)
-	fig.suptitle(title, fontsize=fontsize_title)
+    ax.set_title(title, fontsize=fontsize_title, color=color_label)
     ax.imshow(img, cmap=cmap, vmin=vmin, vmax=vmax)
     ax.axis("off")
     fig.tight_layout(pad=0, h_pad=0, w_pad=0)
@@ -76,6 +78,7 @@ end
 - `cmap`: (`::String`, `="gray"`) colormap to be used for plotting
 - `fontsize_title`: (`::Integer`, `=10`) font size of the title
 - `color_facecolor`: (`::String`, `="#ffffff"`) background color of the figure
+- `color_label`: (`::String`, `="#000000"`) color of the labels
 
 # Returns
 - `Figure`: a PyObject representing the figure
@@ -103,6 +106,7 @@ function plt_images(
     cmap               = "gray"   ,
     fontsize_title     = 10       ,
     color_facecolor    = "#ffffff",
+    color_label        = "#000000",
     )
     @assert dim in [1, 2, 3] "dim of image sequence should be 1, 2, or 3"
     if dim == 2
@@ -122,7 +126,7 @@ function plt_images(
     fig, axs = plt.subplots(nrows=nRow, ncols=nCol, figsize=(width*nCol/2.53999863, (nX/nY)*height*nRow/2.53999863), facecolor=color_facecolor)
 	axs = reshape(axs, nRow, nCol) # to keep axs as a 2D array
     
-    fig.suptitle(title, fontsize=fontsize_title)
+    fig.suptitle(title, fontsize=fontsize_title, color=color_label)
     for frame = 1:nFrame
         row, col = Int(ceil(frame/nCol)), (frame-1)%nCol + 1
         ax = axs[row, col]
