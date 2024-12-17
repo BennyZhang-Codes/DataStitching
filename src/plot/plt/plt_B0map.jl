@@ -27,7 +27,6 @@
 # Examples
 ```julia-repl
 julia> fig = plt_B0map(rand(100, 100))
-
 julia> fig.savefig("B0map.png",bbox_inches="tight", pad_inches=0, transparent=true)
 ```
 """

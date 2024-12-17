@@ -1,8 +1,8 @@
 using KomaHighOrder
 using PyPlot, LinearAlgebra
 
-nX    = 500
-nY    = 500
+nX    = 150
+nY    = 150
 nRow = 5
 nCol = 5
 nCoil = nRow*nCol
@@ -19,6 +19,9 @@ if nRow === nothing || nCol === nothing
 else
     @assert nRow * nCol == nCoil "nCoil should be equal to nRow * nCol"
 end
+
+ϕ = LinRange(-π, π, nCoil + 1)[1:nCoil]
+
 
 if verbose
     @info "Gaussian grid sensitivity" nX=nX nY=nY nRow=nRow nCol=nCol nBlock=nBlock nCoil=nCoil nCoil_all=nRowall*nColall relative_radius=relative_radius 
@@ -48,7 +51,7 @@ csm = zeros(ComplexF64, (nX, nY, nCoil));
     # real = cos.(pha) .* mag
     # imag = sin.(pha) .* mag
     # out[:, :, bx, by] = (real .+ imag*im)
-    csm[:, :, (row-1)*nCol+col] += mag.+0im
+    csm[:, :, (row-1)*nCol+col] += mag .* exp.(im*ϕ[(row-1)*nCol+col])
 end
 
 # Nthreads=Threads.nthreads()

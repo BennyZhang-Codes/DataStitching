@@ -130,7 +130,7 @@ Nblocks = 20
 Op = HighOrderOp_i2((Nx, Ny), tr_nominal, tr_dfc_stitched , BlochHighOrder("111"); Δx=Δx, Δy=Δy, 
                         Nblocks=Nblocks, csm=Complex{T}.(sensitivity[:,:,1,:]), fieldmap=B0map, grid=1, use_gpu=true, verbose=true);
 
-@time x = recon_HOOp1(Op, acqData, recParams)
+@time x = recon_HOOp(Op, acqData, recParams)
 plt_image(rotl90(abs.(x)))
 
 solverinfo = recParams[:solverInfo];

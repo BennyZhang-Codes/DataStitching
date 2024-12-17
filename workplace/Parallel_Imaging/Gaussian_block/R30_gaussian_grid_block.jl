@@ -19,14 +19,14 @@ phantom  = BrainPhantom(prefix="brain3D724", x=0.1, y=0.1, z=0.2) # decide which
 location = 0.8
 
 # settings for phantom
-csm_type  = :gaussian_grid_block;      
+csm_type  = :gaussian_grid_block; 
 csm_nCoil = 49;              
 csm_nRow  = 7;
 csm_nCol  = 7;
 csm_nBlock = 5;
 csm_radius = 4.5;
 
-db0_type  = :quadratic;     
+db0_type  = :quadratic;
 db0_max   = :0.;
 
 fileprefix = "spiral_radius$(csm_radius)_nCoil$(csm_nCoil)_nBlock$(csm_nBlock)"
