@@ -27,7 +27,6 @@
 # Examples
 ```julia-repl
 julia> fig = plt_image(rand(100, 100))
-
 julia> fig.savefig("123.png",bbox_inches="tight", pad_inches=0, transparent=true)
 ```
 """
@@ -86,10 +85,9 @@ end
 # Examples
 ```julia-repl
 julia> imgs = rand(10, 100, 100)
-
 julia> fig = plt_images(imgs)
-
 julia> fig.savefig("123.png",bbox_inches="tight", pad_inches=0, transparent=true)
+```
 """
 function plt_images(
     imgs::AbstractArray{<:Real, 3};

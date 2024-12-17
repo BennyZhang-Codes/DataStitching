@@ -55,6 +55,12 @@ verbose = true
         @test typeof(csm) <: AbstractArray{<:Number,3}
         plt_images(abs.(csm); dim=3, nRow=nRow, nCol=nCol, title="csm_Gaussian_grid_block")
     end
+    @testset "csm_Gaussian_grid_block_pha" begin
+        csm = load_csm(:gaussian_grid_block_pha, nX, nY, nCoil; use_gpu=false, nRow=nRow, nCol=nCol, nBlock=nBlock, relative_radius=relative_radius, verbose=verbose)
+        @test size(csm) == (nX, nY, nCoil)
+        @test typeof(csm) <: AbstractArray{<:Number,3}
+        plt_images(  abs.(csm); dim=3, nRow=nRow, nCol=nCol, title="csm_Gaussian_grid_block_pha mag")
+        plt_images(angle.(csm); dim=3, nRow=nRow, nCol=nCol, title="csm_Gaussian_grid_block_pha pha")
+    end
 end
-
 
