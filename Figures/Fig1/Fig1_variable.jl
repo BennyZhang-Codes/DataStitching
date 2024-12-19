@@ -122,5 +122,5 @@ fig.legend(handles=[
     columnspacing=1, borderpad=0, handletextpad=0.3, handleheight=0.7, handlelength=1.5)
 fig.tight_layout()
 
-fig.savefig("$(outpath)/Fig1.png", dpi=900, transparent=false, bbox_inches="tight", pad_inches=0.05)
-fig.savefig("$(outpath)/Fig1.svg", dpi=900, transparent=false, bbox_inches="tight", pad_inches=0.05)
+fig.savefig("$(outpath)/Fig1_variable.png", dpi=900, transparent=false, bbox_inches="tight", pad_inches=0.05)
+fig.savefig("$(outpath)/Fig1_variable.svg", dpi=900, transparent=false, bbox_inches="tight", pad_inches=0.05)

@@ -18,11 +18,19 @@ phantom = BrainPhantom(prefix="brain3D724", x=0.1, y=0.1, z=0.2) # decide which 
 Nx = Ny = 500;
 # setting the coil sensitivity used in the simulation
 csm_type  = :gaussian_grid_block;      
-csm_nCoil = 256;             
-csm_nRow  = 16;
-csm_nCol  = 16;
+# csm_nCoil = 256;             
+# csm_nRow  = 16;
+# csm_nCol  = 16;
+# csm_nBlock = 4;
+# csm_radius = 5;
+
+csm_nCoil = 100;             
+csm_nRow  = 10;
+csm_nCol  = 10;
 csm_nBlock = 4;
-csm_radius = 5;
+csm_radius = 4.5;
+csm_gpu   = true;
+
 
 db0_type  = :quadratic;     
 db0_max   = :100.;            # set the maximum off-resonance frequency in Hz for quadratic B0 map
@@ -37,7 +45,7 @@ hoseq_standard = load_hoseq(seqname="spiral", r=30, dfc_method=:Standard)[4:end]
 
 # 2. phantom
 @time obj = brain_hophantom2D(phantom; ss=ss, location=location, 
-                        csm_type=csm_type, csm_nCoil=csm_nCoil, csm_nRow=csm_nRow, csm_nCol=csm_nCol, csm_radius=csm_radius, csm_nBlock=csm_nBlock, 
+                        csm_type=csm_type, csm_nCoil=csm_nCoil, csm_nRow=csm_nRow, csm_nCol=csm_nCol, csm_radius=csm_radius, csm_nBlock=csm_nBlock, csm_gpu=csm_gpu,
                         db0_type=db0_type, db0_max=db0_max); 
 obj.Δw .= B0 ? obj.Δw : obj.Δw * 0;     # γ*1.5 T*(-3.45 ppm)*1e-6 * 2π
 obj.T2 .= T2 ? obj.T2 : obj.T2 * Inf;   # cancel T2 relaxiation
@@ -80,7 +88,7 @@ fig_cha = plt_images(mapslices(rotl90, img_nufft, dims=[1,2]); dim=3, nRow=csm_n
 # 3. Preparing for reconstruction
 #############################################################################
 # Coil-Sensitivity Map
-coil = csm_Gaussian_grid_block(724, 604, csm_nCoil; nRow=csm_nRow, nCol=csm_nCol, nBlock=csm_nBlock, relative_radius=csm_radius, verbose=true);
+coil = csm_Gaussian_grid_block(724, 604, csm_nCoil, true; nRow=csm_nRow, nCol=csm_nCol, nBlock=csm_nBlock, relative_radius=csm_radius, verbose=true);
 coil = get_center_crop(coil, Nx, Ny);
 sensitivity = reshape(permutedims(coil, (2,1,3)), Nx, Ny, 1, csm_nCoil);
 csm = mapslices(rotl90, abs.(sensitivity[:,:,1,:]), dims=[1,2]);
@@ -114,7 +122,7 @@ tr_dfc_standard     = Trajectory(K_dfc_adc_standard'[:,:], acqData.traj[1].numPr
 #############################################################################
 Δx = Δy = 0.3e-3;
 
-solver = "cgnr"; regularization = "L2"; λ = 1.e-3; iter=20;
+solver = "admm"; regularization = "TV"; λ = 1.e-4; iter=20;
 recParams = Dict{Symbol,Any}(); #recParams = merge(defaultRecoParams(), recParams)
 recParams[:reconSize] = (Nx, Ny)  # 150, 150
 recParams[:densityWeighting] = true
@@ -126,22 +134,22 @@ recParams[:solver] = solver
 recParams[:solverInfo] = SolverInfo(vec(ComplexF64.(x_ref)), store_solutions=true);
 recParams[:senseMaps]          = Complex{T}.(reshape(sensitivity, Nx, Ny, 1, csm_nCoil));
 
-Nblocks = 20
-Op = HighOrderOp_i2((Nx, Ny), tr_nominal, tr_dfc_stitched , BlochHighOrder("111"); Δx=Δx, Δy=Δy, 
-                        Nblocks=Nblocks, csm=Complex{T}.(sensitivity[:,:,1,:]), fieldmap=B0map, grid=1, use_gpu=true, verbose=true);
+# Nblocks = 20
+# Op = HighOrderOp_i2((Nx, Ny), tr_nominal, tr_dfc_stitched , BlochHighOrder("111"); Δx=Δx, Δy=Δy, 
+#                         Nblocks=Nblocks, csm=Complex{T}.(sensitivity[:,:,1,:]), fieldmap=B0map, grid=1, use_gpu=true, verbose=true);
 
-@time x = recon_HOOp(Op, acqData, recParams)
-plt_image(rotl90(abs.(x)))
+# @time x = recon_HOOp(Op, acqData, recParams)
+# plt_image(rotl90(abs.(x)))
 
-solverinfo = recParams[:solverInfo];
-plt_image(rotl90(reshape(abs.(solverinfo.x_iter[3]), Nx, Ny)))
-
-
+# solverinfo = recParams[:solverInfo];
+# plt_image(rotl90(reshape(abs.(solverinfo.x_iter[3]), Nx, Ny)))
 
 
 
 
-Nblocks=20;
+
+
+Nblocks=10;
 ##### w/  ΔB₀
 # 1. nominal trajectory, BlochHighOrder("000")
 Op1 = HighOrderOp_i2((Nx, Ny), tr_nominal, tr_dfc_stitched , BlochHighOrder("000"); Δx=Δx, Δy=Δy, Nblocks=Nblocks, csm=Complex{T}.(sensitivity[:,:,1,:]), fieldmap=B0map, grid=1, verbose=true);
@@ -168,7 +176,7 @@ imgs = Array{T,3}(undef, length(Ops), Nx, Ny);
 labels = [ "wB0_nominal",  "wB0_stitched_110",  "wB0_stitched_111",  "wB0_standard_111",
           "woB0_nominal", "woB0_stitched_110", "woB0_stitched_111", "woB0_standard_111",];
 
-for idx in 1:4 #eachindex(Ops)
+for idx in 1:8 #eachindex(Ops)
     @time rec = abs.(recon_HOOp(Ops[idx], acqData, recParams));
     imgs[idx, :, :] = rotl90(rec);
     plt_image(rotl90(rec); title=labels[idx])

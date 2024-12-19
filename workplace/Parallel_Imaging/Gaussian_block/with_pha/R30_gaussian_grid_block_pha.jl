@@ -15,11 +15,11 @@ phantom = BrainPhantom(prefix="brain3D724", x=0.1, y=0.1, z=0.2) # decide which 
 Nx = Ny = 500;
 # setting the coil sensitivity used in the simulation
 csm_type  = :gaussian_grid_block_pha;      
-csm_nCoil = 256;             
-csm_nRow  = 16;
-csm_nCol  = 16;
+csm_nCoil = 100;             
+csm_nRow  = 10;
+csm_nCol  = 10;
 csm_nBlock = 4;
-csm_radius = 5;
+csm_radius = 4.5;
 csm_gpu    = true;
 
 db0_type  = :quadratic;     
@@ -113,7 +113,7 @@ tr_dfc_standard     = Trajectory(K_dfc_adc_standard'[:,:], acqData.traj[1].numPr
 #############################################################################
 Δx = Δy = 0.3e-3;
 
-solver = "admm"; regularization = "TV"; λ = 1.e-4; iter=30;
+solver = "cgnr"; regularization = "L2"; λ = 1.e-3; iter=50;
 recParams = Dict{Symbol,Any}(); #recParams = merge(defaultRecoParams(), recParams)
 recParams[:reconSize] = (Nx, Ny)  # 150, 150
 recParams[:densityWeighting] = true
@@ -138,7 +138,7 @@ plt_image(rotl90(reshape(abs.(solverinfo.x_iter[i+1]), Nx, Ny)), vmaxp=99.9)
 
 for i in [10, 20, 30]
     fig = plt_image(rotl90(reshape(abs.(solverinfo.x_iter[i+1]), Nx, Ny)); title="iter $(i)", color_facecolor="#000000", color_label="#FFFFFF", vmaxp=99.9, vmin=0)
-    fig.savefig("$(outpath)/$(fileprefix)_$(solver)_$(regularization)_$(i)_$(λ).png.png", dpi=600, transparent=false, bbox_inches="tight", pad_inches=0)
+    fig.savefig("$(outpath)/$(fileprefix)_$(solver)_$(regularization)_$(i)_$(λ).png", dpi=600, transparent=false, bbox_inches="tight", pad_inches=0)
 end
 using PyPlot
 fig, ax = plt.subplots(1, 1, figsize=(10, 5))
