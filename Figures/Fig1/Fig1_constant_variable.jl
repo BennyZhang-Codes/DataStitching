@@ -15,7 +15,7 @@ figure_height      = 8/2.53999863
 
 fontsize_legend    = 8
 fontsize_title     = 9
-fontsize_label     = 8
+fontsize_label     = 7
 markersize_trigger = 80
 
 color_facecolor      = "#ffffff"

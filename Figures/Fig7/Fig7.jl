@@ -1,7 +1,7 @@
 using PyPlot
 using KomaHighOrder
 
-outpath = "$(@__DIR__)/Figures/Fig2/out"; if ispath(outpath) == false mkpath(outpath) end     # output directory
+outpath = "$(@__DIR__)/Figures/Fig7/out"; if ispath(outpath) == false mkpath(outpath) end     # output directory
 
 sh = SphericalHarmonics()
 nSegment_fully = 4
@@ -107,5 +107,5 @@ for col = 1:2
     fig.text(0+(col-1)/2, 1, "($(order))", ha="left", va="center", fontsize=fontsize_subfigure, color=color_label)
 end
 fig.tight_layout(pad=0, h_pad=0.5, w_pad=0.8)
-fig.savefig("$(outpath)/Fig2.png", dpi=900, transparent=false, bbox_inches="tight", pad_inches=0.05)
-fig.savefig("$(outpath)/Fig2.svg", dpi=900, transparent=false, bbox_inches="tight", pad_inches=0.05)
+fig.savefig("$(outpath)/Fig7.png", dpi=900, transparent=false, bbox_inches="tight", pad_inches=0.05)
+fig.savefig("$(outpath)/Fig7.svg", dpi=900, transparent=false, bbox_inches="tight", pad_inches=0.05)
