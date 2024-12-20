@@ -7,26 +7,41 @@ sh = SphericalHarmonics()
 nSegment_fully = 4
 nSegment_under = 36
 
-_, ntStitched_fully, _ = load_dfc(;dfc_method=:Stitched, seqname="spiral", r=1);
-_, ntStitched_under, _ = load_dfc(;dfc_method=:Stitched, seqname="spiral", r=30);
 
-hoseq_fully = load_hoseq(dfc_method=:Stitched)[4:end]   
-hoseq_under = load_hoseq(dfc_method=:Stitched, r=30)[4:end]   
+seq_img_file_1p0 = "$(@__DIR__)/Figures/Fig7/7T_1mm-200-r4_max51-fa90.seq" 
+seq_dfc_file_1p0 = "$(@__DIR__)/Figures/Fig7/7T_1mm-200-r4-4segs_max51.seq" 
+
+seq_img_file_0p5 = "$(@__DIR__)/Figures/Fig7/7T_0.5mm-400-r4_max51-fa90.seq" 
+seq_dfc_file_0p5 = "$(@__DIR__)/Figures/Fig7/7T_0.5mm-400-r4-188segs_max51.seq" 
+
+seq_1p0 = read_seq(seq_img_file_1p0)[2:8]
+seq_0p5 = read_seq(seq_img_file_0p5)[2:8]
+seq_1p0.GR[1,:] = -seq_1p0.GR[1,:]
+seq_0p5.GR[1,:] = -seq_0p5.GR[1,:]
 
 
-samples_fully = get_samples(hoseq_fully; off_val=Inf);
-samples_under = get_samples(hoseq_under; off_val=Inf);
+trigger_delays_1p0 = read_seq(seq_dfc_file_1p0).DEF["skope_triggerDelays"]
+trigger_delays_0p5 = read_seq(seq_dfc_file_0p5).DEF["skope_triggerDelays"]
 
-t_adc_fully = KomaMRIBase.get_adc_sampling_times(hoseq_fully.SEQ);
-t_adc_under = KomaMRIBase.get_adc_sampling_times(hoseq_under.SEQ);
+samples_1p0 = get_samples(seq_1p0; off_val=Inf);
+samples_0p5 = get_samples(seq_0p5; off_val=Inf);
+
+t_adc_1p0 = KomaMRIBase.get_adc_sampling_times(seq_1p0);
+t_adc_0p5 = KomaMRIBase.get_adc_sampling_times(seq_0p5);
 
 dt = 1e-6
 delay = 0.0005
-a = Int64.(vec(ntStitched_fully)); a[1] += 3; e = cumsum(a); s = e .- a;
-t_trigger_fully = (s .+ 1)*dt .+ KomaMRIBase.get_block_start_times(hoseq_fully.SEQ)[5] .- delay
+# a = Int64.(vec(ntStitched_fully)); a[1] += 3; e = cumsum(a); s = e .- a;
+# t_trigger_1p0 = (s .+ 1)*dt .+ KomaMRIBase.get_block_start_times(seq_1p0)[5] .- delay
 
-a = Int64.(vec(ntStitched_under)); a[1] += 3; e = cumsum(a); s = e .- a;
-t_trigger_under = (s .+ 1)*dt .+ KomaMRIBase.get_block_start_times(hoseq_under.SEQ)[5] .- delay
+# a = Int64.(vec(ntStitched_under)); a[1] += 3; e = cumsum(a); s = e .- a;
+# t_trigger_0p5 = (s .+ 1)*dt .+ KomaMRIBase.get_block_start_times(seq_0p5)[5] .- delay
+
+
+t_trigger_1p0 = trigger_delays_1p0 .+ KomaMRIBase.get_block_start_times(seq_1p0)[6] .- delay
+t_trigger_0p5 = trigger_delays_0p5 .+ KomaMRIBase.get_block_start_times(seq_0p5)[6] .- delay
+
+
 
 
 matplotlib.rc("mathtext", default="regular")
@@ -36,7 +51,7 @@ matplotlib.rcParams["mathtext.default"]
 figure_width       = 17/2.53999863
 figure_height      = 4/2.53999863
 linewidth          = 0.8
-linewidth_marker   = 0.5
+linewidth_marker   = 0.0
 ticklength         = 1.5
 fontsize_legend    = 7
 fontsize_label     = 7
@@ -67,9 +82,9 @@ color_rf           = "#CC66CC"
 
 fig, axs = plt.subplots(nrows=1, ncols=2, figsize=(figure_width, figure_height), facecolor=color_facecolor)
 
-samples_list = [samples_fully, samples_under]
-t_trigger_list = [t_trigger_fully, t_trigger_under]
-t_adc_list = [t_adc_fully, t_adc_under]
+samples_list = [samples_1p0, samples_0p5]
+t_trigger_list = [t_trigger_1p0, t_trigger_0p5]
+t_adc_list = [t_adc_1p0, t_adc_0p5]
 
 
 for (ax, samples, t_trigger) in zip(axs, samples_list, t_trigger_list)
@@ -87,16 +102,20 @@ for (ax, samples, t_trigger) in zip(axs, samples_list, t_trigger_list)
     ax.plot(samples.gy.t*1e3,       samples.gy.A*1e3, color=color_gy, linewidth=linewidth, label=L"G_{y}")
     ax.plot(samples.gz.t*1e3,       samples.gz.A*1e3, color=color_gz, linewidth=linewidth, label=L"G_{z}")
 
-    ax.plot(samples.rf.t*1e3, abs.(samples.rf.A)*1e7, color=color_rf, linewidth=linewidth, label=L"|B_{1}|")
+    ax.plot(samples.rf.t*1e3, abs.(samples.rf.A)*1e6, color=color_rf, linewidth=linewidth, label=L"|B_{1}|")
 
     ax.scatter(t_trigger*1e3, -60*ones(length(t_trigger)), s=markersize_trigger, marker=L"\uparrow", color=color_trigger, linewidth=linewidth_marker, label=L"Trigger")
 
     ax.set_ylim(-75, 75)
-    ax.set_ylabel("Amplitude [mT/m, mG]", fontsize=fontsize_label, color=color_label)
+    ax.set_ylabel("Amplitude [mT/m, uT]", fontsize=fontsize_label, color=color_label)
     ax.set_xlabel("Time [ms]", fontsize=fontsize_label, color=color_label)
     ax.legend(bbox_to_anchor=(0.01, 1.1), fontsize=fontsize_legend, labelcolor=color_label, 
         scatteryoffsets=[0.5],
         ncols=5, loc="upper left", frameon=false, handlelength=1, handletextpad=0.5, columnspacing=1)
+
+    # for trigger in t_trigger
+    #     ax.arrow(trigger*1e3, -65, 0, 10, overhang=0.1, width=0.1, head_width=0.2, head_length=3, linewidth=0.1, length_includes_head=true, fc=color_label)
+    # end
 end
 
 fig.align_ylabels()

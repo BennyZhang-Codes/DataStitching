@@ -105,8 +105,8 @@ for ax in axs
 end
 
 titles = [L"G_x", L"G_y", "k-space trajectory"]
-xlabels = ["Time [ms]", "Time [ms]", L"k_x \ [rad/m]"]
-ylabels = [L"G_x \ [mT/m]", L"G_y \ [mT/m]", L"k_y \ [rad/m]"]
+xlabels = ["Time [ms]", "Time [ms]", L"k_x \ [m^{-1}]"]
+ylabels = [L"G_x \ [mT/m]", L"G_y \ [mT/m]", L"k_y \ [m^{-1}]"]
 for row = 1:2
     for col = 1:3
         ax = axs[row,col]
@@ -138,8 +138,8 @@ for seg = 1:nSegment_fully
 end
 axs[1,1].plot(t_adc_fully, (samples_fully_Stitched.h1.A-samples_fully_Standard.h1.A)*1e3, color=color_difference, linewidth=linewidth, label="Difference")
 axs[1,2].plot(t_adc_fully, (samples_fully_Stitched.h2.A-samples_fully_Standard.h2.A)*1e3, color=color_difference, linewidth=linewidth, label="Difference")
-axs[1,3].plot(k_dfc_adc_fully_Stitched[:,2]*2π, k_dfc_adc_fully_Stitched[:,3]*2π, color=color_gx, linewidth=linewidth, label="Stitched")
-axs[1,3].plot(k_dfc_adc_fully_Standard[:,2]*2π, k_dfc_adc_fully_Standard[:,3]*2π, color=color_gy, linewidth=linewidth, label="Standard")
+axs[1,3].plot(k_dfc_adc_fully_Stitched[:,2], k_dfc_adc_fully_Stitched[:,3], color=color_gx, linewidth=linewidth, label="Stitched")
+axs[1,3].plot(k_dfc_adc_fully_Standard[:,2], k_dfc_adc_fully_Standard[:,3], color=color_gy, linewidth=linewidth, label="Standard")
 axs[1,3].set_aspect(1)
 
 # under
@@ -153,8 +153,8 @@ for seg = 1:nSegment_under
 end 
 lDiff_gx, = axs[2,1].plot(t_adc_under, (samples_under_Stitched.h1.A-samples_under_Standard.h1.A)*1e3, color=color_difference, linewidth=linewidth, label="Difference")
 lDiff_gy, = axs[2,2].plot(t_adc_under, (samples_under_Stitched.h2.A-samples_under_Standard.h2.A)*1e3, color=color_difference, linewidth=linewidth, label="Difference")
-axs[2,3].plot(k_dfc_adc_under_Stitched[:,2]*2π, k_dfc_adc_under_Stitched[:,3]*2π, color=color_gx, linewidth=linewidth, label="Stitched")
-axs[2,3].plot(k_dfc_adc_under_Standard[:,2]*2π, k_dfc_adc_under_Standard[:,3]*2π, color=color_gy, linewidth=linewidth, label="Standard")
+axs[2,3].plot(k_dfc_adc_under_Stitched[:,2], k_dfc_adc_under_Stitched[:,3], color=color_gx, linewidth=linewidth, label="Stitched")
+axs[2,3].plot(k_dfc_adc_under_Standard[:,2], k_dfc_adc_under_Standard[:,3], color=color_gy, linewidth=linewidth, label="Standard")
 axs[2,3].set_aspect(1)
 
 

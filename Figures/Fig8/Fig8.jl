@@ -1,64 +1,71 @@
 using PyPlot
 using KomaHighOrder
 using LinearAlgebra
+using MAT
 legend_handler = PyPlot.matplotlib.legend_handler
 collections = PyPlot.matplotlib.collections
 lines = PyPlot.matplotlib.lines
 Patch = matplotlib.patches.Patch
 
-outpath = "$(@__DIR__)/Figures/Fig3/out"; if ispath(outpath) == false mkpath(outpath) end     # output directory
-
 sh = SphericalHarmonics()
-nSegment_fully = 4
-nSegment_under = 36
 
-_, ntStitched_fully, _ = load_dfc(;dfc_method=:Stitched, seqname="spiral", r=1)
-_, ntStitched_under, _ = load_dfc(;dfc_method=:Stitched, seqname="spiral", r=30)
+outpath = "$(@__DIR__)/Figures/Fig8/out"; if ispath(outpath) == false mkpath(outpath) end     # output directory
+
+path = "E:/pulseq/20241104_ABDL/"
+seq_file_1p0 = "$(path)/seq/7T_1mm-200-r4_max51-fa90.seq"
+seq_file_0p5 = "$(path)/seq/7T_0.5mm-400-r4_max51-fa90.seq"
+dfc_file_1p0 = "$(path)/dfc/7T_1p0_200_r4.mat"
+dfc_file_0p5 = "$(path)/dfc/7T_0p5_400_r4.mat"
 
 # seq
-hoseq_fully_Standard = load_hoseq(dfc_method=:Standard)[8]   # :Standard or :Stitched
-hoseq_fully_Stitched = load_hoseq(dfc_method=:Stitched)[8]   # :Standard or :Stitched
-hoseq_under_Standard = load_hoseq(dfc_method=:Standard, r=30)[8]   # :Standard or :Stitched
-hoseq_under_Stitched = load_hoseq(dfc_method=:Stitched, r=30)[8]   # :Standard or :Stitched
+seq_1p0 = read_seq(seq_file_1p0);
+seq_0p5 = read_seq(seq_file_0p5);
 
-# gradient
-samples_fully_Standard = get_samples(hoseq_fully_Standard; off_val=0); 
-samples_fully_Stitched = get_samples(hoseq_fully_Stitched; off_val=0); 
-samples_under_Standard = get_samples(hoseq_under_Standard; off_val=0); 
-samples_under_Stitched = get_samples(hoseq_under_Stitched; off_val=0); 
+# dfc
+dt_1p0             = matread(dfc_file_1p0)["dt"];  # [s]
+ksphaStitched_1p0  = matread(dfc_file_1p0)["ksphaStitched"]; # rad, rad/m, rad/m²
+ksphaStandard_1p0  = matread(dfc_file_1p0)["ksphaStandard"]; 
+bfieldStitched_1p0 = matread(dfc_file_1p0)["bfieldStitched"]; 
+bfieldStandard_1p0 = matread(dfc_file_1p0)["bfieldStandard"]; # T, T/m, T/m²
+ntStitched_1p0     = matread(dfc_file_1p0)["nSampleAllSegStitched"]; 
+nSample_1p0, nTerm_1p0 = size(matread(dfc_file_1p0)["bfieldStitched"]);   
 
-adc_times_fully = KomaMRIBase.get_adc_sampling_times(hoseq_fully_Stitched.SEQ);
-adc_times_under = KomaMRIBase.get_adc_sampling_times(hoseq_under_Stitched.SEQ);
-t_adc_fully = samples_fully_Stitched.h0.t .* 1e3;  # convert to ms  
-t_adc_under = samples_under_Stitched.h0.t .* 1e3;  # convert to ms  
+# round(nSample_1p0, digits=-2)
+ksphaStandard_1p0 = ksphaStandard_1p0[end-nSample_1p0+1:end, 1:nTerm_1p0];
+ksphaStitched_1p0 = ksphaStitched_1p0[end-nSample_1p0+1:end, 1:nTerm_1p0];
+t_1p0 = collect(0:nSample_1p0-1) .* dt_1p0 .* 1e3;  # convert to ms  
 
-# trajectory
-_, _, k_dfc_fully_Standard, k_dfc_adc_fully_Standard = get_kspace(hoseq_fully_Standard; Δt=1);  # [nADC, nK]  zeroth-order: [:, 1], first-order: [:, 2:4], and second-order: [:, 5:9]
-_, _, k_dfc_fully_Stitched, k_dfc_adc_fully_Stitched = get_kspace(hoseq_fully_Stitched; Δt=1);  # [nADC, nK]  zeroth-order: [:, 1], first-order: [:, 2:4], and second-order: [:, 5:9]
-_, _, k_dfc_under_Standard, k_dfc_adc_under_Standard = get_kspace(hoseq_under_Standard; Δt=1);  # [nADC, nK]  zeroth-order: [:, 1], first-order: [:, 2:4], and second-order: [:, 5:9]
-_, _, k_dfc_under_Stitched, k_dfc_adc_under_Stitched = get_kspace(hoseq_under_Stitched; Δt=1);  # [nADC, nK]  zeroth-order: [:, 1], first-order: [:, 2:4], and second-order: [:, 5:9]
-
-
-# nSamplePerSegment_fully = Int64(size(t_adc_fully)[1]//4)
-# Segment_range_fully = []
-# for seg = 1 : nSegment_fully
-#     r_start = 1+nSamplePerSegment_fully*(seg-1)
-#     r_stop = seg==nSegment_fully ? nSamplePerSegment_fully*seg : 1+nSamplePerSegment_fully*seg 
-#     push!(Segment_range_fully, r_start:r_stop)
-# end
-
-a = Int64.(vec(ntStitched_fully))
-a[1] += 2
+a = Int64.(vec(ntStitched_1p0))
 e = cumsum(a)
 s = e .- a
-Segment_range_fully = diag([st+1:en+1 for st in s, en in e])
+s[1] = 1
+Segment_range_1p0 = diag([st:en for st in s, en in e])
 
 
-a = Int64.(vec(ntStitched_under))
-a[1] += 2
+dt_0p5             = matread(dfc_file_0p5)["dt"];  # [s]
+ksphaStitched_0p5  = matread(dfc_file_0p5)["ksphaStitched"]; # rad, rad/m, rad/m²
+ksphaStandard_0p5  = matread(dfc_file_0p5)["ksphaStandard"]; 
+bfieldStitched_0p5 = matread(dfc_file_0p5)["bfieldStitched"]; 
+bfieldStandard_0p5 = matread(dfc_file_0p5)["bfieldStandard"]; # T, T/m, T/m²
+ntStitched_0p5     = matread(dfc_file_0p5)["nSampleAllSegStitched"]; 
+nSample_0p5, nTerm_0p5 = size(matread(dfc_file_0p5)["bfieldStitched"]);   
+ksphaStandard_0p5 = ksphaStandard_0p5[end-nSample_0p5+1:end, 1:nTerm_0p5];
+ksphaStitched_0p5 = ksphaStitched_0p5[end-nSample_0p5+1:end, 1:nTerm_0p5];
+t_0p5 = collect(0:nSample_0p5-1) .* dt_0p5 .* 1e3;  # convert to ms  
+
+a = Int64.(vec(ntStitched_0p5))
 e = cumsum(a)
 s = e .- a
-Segment_range_under = diag([st+1:en+1 for st in s, en in e])
+s[1] = 1
+Segment_range_0p5 = diag([st:en for st in s, en in e])
+
+nSegment_1p0 = length(Segment_range_1p0)
+nSegment_0p5 = length(Segment_range_0p5)
+t_1p0 = collect(range(1, nSample_1p0)) .* dt_1p0 .* 1e3;  # convert to ms  
+t_0p5 = collect(range(1, nSample_0p5)) .* dt_0p5 .* 1e3;  # convert to ms  
+
+
+
 
 matplotlib.rc("mathtext", default="regular")
 matplotlib.rc("figure", dpi=200)
@@ -85,13 +92,12 @@ color_gy           = "C1"
 # color_gx           = "#6699CC"
 # color_gy           = "#FF6666"
 
-fig, axs = plt.subplots(nrows=2, ncols=3, figsize=(figure_width, figure_height), 
-                        facecolor=color_facecolor)
+fig, axs = plt.subplots(nrows=2, ncols=3, figsize=(figure_width, figure_height), facecolor=color_facecolor)
 ax1, ax2, ax3, ax4, ax5, ax6 = axs # unpack the 3 axes for zeroth-order, first-order, and second-order plots
-vmax_g_fully = 1.1 * maximum(abs.(samples_fully_Stitched.h1.A*1e3))
-vmax_k_fully = 1.1 * maximum([maximum(abs.(k_dfc_adc_fully_Stitched[:,2:3])), maximum(abs.(k_dfc_adc_fully_Standard[:,2:3]))])
-vmax_g_under = 1.1 * maximum(abs.(samples_under_Stitched.h1.A*1e3))
-vmax_k_under = 1.1 * maximum([maximum(abs.(k_dfc_adc_under_Stitched[:,2:3])), maximum(abs.(k_dfc_adc_under_Standard[:,2:3]))])
+vmax_g_1p0 = 1.1 * maximum(abs.(bfieldStitched_1p0[:, 2]))
+vmax_k_1p0 = 1.1 * maximum([maximum(abs.(ksphaStitched_1p0[:,2:3])), maximum(abs.(ksphaStitched_1p0[:,2:3]))])
+vmax_g_0p5 = 1.1 * maximum(abs.(bfieldStitched_0p5[:, 2]))
+vmax_k_0p5 = 1.1 * maximum([maximum(abs.(ksphaStitched_0p5[:,2:3])), maximum(abs.(ksphaStitched_0p5[:,2:3]))])
 
 
 for ax in axs
@@ -105,8 +111,8 @@ for ax in axs
 end
 
 titles = [L"G_x", L"G_y", "k-space trajectory"]
-xlabels = ["Time [ms]", "Time [ms]", L"k_x \ [rad/m]"]
-ylabels = [L"G_x \ [mT/m]", L"G_y \ [mT/m]", L"k_y \ [rad/m]"]
+xlabels = ["Time [ms]", "Time [ms]", L"k_x \ [m^{-1}]"]
+ylabels = [L"G_x \ [mT/m]", L"G_y \ [mT/m]", L"k_y \ [m^{-1}]"]
 for row = 1:2
     for col = 1:3
         ax = axs[row,col]
@@ -120,41 +126,40 @@ for row = 1:2
 end
 
 for ax in axs[1, 1:2] 
-    ax.set_xlim(t_adc_fully[1]-1, t_adc_fully[end]+1)
-    ax.set_ylim(-vmax_g_fully, vmax_g_fully)
-    ax.yaxis.set_major_locator(plt.MultipleLocator(round(vmax_g_fully/4, sigdigits=1)))
+    ax.set_xlim(t_1p0[1]-1, t_1p0[end]+1)
+    ax.set_ylim(-vmax_g_1p0, vmax_g_1p0)
+    ax.yaxis.set_major_locator(plt.MultipleLocator(round(vmax_g_1p0/4, sigdigits=1)))
 end
 for ax in axs[2, 1:2] 
-    ax.set_xlim(t_adc_under[1]-1, t_adc_under[end]+1)
-    ax.set_ylim(-vmax_g_under, vmax_g_under)
-    ax.yaxis.set_major_locator(plt.MultipleLocator(round(vmax_g_under/4, sigdigits=1)))
+    ax.set_xlim(t_0p5[1]-1, t_0p5[end]+1)
+    ax.set_ylim(-vmax_g_0p5, vmax_g_0p5)
+    ax.yaxis.set_major_locator(plt.MultipleLocator(round(vmax_g_0p5/4, sigdigits=1)))
 end
 
-# fully
-for seg = 1:nSegment_fully
-    seg_r = Segment_range_fully[seg]
-    axs[1,1].plot(t_adc_fully[seg_r], samples_fully_Stitched.h1.A[seg_r]*1e3, color=color_segment[seg], linewidth=linewidth, label="Segment $(seg)")
-    axs[1,2].plot(t_adc_fully[seg_r], samples_fully_Stitched.h2.A[seg_r]*1e3, color=color_segment[seg], linewidth=linewidth, label="Segment $(seg)")
+# 1p0
+for seg = 1:nSegment_1p0
+    seg_r = Segment_range_1p0[seg]
+    axs[1,1].plot(t_1p0[seg_r], bfieldStitched_1p0[seg_r, 2], color=color_segment[seg], linewidth=linewidth, label="Segment $(seg)")
+    axs[1,2].plot(t_1p0[seg_r], bfieldStitched_1p0[seg_r, 3], color=color_segment[seg], linewidth=linewidth, label="Segment $(seg)")
 end
-axs[1,1].plot(t_adc_fully, (samples_fully_Stitched.h1.A-samples_fully_Standard.h1.A)*1e3, color=color_difference, linewidth=linewidth, label="Difference")
-axs[1,2].plot(t_adc_fully, (samples_fully_Stitched.h2.A-samples_fully_Standard.h2.A)*1e3, color=color_difference, linewidth=linewidth, label="Difference")
-axs[1,3].plot(k_dfc_adc_fully_Stitched[:,2]*2π, k_dfc_adc_fully_Stitched[:,3]*2π, color=color_gx, linewidth=linewidth, label="Stitched")
-axs[1,3].plot(k_dfc_adc_fully_Standard[:,2]*2π, k_dfc_adc_fully_Standard[:,3]*2π, color=color_gy, linewidth=linewidth, label="Standard")
+axs[1,1].plot(t_1p0, (bfieldStitched_1p0[:, 2] - bfieldStandard_1p0[:, 2]), color=color_difference, linewidth=linewidth, label="Difference")
+axs[1,2].plot(t_1p0, (bfieldStitched_1p0[:, 3] - bfieldStandard_1p0[:, 3]), color=color_difference, linewidth=linewidth, label="Difference")
+axs[1,3].plot(ksphaStitched_1p0[:,2]/2π, ksphaStitched_1p0[:,3]/2π, color=color_gx, linewidth=linewidth, label="Stitched")
+axs[1,3].plot(ksphaStandard_1p0[:,2]/2π, ksphaStandard_1p0[:,3]/2π, color=color_gy, linewidth=linewidth, label="Standard")
 axs[1,3].set_aspect(1)
 
-# under
-for seg = 1:nSegment_under
+# 0p5
+for seg = 1:nSegment_0p5
     nColor = length(color_segment)
-    color_idx = seg%nColor != 0 ? seg%nColor : nColor
-    
-    seg_r = Segment_range_under[seg]
-    axs[2,1].plot(t_adc_under[seg_r], samples_under_Stitched.h1.A[seg_r]*1e3, color=color_segment[color_idx], linewidth=linewidth, label="Stitched")
-    axs[2,2].plot(t_adc_under[seg_r], samples_under_Stitched.h2.A[seg_r]*1e3, color=color_segment[color_idx], linewidth=linewidth, label="Stitched")
+    color_idx = seg%nColor != 0 ? seg%nColor : nColor    
+    seg_r = Segment_range_0p5[seg]
+    axs[2,1].plot(t_0p5[seg_r], bfieldStitched_0p5[seg_r, 2], color=color_segment[color_idx], linewidth=linewidth, label="Stitched")
+    axs[2,2].plot(t_0p5[seg_r], bfieldStitched_0p5[seg_r, 3], color=color_segment[color_idx], linewidth=linewidth, label="Stitched")
 end 
-lDiff_gx, = axs[2,1].plot(t_adc_under, (samples_under_Stitched.h1.A-samples_under_Standard.h1.A)*1e3, color=color_difference, linewidth=linewidth, label="Difference")
-lDiff_gy, = axs[2,2].plot(t_adc_under, (samples_under_Stitched.h2.A-samples_under_Standard.h2.A)*1e3, color=color_difference, linewidth=linewidth, label="Difference")
-axs[2,3].plot(k_dfc_adc_under_Stitched[:,2]*2π, k_dfc_adc_under_Stitched[:,3]*2π, color=color_gx, linewidth=linewidth, label="Stitched")
-axs[2,3].plot(k_dfc_adc_under_Standard[:,2]*2π, k_dfc_adc_under_Standard[:,3]*2π, color=color_gy, linewidth=linewidth, label="Standard")
+lDiff_gx, = axs[2,1].plot(t_0p5, (bfieldStitched_0p5[:, 2] - bfieldStandard_0p5[:, 2]), color=color_difference, linewidth=linewidth, label="Difference")
+lDiff_gy, = axs[2,2].plot(t_0p5, (bfieldStitched_0p5[:, 3] - bfieldStandard_0p5[:, 3]), color=color_difference, linewidth=linewidth, label="Difference")
+axs[2,3].plot(ksphaStitched_0p5[:,2]/2π, ksphaStitched_0p5[:,3]/2π, color=color_gx, linewidth=linewidth, label="Stitched")
+axs[2,3].plot(ksphaStandard_0p5[:,2]/2π, ksphaStandard_0p5[:,3]/2π, color=color_gy, linewidth=linewidth, label="Standard")
 axs[2,3].set_aspect(1)
 
 
@@ -200,5 +205,5 @@ for row = 1:2
 end
 
 fig.tight_layout(pad=0, h_pad=0.5, w_pad=0.1)
-fig.savefig("$(outpath)/Fig3.png", dpi=900, transparent=false, bbox_inches="tight", pad_inches=0.05)
-fig.savefig("$(outpath)/Fig3.svg", dpi=900, transparent=false, bbox_inches="tight", pad_inches=0.05)
+fig.savefig("$(outpath)/Fig8.png", dpi=900, transparent=false, bbox_inches="tight", pad_inches=0.05)
+fig.savefig("$(outpath)/Fig8.svg", dpi=900, transparent=false, bbox_inches="tight", pad_inches=0.05)
