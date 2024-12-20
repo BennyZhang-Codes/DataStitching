@@ -67,6 +67,8 @@ for row = 1:7
 end
 ylabels = [L"G_{0}", L"G_{x}", L"G_{y}", L"G_{z}", L"G_{xy}", L"G_{zy}", L"G_{2z^2-(x^2+y^2)}", L"G_{xz}", L"G_{x^2-y^2}"]
 ylabels = [L"b_{0}", L"b_{x}", L"b_{y}", L"b_{z}", L"b_{xy}", L"b_{zy}", L"b_{2z^2-(x^2+y^2)}", L"b_{xz}", L"b_{x^2-y^2}"]
+units   = [L"mT", L"mT/m", L"mT/m", L"mT/m", L"mT/m^2", L"mT/m^2", L"mT/m^2", L"mT/m^2", L"mT/m^2"]
+
 
 vmaxs = [0.15 0.15; 1.5 1.5; 8 5; 8 5; 3 3; 10 6; 4 4];
 t_adc = [t_adc_fully, t_adc_under];
@@ -88,7 +90,7 @@ for row = 1:7
         line1, = ax.plot(t, (sampleStitched[Symbol("h$(term)")].A-sampleStandard[Symbol("h$(term)")].A)*1e3, color=color_difference, linewidth=linewidth, label="Difference")
         line2, = ax.plot(t, sampleStitched[Symbol("h$(term)")].A*1e3, color=sh.dict["h$(term)"].color, linewidth=linewidth, label="Stitched")
         ax.yaxis.set_major_locator(plt.MultipleLocator(vmax))
-        ax.set_ylabel("$(ylabels[term+1])\n[m$(sh.dict["h$(term)"].unit)]",rotation=0, 
+        ax.set_ylabel("$(ylabels[term+1])\n[$(units[term+1])]",rotation=0, 
             ha="right", va="center", x=0, y=0.5,
             fontsize=fontsize_label, color=color_label, labelpad=pad_label)
         ax.legend(handles=[line2, line1], fontsize=fontsize_legend, labelcolor=color_label, ncols=ncol, 
