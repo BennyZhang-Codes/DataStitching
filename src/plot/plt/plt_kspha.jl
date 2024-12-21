@@ -78,7 +78,7 @@ function plt_kspha(
     ax2.plot(t, kspha[:, 8], linewidth=linewidth, color=color_dfc[8], label=legend_dfc[8])
     ax2.plot(t, kspha[:, 9], linewidth=linewidth, color=color_dfc[9], label=legend_dfc[9])
     for ax in axs
-        ax.legend(bbox_to_anchor=(0.01, 1.0), fontsize=fontsize_legend, labelcolor=color_label, 
+        ax.legend(bbox_to_anchor=(0.01, 1.1), fontsize=fontsize_legend, labelcolor=color_label, 
                 scatteryoffsets=[0.5],
                 ncols=5, loc="upper left", frameon=false, handlelength=1, handletextpad=0.5, columnspacing=1)
     end
