@@ -62,8 +62,8 @@ function plt_traj(
     ax.scatter(kx, ky, linewidths=0, marker=".", s=markersize, c=collect(1:nPoints), cmap=cmap)
 
     # ax.plot(k_nominal[:,1], k_nominal[:,2], ".")
-    ax.set_xlabel(L"k_x \quad [m⁻¹]", fontsize=fontsize_label, color=color_label, labelpad=pad_label)
-    ax.set_ylabel(L"k_y \quad [m⁻¹]", fontsize=fontsize_label, color=color_label, labelpad=pad_label)
+    ax.set_xlabel(L"k_x \quad [m^{-1}]", fontsize=fontsize_label, color=color_label, labelpad=pad_label)
+    ax.set_ylabel(L"k_y \quad [m^{-1}]", fontsize=fontsize_label, color=color_label, labelpad=pad_label)
 
     fig.tight_layout(pad=0.1, w_pad=0, h_pad=0)
     return fig

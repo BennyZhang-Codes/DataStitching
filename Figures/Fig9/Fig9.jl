@@ -74,7 +74,7 @@ pad_labeltick      = 2
 pad_label          = 2
 color_facecolor    = "#ffffff"
 color_label        = "#000000"
-color_difference   = "#777777"
+color_difference   = "#555555"
 color_segment      = ["C0", "C1", "C2", "C3"]
 
 fig, axs = plt.subplots(nrows=7, ncols=2, figsize=(figure_width, figure_height), facecolor=color_facecolor)
