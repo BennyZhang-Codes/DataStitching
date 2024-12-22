@@ -24,6 +24,9 @@ import KomaMRI.KomaMRICore: SimulationMethod, SpinStateRepresentation
 @reexport import MAT
 import Functors: @functor
 
+using AbstractNFFTs
+using NFFTTools
+
 include("utils/utils.jl")
 include("datatypes/datatypes.jl")
 include("phantom/phantom.jl")
@@ -32,6 +35,7 @@ include("plot/plot.jl")
 include("mrd/mrd.jl")
 include("reconstruction/recon.jl")
 include("example/example.jl")
+include("synchronization/synchronization.jl")
 
 #Package version, KomaMRI.__VERSION__
 using Pkg
