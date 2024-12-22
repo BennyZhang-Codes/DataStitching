@@ -18,8 +18,8 @@ julia> traj_shifted = InterpTrajTime(traj, dt, delTime)
 """
 function InterpTrajTime(
     traj::AbstractArray{<:Real, 2}, 
-    dt::Float64, 
-    delTime::Float64)
+    dt::Real, 
+    delTime::Real)
     nSample, nTerm = size(traj)
 
     # Create time vector for input trajectory

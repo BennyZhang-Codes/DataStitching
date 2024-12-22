@@ -1,10 +1,20 @@
+# grid for reconstruction
+include("grid/grid.jl")
+
+# get sampling density
+include("SampleDensity/SampleDensity.jl")
+
+# signal encoding operators
 include("EncodingOperators/SignalOp.jl")
 include("EncodingOperators/HighOrderOp.jl")
 include("EncodingOperators/HighOrderOp_i2.jl")
+include("EncodingOperators/HighOrderOpv2.jl")
 
 include("recon_2d.jl")
 export recon_2d
 
+
+# reconstruction with high order operator
 include("recon_HOOp.jl")
 export recon_HOOp
 

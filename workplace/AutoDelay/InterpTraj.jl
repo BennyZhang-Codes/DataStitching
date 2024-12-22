@@ -1,4 +1,7 @@
 using MAT
+using Interpolations
+using PyPlot
+
 
 path = "$(@__DIR__)/workplace/AutoDelay/data"
 
@@ -20,6 +23,14 @@ ksphaStitched = matread(DFCfile)["ksphaStitched"];
 ksphaStandard = matread(DFCfile)["ksphaStandard"];
 delayStitched = matread(DFCfile)["delayStitched"];
 delayStandard = matread(DFCfile)["delayStandard"];
+
+bfieldStitched = matread(DFCfile)["bfieldStitched"];
+bfieldStandard = matread(DFCfile)["bfieldStandard"];
+
+plt_kspha(ksphaStitched, dt)
+plt_bfield(bfieldStitched, dt)
+
+plt_kspha_com(ksphaStitched, interp1_TrajTime(ksphaStitched, dt, dt*5), dt)
 
 
 
