@@ -1,3 +1,6 @@
+# spatial basis functions
+include("SphericalHarmonics/basisfunction.jl")
+
 # grid for reconstruction
 include("grid/grid.jl")
 
@@ -9,6 +12,7 @@ include("EncodingOperators/SignalOp.jl")
 include("EncodingOperators/HighOrderOp.jl")
 include("EncodingOperators/HighOrderOp_i2.jl")
 include("EncodingOperators/HighOrderOpv2.jl")
+include("EncodingOperators/HighOrderOpv2_i2.jl")
 
 include("recon_2d.jl")
 export recon_2d

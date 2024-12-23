@@ -211,10 +211,10 @@ plt_image(rotl90(abs.(reshape(x2, (Nx, Ny)))))
 reconsize    = (Nx, Ny)
 tr_nominal   = tr_nominal
 tr_measured  = tr_dfc_stitched
-sim_method   = BlochHighOrder("000")
+sim_method   = BlochHighOrder("111")
 fieldmap     = Matrix(B0map)
 csm          = Complex{T}.(sensitivity[:,:,1,:])
-Nblocks      = 10
+Nblocks      = 5
 use_gpu      = true
 verbose      = true
 Δx           = 1e-3
@@ -275,7 +275,7 @@ x_ref = brain_phantom2D_reference(phantom, :ρ, (150., 150.), (1., 1.); location
 xm = vec(x_ref)
 
 using BenchmarkTools
-Nblocks = 5
+Nblocks = 1
 function prod_HighOrderOp_i3(
     xm::AbstractVector{T}, 
     x::Vector{Float64}, 
@@ -315,19 +315,19 @@ function prod_HighOrderOp_i3(
     end
     progress_bar = Progress(Nblocks)
     for (block, p) = enumerate(parts)
-        @inbounds begin
-            h0, h1, h2, h3, h4, h5, h6, h7, h8 = @view(nodes_measured[1,p]), @view(nodes_measured[2,p]), @view(nodes_measured[3,p]), @view(nodes_measured[4,p]),
-                                        @view(nodes_measured[5,p]), @view(nodes_measured[6,p]), @view(nodes_measured[7,p]), @view(nodes_measured[8,p]), @view(nodes_measured[9,p])
-            hx, hy, hz = @view(nodes_nominal[1,p]), @view(nodes_nominal[2,p]), @view(nodes_nominal[3,p])
-            ϕ0 = sim_method.ho0 ? h0 .* x0' : 0
-            ϕ1 = sim_method.ho1 ? (h1 .* x') .+ (h2 .* y') .+ (h3 .* z') : (hx .* x') .+ (hy .* y') .+ (hz .* z')
-            ϕ2 = sim_method.ho2 ? h4 .* (x .* y)' .+ h5 .* (z .* y)' .+ h6 .* (3z.^2-(x.^2 .+ y.^2 .+ z.^2))' .+
-                    h7 .* (x .* z)' .+ h8 .* (x.^2 .- y.^2)' : 0
-            ϕB0 = times[p] .* fieldmap'
-            ϕ = ϕ0 .+ ϕ1 .+ ϕ2 .+ ϕB0
-            e = exp.(-2*1im*pi*ϕ)
-            out[p, :] =  e * (xm .* csm)
-        end
+        h0, h1, h2, h3, h4, h5, h6, h7, h8 = @view(nodes_measured[1,p]), @view(nodes_measured[2,p]), @view(nodes_measured[3,p]), @view(nodes_measured[4,p]),
+                                    @view(nodes_measured[5,p]), @view(nodes_measured[6,p]), @view(nodes_measured[7,p]), @view(nodes_measured[8,p]), @view(nodes_measured[9,p])
+        hx, hy, hz = @view(nodes_nominal[1,p]), @view(nodes_nominal[2,p]), @view(nodes_nominal[3,p])
+        ϕ0 = sim_method.ho0 ? h0 .* x0' : 0
+        ϕ1 = sim_method.ho1 ? (h1 .* x') .+ (h2 .* y') .+ (h3 .* z') : (hx .* x') .+ (hy .* y') .+ (hz .* z')
+        ϕ2 = sim_method.ho2 ? h4 .* (x .* y)' .+ h5 .* (z .* y)' .+ h6 .* (3z.^2-(x.^2 .+ y.^2 .+ z.^2))' .+
+                h7 .* (x .* z)' .+ h8 .* (x.^2 .- y.^2)' : 0
+        ϕB0 = times[p] .* fieldmap'
+        ϕ = ϕ0 .+ ϕ1 .+ ϕ2 .+ ϕB0
+
+        e = exp.(-2*1im*pi*ϕ)
+        out[p, :] =  e * (xm .* csm)
+
         if verbose
             next!(progress_bar, showvalues=[(:Nblocks, block)])
         end
@@ -337,34 +337,46 @@ function prod_HighOrderOp_i3(
     end
     return vec(out)
 end
-@benchmark prod_HighOrderOp_i3(xm, x, y, z, nVox, nSam, nCha, nodes_measured, nodes_nominal, times, fieldmap, csm;
-sim_method, Nblocks=Nblocks, parts=parts, use_gpu=use_gpu, verbose=verbose)
-@btime prod_HighOrderOp_i3(xm, x, y, z, nVox, nSam, nCha, nodes_measured, nodes_nominal, times, fieldmap, csm;
-                                        sim_method, Nblocks=Nblocks, parts=parts, use_gpu=use_gpu, verbose=verbose)
 
-using KomaHighOrder: prod_HighOrderOp
-@benchmark prod_HighOrderOp(xm, x, y, z, nodes_measured, nodes_nominal, times, fieldmap;
-                                        sim_method, Nblocks=Nblocks, parts=parts, use_gpu=use_gpu, verbose=verbose)
-
-@btime begin
+function prod_HighOrderOp_i4(
+    xm::AbstractVector{T}, 
+    x::Vector{Float64}, 
+    y::Vector{Float64}, 
+    z::Vector{Float64}, 
+    nVox::Int64, 
+    nSam::Int64, 
+    nCha::Int64,
+    nodes_measured::Matrix{Float64}, 
+    nodes_nominal::Matrix{Float64},
+    times::Vector{Float64}, 
+    fieldmap::Vector{Float64},
+    csm::Array{ComplexF64, 2};
+    sim_method::BlochHighOrder=BlochHighOrder("111"), 
+    Nblocks::Int64=1, 
+    parts::Vector{UnitRange{Int64}}=[1:nSam], 
+    use_gpu::Bool=false, 
+    verbose::Bool=false) where T<:Union{Real,Complex}
+    xm = Vector(xm)
     if verbose
         @info "HighOrderOp_i2 prod Nblocks=$Nblocks, use_gpu=$use_gpu"
     end
-    out = zeros(ComplexF64, nSam, nCha)
-    x0 = ones(Float64, nVox)
     if use_gpu
-        out = out |> gpu
+        out = CUDA.zeros(ComplexF64, nSam, nCha)
+        x0 = CUDA.ones(Float64, nVox)
         nodes_measured = nodes_measured |> gpu
         nodes_nominal = nodes_nominal |> gpu
         xm = xm |> gpu
-        x0 = x0 |> gpu
         x = x |> gpu
         y = y |> gpu
         z = z |> gpu
         times = times |> gpu
         fieldmap = fieldmap |> gpu
         csm = csm |> gpu
+    else
+        out = zeros(ComplexF64, nSam, nCha)
+        x0 = ones(Float64, nVox)
     end
+
     progress_bar = Progress(Nblocks)
     for (block, p) = enumerate(parts)
         h0, h1, h2, h3, h4, h5, h6, h7, h8 = @view(nodes_measured[1,p]), @view(nodes_measured[2,p]), @view(nodes_measured[3,p]), @view(nodes_measured[4,p]),
@@ -376,43 +388,111 @@ using KomaHighOrder: prod_HighOrderOp
                 h7 .* (x .* z)' .+ h8 .* (x.^2 .- y.^2)' : 0
         ϕB0 = times[p] .* fieldmap'
         ϕ = ϕ0 .+ ϕ1 .+ ϕ2 .+ ϕB0
-        e = exp.(-2*1im*pi*ϕ)
 
-        # @time out[p, 1] =  e * xm 
-        # @time out[p, :] =  e * (xm .* csm)
+        e = exp.(-2*1im*pi*ϕ)
+        out[p, :] =  e * (xm .* csm)
+
         if verbose
             next!(progress_bar, showvalues=[(:Nblocks, block)])
         end
     end
+    if use_gpu
+        out = out |> cpu
+    end
+    return vec(out)
+end
+
+# function prod_HighOrderOp_i4(
+#     xm::AbstractVector{T}, 
+#     x::Vector{Float64}, 
+#     y::Vector{Float64}, 
+#     z::Vector{Float64}, 
+#     nVox::Int64, 
+#     nSam::Int64, 
+#     nCha::Int64,
+#     nodes_measured::Matrix{Float64}, 
+#     nodes_nominal::Matrix{Float64},
+#     times::Vector{Float64}, 
+#     fieldmap::Vector{Float64},
+#     csm::Array{ComplexF64, 2};
+#     sim_method::BlochHighOrder=BlochHighOrder("111"), 
+#     Nblocks::Int64=1, 
+#     parts::Vector{UnitRange{Int64}}=[1:nSam], 
+#     use_gpu::Bool=false, 
+#     verbose::Bool=false) where T<:Union{Real,Complex}
+#     xm = Vector(xm)
+#     if verbose
+#         @info "HighOrderOp_i2 prod Nblocks=$Nblocks, use_gpu=$use_gpu"
+#     end
+#     out = zeros(ComplexF64, nSam, nCha)
+#     # x0 = ones(Float64, nVox)
+#     if use_gpu
+#         out = out |> gpu
+#         nodes_measured = nodes_measured |> gpu
+#         nodes_nominal = nodes_nominal |> gpu
+#         xm = xm |> gpu
+#         # x0 = x0 |> gpu
+#         x = x |> gpu
+#         y = y |> gpu
+#         z = z |> gpu
+#         times = times |> gpu
+#         fieldmap = fieldmap |> gpu
+#         csm = csm |> gpu
+#     end
+#     progress_bar = Progress(Nblocks)
+#     bf = basisfunc(x,y,z, collect(1:9))
+#     for (block, p) = enumerate(parts)
+#         ϕ = @view(times[p]) .* fieldmap' .+ (bf * @view(nodes_measured[:,p]))'
+#         e = exp.(-2*1im*pi*ϕ)
+#         out[p, :] =  e * (xm .* csm)
+#         if verbose
+#             next!(progress_bar, showvalues=[(:Nblocks, block)])
+#         end
+#     end
+#     if use_gpu
+#         out = out |> cpu
+#     end
+#     return vec(out)
+# end
+
+
+@time prod_HighOrderOp_i3(xm, x, y, z, nVox, nSam, nCha, nodes_measured, nodes_nominal, times, fieldmap, csm;
+sim_method, Nblocks=Nblocks, parts=parts, use_gpu=use_gpu, verbose=verbose)
+
+@time prod_HighOrderOp_i4(xm, x, y, z, nVox, nSam, nCha, nodes_measured, nodes_nominal, times, fieldmap, csm;
+sim_method, Nblocks=Nblocks, parts=parts, use_gpu=use_gpu, verbose=verbose)
+
+@benchmark prod_HighOrderOp_i3(xm, x, y, z, nVox, nSam, nCha, nodes_measured, nodes_nominal, times, fieldmap, csm;
+sim_method, Nblocks=Nblocks, parts=parts, use_gpu=use_gpu, verbose=verbose)
+@benchmark prod_HighOrderOp_i4(xm, x, y, z, nVox, nSam, nCha, nodes_measured, nodes_nominal, times, fieldmap, csm;
+sim_method, Nblocks=Nblocks, parts=parts, use_gpu=use_gpu, verbose=verbose)
+
+@benchmark bf = basisfunc(x,y,z, collect(1:9))
+
+p = 1:8000
+bf = basisfunc(x,y,z, collect(1:9))
+
+@benchmark begin  #  313 us
+    ϕ = times[p] .* fieldmap' .+ (bf * @view(nodes_measured[:,p]))'
+    e = exp.(-2*1im*pi*ϕ)
+    out[p, :] =  e * (xm .* csm)
+end
+
+@benchmark begin  # 284 us
+    ϕ = @view(times[p]) .* fieldmap' .+ (bf * @view(nodes_measured[:,p]))'
+    e = exp.(-2*1im*pi*ϕ)
+    out[p, :] =  e * (xm .* csm)
 end
 
 
 
-xm = vec(x_ref)
-@time begin
-    if verbose
-        @info "HighOrderOp_i2 prod Nblocks=$Nblocks, use_gpu=$use_gpu"
-    end
-    # xm = repeat(xm, 1, nCha)
-    out = zeros(ComplexF64, nSam, nCha)
-    x0 = ones(Float64, nVox)
-    if use_gpu
-        out = out |> gpu
-        nodes_measured = nodes_measured |> gpu
-        nodes_nominal = nodes_nominal |> gpu
-        xm = xm |> gpu
-        x0 = x0 |> gpu
-        x = x |> gpu
-        y = y |> gpu
-        z = z |> gpu
-        times = times |> gpu
-        fieldmap = fieldmap |> gpu
-        csm = csm |> gpu
-    end
-    # progress_bar = Progress(Nblocks)
+
+
+
+@benchmark begin  
     for (block, p) = enumerate(parts)
         h0, h1, h2, h3, h4, h5, h6, h7, h8 = @view(nodes_measured[1,p]), @view(nodes_measured[2,p]), @view(nodes_measured[3,p]), @view(nodes_measured[4,p]),
-                                       @view(nodes_measured[5,p]), @view(nodes_measured[6,p]), @view(nodes_measured[7,p]), @view(nodes_measured[8,p]), @view(nodes_measured[9,p])
+                                    @view(nodes_measured[5,p]), @view(nodes_measured[6,p]), @view(nodes_measured[7,p]), @view(nodes_measured[8,p]), @view(nodes_measured[9,p])
         hx, hy, hz = @view(nodes_nominal[1,p]), @view(nodes_nominal[2,p]), @view(nodes_nominal[3,p])
         ϕ0 = sim_method.ho0 ? h0 .* x0' : 0
         ϕ1 = sim_method.ho1 ? (h1 .* x') .+ (h2 .* y') .+ (h3 .* z') : (hx .* x') .+ (hy .* y') .+ (hz .* z')
@@ -420,28 +500,46 @@ xm = vec(x_ref)
                 h7 .* (x .* z)' .+ h8 .* (x.^2 .- y.^2)' : 0
         ϕB0 = times[p] .* fieldmap'
         ϕ = ϕ0 .+ ϕ1 .+ ϕ2 .+ ϕB0
+
         e = exp.(-2*1im*pi*ϕ)
-        # out[p, :] =  e * (xm .* csm)
-        # if verbose
-        #     next!(progress_bar, showvalues=[(:Nblocks, block)])
-        # end
+        out[p, :] =  e * (xm .* csm)
     end
 end
 
-p = 1:4000
-
-h0, h1, h2, h3, h4, h5, h6, h7, h8 = @view(nodes_measured[1,p]), @view(nodes_measured[2,p]), @view(nodes_measured[3,p]), @view(nodes_measured[4,p]),
-@view(nodes_measured[5,p]), @view(nodes_measured[6,p]), @view(nodes_measured[7,p]), @view(nodes_measured[8,p]), @view(nodes_measured[9,p])
-hx, hy, hz = @view(nodes_nominal[1,p]), @view(nodes_nominal[2,p]), @view(nodes_nominal[3,p])
-ϕ0 = sim_method.ho0 ? h0 .* x0' : 0
-ϕ1 = sim_method.ho1 ? (h1 .* x') .+ (h2 .* y') .+ (h3 .* z') : (hx .* x') .+ (hy .* y') .+ (hz .* z')
-ϕ2 = sim_method.ho2 ? h4 .* (x .* y)' .+ h5 .* (z .* y)' .+ h6 .* (3z.^2-(x.^2 .+ y.^2 .+ z.^2))' .+
-h7 .* (x .* z)' .+ h8 .* (x.^2 .- y.^2)' : 0
-ϕB0 = times[p] .* fieldmap'
-ϕ = ϕ0 .+ ϕ1 .+ ϕ2 .+ ϕB0
-@time e = exp.(-2*1im*pi*ϕ)
-@time out[p, :] =  e * (xm .* csm)
-
-@time out[p, 1] =  e * xm 
+@benchmark bf = basisfunc(x,y,z, collect(1:9))
 
 
+@benchmark begin  
+    bf = basisfunc(x,y,z, collect(1:9))
+    for (block, p) = enumerate(parts)
+        ϕ = @view(times[p]) .* fieldmap' .+ (bf * @view(nodes_measured[:,p]))'
+        e = exp.(-2*1im*pi*ϕ)
+        out[p, :] =  e * (xm .* csm)
+    end
+end
+
+
+
+@benchmark begin  
+    out = zeros(ComplexF64, nSam, nCha)
+    x0 = ones(Float64, nVox)
+    if use_gpu
+        out = out |> gpu
+        x0 = x0 |> gpu
+    end
+end
+
+@benchmark begin
+    if use_gpu
+        out = CUDA.zeros(ComplexF64, nSam, nCha)
+        x0 = CUDA.ones(Float64, nVox)
+    else
+        out = zeros(ComplexF64, nSam, nCha)
+        x0 = ones(Float64, nVox)
+    end
+end
+
+
+using KomaHighOrder: prod_HighOrderOp
+@benchmark prod_HighOrderOp(xm, x, y, z, nodes_measured, nodes_nominal, times, fieldmap;
+                                        sim_method, Nblocks=Nblocks, parts=parts, use_gpu=use_gpu, verbose=verbose)

@@ -23,32 +23,38 @@ end
 LinearOperators.storage_type(op::HighOrderOpv2) = typeof(op.Mv5)
 
 """
-    HighOrderOpv2(reconsize::NTuple{D,Int64}, tr_nominal::Trajectory, tr_measured::Trajectory; Nblocks::Int64=50, use_gpu::Bool=true) where D
+    HighOrderOpv2(grid::Grid{T}, tr_kspha::AbstractArray{T, 2}, times::AbstractVector{T}; fieldmap::Matrix{T} = zeros(T,(grid.nX, grid.nY)), csm::Array{Complex{T}, 3} = ones(Complex{T},(grid.nX, grid.nY)..., 1), sim_method::BlochHighOrder = BlochHighOrder("111"), tr_nominal::AbstractArray{T, 2} = tr_kspha[2:4, :], tr_kspha_dt = nothing, Nblocks::Int64 = 50, use_gpu::Bool = true, verbose::Bool = false)
 
 # Description
     generates a `HighOrderOpv2` which explicitely evaluates the MRI Fourier HighOrder encoding operator.
 
 # Arguments:
-* `reconsize::NTuple{D,Int64}`  - size of image to encode/reconstruct
-* `tr_nominal::Trajectory`  - (must be 3 rows [x, y, z]') nominal Trajectory without normalization.
-* `tr_measured::Trajectory`    - (must be 9 rows [h0, h1, h2, h3, h4, h5, h6, h7, h8]') measured Trajectory without normalization. 
-``
-                              this results in complex valued image even for real-valued input.
-* `Nblocks`                 - split trajectory into `Nblocks` blocks to avoid memory overflow.
-* `use_gpu`                 - use GPU for HighOrder encoding/decoding(default: `true`).
+* `grid::Grid{T}`                   - grid object.
+* `tr_kspha::AbstractArray{T, 2}`   - trajectory of k-space phase encoding.
+* `times::AbstractVector{T}`        - time points for trajectory.
+
+# Keywords:
+* `fieldmap::Matrix{T}`             - fieldmap for off-resonance correction.
+* `csm::Array{Complex{T}, 3}`       - coil sensitivity map.
+* `sim_method::BlochHighOrder`      - BlochHighOrder simulation method.
+* `tr_nominal::AbstractArray{T, 2}` - nominal trajectory.
+* `tr_kspha_dt`                     - trajectory of k-space phase encoding for time-derivative.
+* `Nblocks::Int64`                  - split trajectory into `Nblocks` blocks to avoid memory overflow.
+* `use_gpu::Bool`                   - use GPU for HighOrder encoding/decoding(default: `true`).
+* `verbose::Bool`                   - print progress information(default: `false`).
 """
 function HighOrderOpv2(
-    grid::Grid{T},
-    tr_kspha::AbstractArray{T, 2}, 
-    times::AbstractVector{T}, 
-    sim_method::BlochHighOrder; 
-    fieldmap::Matrix{T}=zeros(T,(grid.nX, grid.nY)), 
-    csm::Array{Complex{T}, 3}=ones(Complex{T},(grid.nX, grid.nY)..., 1), 
-    tr_nominal::AbstractArray{T, 2}=tr_kspha[2:4, :],
-    tr_kspha_dt=nothing,
-    Nblocks::Int64=50, 
-    use_gpu::Bool=true, 
-    verbose::Bool=false, 
+    grid        ::Grid{T},
+    tr_kspha    ::AbstractArray{T, 2}, 
+    times       ::AbstractVector{T};
+    fieldmap    ::Matrix{T}            = zeros(T,(grid.nX, grid.nY)), 
+    csm         ::Array{Complex{T}, 3} = ones(Complex{T},(grid.nX, grid.nY)..., 1), 
+    sim_method  ::BlochHighOrder       = BlochHighOrder("111"),
+    tr_nominal  ::AbstractArray{T, 2}  = tr_kspha[2:4, :],
+    tr_kspha_dt                        = nothing,
+    Nblocks     ::Int64                = 50, 
+    use_gpu     ::Bool                 = true, 
+    verbose     ::Bool                 = false, 
     ) where {T<:AbstractFloat}
 
     @assert size(tr_kspha,  1) == 9 "tr_kspha must have 9 rows for 0th-2nd order terms"
@@ -127,6 +133,7 @@ function prod_HighOrderOpv2_dt(
     if use_gpu
         out = out |> gpu
         tr_kspha = tr_kspha |> gpu
+        tr_kspha_dt = tr_kspha_dt |> gpu
         tr_nominal = tr_nominal |> gpu
         xm = xm |> gpu
         x0 = x0 |> gpu
@@ -136,6 +143,10 @@ function prod_HighOrderOpv2_dt(
         times = times |> gpu
         fieldmap = fieldmap |> gpu
         csm = csm |> gpu
+    else
+        x = grid.x
+        y = grid.y
+        z = grid.z
     end
     progress_bar = Progress(Nblocks)
     for (block, p) = enumerate(parts)
@@ -195,6 +206,10 @@ function prod_HighOrderOpv2(
         times = times |> gpu
         fieldmap = fieldmap |> gpu
         csm = csm |> gpu
+    else
+        x = grid.x
+        y = grid.y
+        z = grid.z
     end
     progress_bar = Progress(Nblocks)
     for (block, p) = enumerate(parts)
@@ -258,6 +273,10 @@ function ctprod_HighOrderOpv2(
         times = times |> gpu
         fieldmap = fieldmap |> gpu
         csmC = csmC |> gpu
+    else
+        x = grid.x
+        y = grid.y
+        z = grid.z
     end
     progress_bar = Progress(Nblocks)
     for (block, p) = enumerate(parts)

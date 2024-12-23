@@ -4,15 +4,17 @@ Base.@kwdef struct Grid{T<:AbstractFloat}
     nX::Int64 = 0
     nY::Int64 = 0
     nZ::Int64 = 0
-    Δx::T = 1.0
-    Δy::T = 1.0
-    Δz::T = 1.0
+    Δx::Real = 1.0
+    Δy::Real = 1.0
+    Δz::Real = 1.0
     x::AbstractVector{T} = [0.]
     y::AbstractVector{T} = [0.]
     z::AbstractVector{T} = [0.]
     matrixSize::Tuple{Int64,Int64,Int64} = (nX, nY, nZ)
-    resolution::Tuple{T,T,T} = (Δx, Δy, Δz)
+    resolution::Tuple{Real,Real,Real} = (Δx, Δy, Δz)
 end
+
+@functor Grid
 
 function Grid(
     nX::Int64, 
@@ -51,4 +53,5 @@ end
 Base.show(io::IO, b::Grid) = begin
 	print(io, "Grid [ MatrixSize: $(b.nX) x $(b.nY) x $(b.nZ), Resolution: $(b.Δx*1e3) x $(b.Δy*1e3) x $(b.Δz*1e3) mm³ ]")
 end
+
 

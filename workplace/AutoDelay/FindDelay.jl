@@ -29,7 +29,6 @@ delayStandard = matread(DFCfile)["delayStandard"];
 
 Δx, Δy, Δz = T.(FOV ./ matrixSize);
 nX, nY, nZ = matrixSize;
-
 nSample, nCha = size(data);
 pha_spha = InterpTrajTime(ksphaStitched,dt,delayStitched-dt*0.5)[1:nSample,:];
 datatime = collect(dt * (0:nSample-1));
@@ -55,8 +54,8 @@ HOOp = HighOrderOpv2(grid, T.(pha_spha[:, 1:9]'), T.(datatime), BHO;
                         Nblocks=Nblocks, csm=Complex{T}.(csm), fieldmap=T.(b0), use_gpu=use_gpu, verbose=verbose);
 
 weight = SampleDensity(pha_spha'[2:3,:], (nX, nY));
-x1 = recon_HOOp(HOOp, Complex{T}.(data), Complex{T}.(weight), recParams)
-plt_image(abs.(x1))
+# x1 = recon_HOOp(HOOp, Complex{T}.(data), Complex{T}.(weight), recParams)
+# plt_image(abs.(x1))
 
 
 del0 = 0; # starting guess 
