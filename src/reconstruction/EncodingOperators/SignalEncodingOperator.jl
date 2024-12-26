@@ -1,0 +1,5 @@
+include("SignalOp.jl")
+include("HighOrderOp.jl")
+include("HighOrderOp_v1.jl")
+include("HighOrderOp_v1p1.jl")
+include("HighOrderOp_v2.jl")

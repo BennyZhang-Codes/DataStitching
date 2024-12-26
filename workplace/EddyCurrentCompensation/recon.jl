@@ -3,7 +3,7 @@ import KomaHighOrder.MRIBase: AcquisitionData
 
 using CUDA
 
-idx = 6;
+idx = 1;
 CUDA.device!(1)
 
 
@@ -68,10 +68,10 @@ csm = imresize(csm, (nY, nX, nCha))
 
 k0_ecc = matread(ECC_file)["phase_drift"];
 
-# fig = plt.subplots(1,1)
-# plot(k0_ecc')
-# plot(kStitched[:, 1]*2π)
-
+fig, ax = plt.subplots(1,1)
+ax.plot(k0_ecc', label="model")
+ax.plot(kStitched[:, 1]*2π, label="Stitched")
+ax.legend()
 
 nSample, nCha = size(data);
 tr           = Trajectory(T.(k_adc'[1:2, :]), 1, nSample, circular=false, times=times);

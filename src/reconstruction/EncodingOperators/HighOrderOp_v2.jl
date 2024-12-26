@@ -1,8 +1,8 @@
-export HighOrderOpv2
+export HighOrderOp_v2
 # recon
 using LinearOperators
 
-mutable struct HighOrderOpv2{T,F1,F2} <: AbstractLinearOperator{T}
+mutable struct HighOrderOp_v2{T,F1,F2} <: AbstractLinearOperator{T}
   nrow :: Int
   ncol :: Int
   symmetric :: Bool
@@ -20,13 +20,13 @@ mutable struct HighOrderOpv2{T,F1,F2} <: AbstractLinearOperator{T}
   Mtu5 :: Vector{T}
 end
 
-LinearOperators.storage_type(op::HighOrderOpv2) = typeof(op.Mv5)
+LinearOperators.storage_type(op::HighOrderOp_v2) = typeof(op.Mv5)
 
 """
-    HighOrderOpv2(grid::Grid{T}, tr_kspha::AbstractArray{T, 2}, times::AbstractVector{T}; fieldmap::Matrix{T} = zeros(T,(grid.nX, grid.nY)), csm::Array{Complex{T}, 3} = ones(Complex{T},(grid.nX, grid.nY)..., 1), sim_method::BlochHighOrder = BlochHighOrder("111"), tr_nominal::AbstractArray{T, 2} = tr_kspha[2:4, :], tr_kspha_dt = nothing, Nblocks::Int64 = 50, use_gpu::Bool = true, verbose::Bool = false)
+    HighOrderOp_v2(grid::Grid{T}, tr_kspha::AbstractArray{T, 2}, times::AbstractVector{T}; fieldmap::Matrix{T} = zeros(T,(grid.nX, grid.nY)), csm::Array{Complex{T}, 3} = ones(Complex{T},(grid.nX, grid.nY)..., 1), sim_method::BlochHighOrder = BlochHighOrder("111"), tr_nominal::AbstractArray{T, 2} = tr_kspha[2:4, :], tr_kspha_dt = nothing, Nblocks::Int64 = 50, use_gpu::Bool = true, verbose::Bool = false)
 
 # Description
-    generates a `HighOrderOpv2` which explicitely evaluates the MRI Fourier HighOrder encoding operator.
+    generates a `HighOrderOp_v2` which explicitely evaluates the MRI Fourier HighOrder encoding operator.
 
 # Arguments:
 * `grid::Grid{T}`                   - grid object.
@@ -43,7 +43,7 @@ LinearOperators.storage_type(op::HighOrderOpv2) = typeof(op.Mv5)
 * `use_gpu::Bool`                   - use GPU for HighOrder encoding/decoding(default: `true`).
 * `verbose::Bool`                   - print progress information(default: `false`).
 """
-function HighOrderOpv2(
+function HighOrderOp_v2(
     grid        ::Grid{T},
     tr_kspha    ::AbstractArray{T, 2}, 
     times       ::AbstractVector{T};
@@ -82,32 +82,32 @@ function HighOrderOpv2(
         push!(parts, n*Nblocks+1:k)
     end
 
-    @info "HighOrderOpv2 Nblocks=$Nblocks, use_gpu=$use_gpu"
+    @info "HighOrderOp_v2 Nblocks=$Nblocks, use_gpu=$use_gpu"
     @info grid
     @info sim_method
     if isnothing(tr_kspha_dt)
-        Op =  HighOrderOpv2{Complex{T},Nothing,Function}(nRow, nCol, false, false
-                    , (res,xm)->(res .= prod_HighOrderOpv2(xm, grid, nVox, nSam, nCha, tr_kspha, tr_nominal, times, fieldmap, csm;
+        Op =  HighOrderOp_v2{Complex{T},Nothing,Function}(nRow, nCol, false, false
+                    , (res,xm)->(res .= prod_HighOrderOp_v2(xm, grid, nVox, nSam, nCha, tr_kspha, tr_nominal, times, fieldmap, csm;
                                             sim_method, Nblocks=Nblocks, parts=parts, use_gpu=use_gpu, verbose=verbose))
                     , nothing
-                    , (res,ym)->(res .= ctprod_HighOrderOpv2(ym, grid, nVox, nSam, nCha, tr_kspha, tr_nominal, times, fieldmap, csm;
+                    , (res,ym)->(res .= ctprod_HighOrderOp_v2(ym, grid, nVox, nSam, nCha, tr_kspha, tr_nominal, times, fieldmap, csm;
                                             sim_method, Nblocks=Nblocks, parts=parts, use_gpu=use_gpu, verbose=verbose))
                     , 0,0,0, false, false, false, Complex{T}[], Complex{T}[])
     else
         @assert size(tr_kspha_dt) == size(tr_kspha) "tr_kspha_dt must have same size as tr_kspha"
         tr_kspha_dt = T.(tr_kspha_dt)
-        Op =  HighOrderOpv2{Complex{T},Nothing,Function}(nRow, nCol, false, false
-                    , (res,xm)->(res .= prod_HighOrderOpv2_dt(xm, grid, nVox, nSam, nCha, tr_kspha, tr_kspha_dt, tr_nominal, times, fieldmap, csm;
+        Op =  HighOrderOp_v2{Complex{T},Nothing,Function}(nRow, nCol, false, false
+                    , (res,xm)->(res .= prod_HighOrderOp_v2_dt(xm, grid, nVox, nSam, nCha, tr_kspha, tr_kspha_dt, tr_nominal, times, fieldmap, csm;
                                             sim_method, Nblocks=Nblocks, parts=parts, use_gpu=use_gpu, verbose=verbose))
                     , nothing
-                    , (res,ym)->(res .= ctprod_HighOrderOpv2(ym, grid, nVox, nSam, nCha, tr_kspha, tr_nominal, times, fieldmap, csm;
+                    , (res,ym)->(res .= ctprod_HighOrderOp_v2(ym, grid, nVox, nSam, nCha, tr_kspha, tr_nominal, times, fieldmap, csm;
                                             sim_method, Nblocks=Nblocks, parts=parts, use_gpu=use_gpu, verbose=verbose))
                     , 0,0,0, false, false, false, Complex{T}[], Complex{T}[])
     end
     return Op
 end
 
-function prod_HighOrderOpv2_dt(
+function prod_HighOrderOp_v2_dt(
     xm::AbstractVector{T}, 
     grid::Grid{D},
     nVox::Int64, 
@@ -126,7 +126,7 @@ function prod_HighOrderOpv2_dt(
     verbose::Bool=false) where {D<:AbstractFloat, T<:Union{Real,Complex}}
     xm = Vector(xm)
     if verbose
-        @info "HighOrderOpv2 prod Nblocks=$Nblocks, use_gpu=$use_gpu"
+        @info "HighOrderOp_v2 prod Nblocks=$Nblocks, use_gpu=$use_gpu"
     end
     out = zeros(ComplexF64, nSam, nCha)
     x0 = ones(Float64, nVox)
@@ -172,7 +172,7 @@ function prod_HighOrderOpv2_dt(
     return vec(out)
 end
 
-function prod_HighOrderOpv2(
+function prod_HighOrderOp_v2(
     xm::AbstractVector{T}, 
     grid::Grid{D},
     nVox::Int64, 
@@ -190,7 +190,7 @@ function prod_HighOrderOpv2(
     verbose::Bool=false) where {D<:AbstractFloat, T<:Union{Real,Complex}}
     xm = Vector(xm)
     if verbose
-        @info "HighOrderOpv2 prod Nblocks=$Nblocks, use_gpu=$use_gpu"
+        @info "HighOrderOp_v2 prod Nblocks=$Nblocks, use_gpu=$use_gpu"
     end
     out = zeros(ComplexF64, nSam, nCha)
     x0 = ones(Float64, nVox)
@@ -235,7 +235,7 @@ function prod_HighOrderOpv2(
     return vec(out)
 end
 
-function ctprod_HighOrderOpv2(
+function ctprod_HighOrderOp_v2(
     ym::AbstractVector{T}, 
     grid::Grid{D},
     nVox::Int64, 
@@ -256,7 +256,7 @@ function ctprod_HighOrderOpv2(
     # ym = Vector(ym[1:nSam])
 
     if verbose
-        @info "HighOrderOpv2 ctprod Nblocks=$Nblocks, use_gpu=$use_gpu"
+        @info "HighOrderOp_v2 ctprod Nblocks=$Nblocks, use_gpu=$use_gpu"
     end
     out = zeros(ComplexF64, nVox, nCha)
     x0 = ones(Float64, nVox)
@@ -304,7 +304,7 @@ function ctprod_HighOrderOpv2(
   return vec(sum(out, dims=2))
 end
 
-function Base.adjoint(op::HighOrderOpv2{T}) where T
+function Base.adjoint(op::HighOrderOp_v2{T}) where T
   return LinearOperator{T}(op.ncol, op.nrow, op.symmetric, op.hermitian,
                         op.ctprod!, nothing, op.prod!)
 end
