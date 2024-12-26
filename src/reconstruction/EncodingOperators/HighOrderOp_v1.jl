@@ -1,13 +1,8 @@
-#=
-only one calculation of the exponentials of total phase is needed, which is the most expensive part of the computation.
-but it's tow slow with frequently tansfering data between CPU and GPU.
-=#
-
-export HighOrderOp_i1
+export HighOrderOp_v1
 # recon
 using LinearOperators
 
-mutable struct HighOrderOp_i1{T,F1,F2} <: AbstractLinearOperator{T}
+mutable struct HighOrderOp_v1{T,F1,F2} <: AbstractLinearOperator{T}
   nrow :: Int
   ncol :: Int
   symmetric :: Bool
@@ -25,13 +20,13 @@ mutable struct HighOrderOp_i1{T,F1,F2} <: AbstractLinearOperator{T}
   Mtu5 :: Vector{T}
 end
 
-LinearOperators.storage_type(op::HighOrderOp_i1) = typeof(op.Mv5)
+LinearOperators.storage_type(op::HighOrderOp_v1) = typeof(op.Mv5)
 
 """
-    HighOrderOp_i1(shape::NTuple{D,Int64}, tr_nominal::Trajectory, tr_measured::Trajectory; Nblocks::Int64=50, use_gpu::Bool=true) where D
+    HighOrderOp_v1(shape::NTuple{D,Int64}, tr_nominal::Trajectory, tr_measured::Trajectory; Nblocks::Int64=50, use_gpu::Bool=true) where D
 
 # Description
-    generates a `HighOrderOp_i1` which explicitely evaluates the MRI Fourier HighOrder encoding operator.
+    generates a `HighOrderOp_v1` which explicitely evaluates the MRI Fourier HighOrder encoding operator.
 
 # Arguments:
 * `shape::NTuple{D,Int64}`  - size of image to encode/reconstruct
@@ -42,7 +37,7 @@ LinearOperators.storage_type(op::HighOrderOp_i1) = typeof(op.Mv5)
 * `Nblocks`                 - split trajectory into `Nblocks` blocks to avoid memory overflow.
 * `use_gpu`                 - use GPU for HighOrder encoding/decoding(default: `true`).
 """
-function HighOrderOp_i1(
+function HighOrderOp_v1(
     shape::NTuple{D,Int64}, 
     tr_nominal::Trajectory, 
     tr_measured::Trajectory, 
@@ -97,26 +92,20 @@ function HighOrderOp_i1(
     # print(x)
     x, y = x * Δx, y * Δy 
 
-    e = zeros(ComplexF64, nrow, ncol)
-    calc_phase(@view(e[:,:]), nrow, ncol, x, y, z, nodes_measured, nodes_nominal, times, fieldmap;
-        sim_method, Nblocks=Nblocks, parts=parts, use_gpu=use_gpu, verbose=verbose)
 
-    @info "HighOrderOp_i1 Nblocks=$Nblocks, use_gpu=$use_gpu, Δx=$Δx, Δy=$Δy"
+    @info "HighOrderOp_v1 Nblocks=$Nblocks, use_gpu=$use_gpu, Δx=$Δx, Δy=$Δy"
     @info sim_method
-    return HighOrderOp_i1{ComplexF64,Nothing,Function}(nrow, ncol, false, false
-                , (res,xm)->(res .= prod_HighOrderOp_i1(@view(e[:,:]), xm, nrow, ncol;
-                                        Nblocks=Nblocks, parts=parts, use_gpu=use_gpu, verbose=verbose))
+    return HighOrderOp_v1{ComplexF64,Nothing,Function}(nrow, ncol, false, false
+                , (res,xm)->(res .= prod_HighOrderOp_v1(xm, x, y, z, nodes_measured, nodes_nominal, times, fieldmap;
+                                        sim_method, Nblocks=Nblocks, parts=parts, use_gpu=use_gpu, verbose=verbose))
                 , nothing
-                , (res,ym)->(res .= ctprod_HighOrderOp_i1(@view(e[:,:]), ym, nrow, ncol;
-                                        Nblocks=Nblocks, parts=parts, use_gpu=use_gpu, verbose=verbose))
+                , (res,ym)->(res .= ctprod_HighOrderOp_v1(ym, x, y, z, nodes_measured, nodes_nominal, times, fieldmap;
+                                        sim_method, Nblocks=Nblocks, parts=parts, use_gpu=use_gpu, verbose=verbose))
                 , 0,0,0, false, false, false, ComplexF64[], ComplexF64[])
 end
 
-
-function calc_phase(
-    e::AbstractArray{T}, 
-    nrow::Int64,
-    ncol::Int64, 
+function prod_HighOrderOp_v1(
+    xm::AbstractVector{T}, 
     x::Vector{Float64}, 
     y::Vector{Float64}, 
     z::Vector{Float64}, 
@@ -129,14 +118,17 @@ function calc_phase(
     parts::Vector{UnitRange{Int64}}=[1:size(nodes_measured,2)], 
     use_gpu::Bool=false, 
     verbose::Bool=false) where T<:Union{Real,Complex}
-
-    @info "HighOrderOp_li calculaiton of the exponentials of total phase, prod Nblocks=$Nblocks, use_gpu=$use_gpu"
-
-    x0 = ones(Float64, ncol)
+    xm = Vector(xm)
+    if verbose
+        @info "HighOrderOp_v1 prod Nblocks=$Nblocks, use_gpu=$use_gpu"
+    end
+    out = zeros(ComplexF64,size(nodes_measured,2))
+    x0 = ones(Float64, size(x))
     if use_gpu
-        println("using GPU")
+        out = out |> gpu
         nodes_measured = nodes_measured |> gpu
         nodes_nominal = nodes_nominal |> gpu
+        xm = xm |> gpu
         x0 = x0 |> gpu
         x = x |> gpu
         y = y |> gpu
@@ -155,43 +147,8 @@ function calc_phase(
                 h7 .* (x .* z)' .+ h8 .* (x.^2 .- y.^2)' : 0
         ϕB0 = times[p] .* fieldmap'
         ϕ = ϕ0 .+ ϕ1 .+ ϕ2 .+ ϕB0
-        @time exp_ϕ = exp.(-2*1im*pi*ϕ)
-        if use_gpu
-            exp_ϕ = exp_ϕ |> cpu
-        end
-        e[p, :] =  exp_ϕ
-        if verbose
-            next!(progress_bar, showvalues=[(:Nblocks, block)])
-        end
-    end
-end
-
-
-function prod_HighOrderOp_i1(
-    e::AbstractArray{T}, 
-    xm::AbstractVector{T}, 
-    nrow::Int64,
-    ncol::Int64;
-    Nblocks::Int64=1, 
-    parts::Vector{UnitRange{Int64}}=[1:nrow], 
-    use_gpu::Bool=false, 
-    verbose::Bool=false) where T<:Union{Real,Complex}
-    xm = Vector(xm)
-    if verbose
-        @info "HighOrderOp_i1 prod Nblocks=$Nblocks, use_gpu=$use_gpu"
-    end
-    out = zeros(ComplexF64, nrow)
-    if use_gpu
-        out = out |> gpu
-        xm = xm |> gpu
-    end
-    progress_bar = Progress(Nblocks)
-    for (block, p) = enumerate(parts)
-        exp_ϕ = e[p, :]
-        if use_gpu
-            exp_ϕ = exp_ϕ |> gpu
-        end
-        out[p] =  exp_ϕ * xm
+        e = exp.(-2*1im*pi*ϕ)
+        out[p] =  e * xm
         if verbose
             next!(progress_bar, showvalues=[(:Nblocks, block)])
         end
@@ -202,33 +159,54 @@ function prod_HighOrderOp_i1(
     return vec(out)
 end
 
-function ctprod_HighOrderOp_i1(
-    e::AbstractArray{T}, 
+function ctprod_HighOrderOp_v1(
     xm::AbstractVector{T}, 
-    nrow::Int64,
-    ncol::Int64;
+    x::Vector{Float64}, 
+    y::Vector{Float64}, 
+    z::Vector{Float64},
+    nodes_measured::Matrix{Float64}, 
+    nodes_nominal::Matrix{Float64},
+    times::Vector{Float64}, 
+    fieldmap::Vector{Float64};
+    sim_method::BlochHighOrder=BlochHighOrder("111"), 
     Nblocks::Int64=1, 
-    parts::Vector{UnitRange{Int64}}=[1:nrow], 
+    parts::Vector{UnitRange{Int64}}=[1:size(nodes_measured,2)], 
     use_gpu::Bool=false, 
     verbose::Bool=false) where T<:Union{Real,Complex}
 
     xm = Vector(xm)
     if verbose
-        @info "HighOrderOp_i1 ctprod Nblocks=$Nblocks, use_gpu=$use_gpu"
+        @info "HighOrderOp_v1 ctprod Nblocks=$Nblocks, use_gpu=$use_gpu"
     end
-    out = zeros(ComplexF64, ncol)
+    out = zeros(ComplexF64, size(x, 1))
+    x0 = ones(Float64, size(x))
 
     if use_gpu
         out = out |> gpu
+        nodes_measured = nodes_measured |> gpu
+        nodes_nominal = nodes_nominal |> gpu
         xm = xm |> gpu
+        x0 = x0 |> gpu
+        x = x |> gpu
+        y = y |> gpu
+        z = z |> gpu
+        times = times |> gpu
+        fieldmap = fieldmap |> gpu
     end
     progress_bar = Progress(Nblocks)
     for (block, p) = enumerate(parts)
-        exp_ϕ = transpose(e[p, :])
-        if use_gpu
-            exp_ϕ = exp_ϕ |> gpu
-        end
-        out +=  conj(exp_ϕ) * xm[p]
+        h0, h1, h2, h3, h4, h5, h6, h7, h8 = @view(nodes_measured[1,p]), @view(nodes_measured[2,p]), @view(nodes_measured[3,p]), @view(nodes_measured[4,p]),
+                                       @view(nodes_measured[5,p]), @view(nodes_measured[6,p]), @view(nodes_measured[7,p]), @view(nodes_measured[8,p]), @view(nodes_measured[9,p])
+        hx, hy, hz = @view(nodes_nominal[1,p]), @view(nodes_nominal[2,p]), @view(nodes_nominal[3,p])
+        ϕ0 = sim_method.ho0 ? x0 .* h0' : 0
+        ϕ1 = sim_method.ho1 ? (x .* h1') .+ (y .* h2') .+ (z .* h3') : (x .* hx') .+ (y .* hy') .+ (z .* hz')
+        ϕ2 = sim_method.ho2 ? (x .* y) .* h4' .+ (z .* y) .* h5' .+ (3z.^2-(x.^2 .+ y.^2 .+ z.^2)) .* h6' .+
+            (x .* z) .* h7' .+ (x.^2 .- y.^2) .* h8' : 0
+        ϕB0 = fieldmap .* times[p]'
+        ϕ = ϕ0 .+ ϕ1 .+ ϕ2 .+ ϕB0
+
+        e = exp.(-2*1im*pi*ϕ)
+        out +=  conj(e) * xm[p]
         if verbose
             next!(progress_bar, showvalues=[(:Nblocks, block)])
         end
@@ -239,7 +217,7 @@ function ctprod_HighOrderOp_i1(
   return vec(out)
 end
 
-function Base.adjoint(op::HighOrderOp_i1{T}) where T
+function Base.adjoint(op::HighOrderOp_v1{T}) where T
   return LinearOperator{T}(op.ncol, op.nrow, op.symmetric, op.hermitian,
                         op.ctprod!, nothing, op.prod!)
 end

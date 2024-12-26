@@ -51,7 +51,10 @@ end
 
 
 Base.show(io::IO, b::Grid) = begin
-	print(io, "Grid [ MatrixSize: $(b.nX) x $(b.nY) x $(b.nZ), Resolution: $(b.Δx*1e3) x $(b.Δy*1e3) x $(b.Δz*1e3) mm³ ]")
+    Δx = round(b.Δx*1e3, digits=2)
+    Δy = round(b.Δy*1e3, digits=2)
+    Δz = round(b.Δz*1e3, digits=2)
+	print(io, "Grid [ MatrixSize: $(b.nX) x $(b.nY) x $(b.nZ), Resolution: $(Δx) x $(Δy) x $(Δz) mm³ ]")
 end
 
 

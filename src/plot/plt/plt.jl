@@ -1,5 +1,8 @@
 using PyPlot
 
+include("plt_plot.jl")
+export plt_plot
+
 include("plt_image.jl")
 export plt_image, plt_images
 
