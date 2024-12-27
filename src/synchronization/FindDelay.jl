@@ -1,7 +1,7 @@
 import DSP: conv
 
 """
-    τ = FindDelay(gridding, kspha, datatime, StartTime, dt, ...)
+    τ = FindDelay(gridding, data, kspha, datatime, StartTime, dt, ...)
     
 # Description
 A Julia implementation of the model-based synchronization delay estimation algorithm.
@@ -14,6 +14,7 @@ This implementation utilizes our `HighOrderOp` to realize the expanded encoding 
 - `gridding::Grid{T}`: gridding object containing the grid parameters
 - `data::AbstractArray{T, 2} [nSample, nCha]`: signal data
 - `kspha::AbstractArray{T, 2} [~, nCha]`: coefficients of spherical harmonics basis functions
+- `datatime::AbstractVector [nSample]`: sampling time points of the signal data
 - `StartTime::T`: the time point of the first sample
 - `dt::T`: sampling interval
 
@@ -36,13 +37,14 @@ This implementation utilizes our `HighOrderOp` to realize the expanded encoding 
 
 # Example
 ```julia
-julia> τ = FindDelay(gridding, kspha, datatime, StartTime, dt, ...)
+julia> τ = FindDelay(gridding, data, kspha, datatime, StartTime, dt, ...)
 ```
 """
 function FindDelay(
     gridding    :: Grid{T}                       ,
     data        :: AbstractArray{Complex{T}, 2}  ,
     kspha       :: AbstractArray{T, 2}           , 
+    datatime    :: AbstractVector{T}             ,
     StartTime   :: T                             ,
     dt          :: T                             ;
     JumpFact    :: Int64                = 3      ,
@@ -57,7 +59,12 @@ function FindDelay(
     iter_max    :: Int64                = 10     ,
     λ           :: T                    = 0.     ,
     verbose     :: Bool                 = false  , 
-    ) ::T where {T<:AbstractFloat} 
+    ) ::T where {T<:AbstractFloat}
+    @assert size(data,2) == size(csm,3) "data and csm must have the same number of coil channels"
+    @assert size(data,1) == size(datatime, 1) "data and datatime must have the same number of spatial points"
+
+    nSample, nCha = size(data);
+
     # 1. Initialize some variables
     τ         = 0;
     nIter     = 1;
@@ -71,16 +78,16 @@ function FindDelay(
     recParams[:λ]              = λ
     recParams[:iterations]     = iter_max
     recParams[:solver]         = solver
-    datatime = T.(collect(dt * (0:nSample-1)));
+
 
     # 2. Compute kspha_dt, which is "dk/dt"
     kernel = [1/8 1/4 0 -1/4 -1/8]';
-    kspha_dt = conv(kspha, kernel)[3:end-2,:]/dt;
+    kspha_dt = conv(kspha, kernel)[3:end-2,:]/dt;  # crop both sides to match size of kspha
     
     while abs(Δτ) > Δτ_min
         # Interpolate to match datatime
-        kspha_τ    = T.(InterpTrajTime(kspha   , dt, τ + StartTime, intermode=intermode)[1:nSample,1:9]');
-        kspha_dt_τ = T.(InterpTrajTime(kspha_dt, dt, τ + StartTime, intermode=intermode)[1:nSample,1:9]');
+        kspha_τ    = T.(InterpTrajTime(kspha   , dt, τ + StartTime, datatime, intermode=intermode)[1:nSample,1:9]');
+        kspha_dt_τ = T.(InterpTrajTime(kspha_dt, dt, τ + StartTime, datatime, intermode=intermode)[1:nSample,1:9]');
         
         HOOp    = HighOrderOp(gridding, kspha_τ, datatime; sim_method=sim_method, 
                     Nblocks=Nblocks, csm=csm, fieldmap=fieldmap, use_gpu=use_gpu, verbose=verbose);
@@ -109,4 +116,30 @@ function FindDelay(
         push!(τ_perIter, τ);
     end
     return T.(τ)
+end
+
+function FindDelay(
+    gridding    :: Grid{T}                       ,
+    data        :: AbstractArray{Complex{T}, 2}  ,
+    kspha       :: AbstractArray{T, 2}           , 
+    StartTime   :: T                             ,
+    dt          :: T                             ;
+    JumpFact    :: Int64                = 3      ,
+    intermode   :: Interpolations.InterpolationType = AkimaMonotonicInterpolation(),
+    fieldmap    :: AbstractArray{T, 2}  = zeros(T,(gridding.nX, gridding.nY)), 
+    csm         :: Array{Complex{T}, 3} = ones(Complex{T},(gridding.nX, gridding.nY)..., 1), 
+    sim_method  :: BlochHighOrder       = BlochHighOrder("111"),
+    Nblocks     :: Int64                = 50     , 
+    use_gpu     :: Bool                 = true   , 
+    solver      :: String               = "cgnr" ,
+    reg         :: String               = "L2"   ,
+    iter_max    :: Int64                = 10     ,
+    λ           :: T                    = 0.     ,
+    verbose     :: Bool                 = false  , 
+    ) ::T where {T<:AbstractFloat} 
+    nSample, nCha = size(data);
+    datatime = T.(collect(dt * (0:nSample-1)));
+    return FindDelay(gridding, data, kspha, datatime, StartTime, dt; 
+        JumpFact=JumpFact, intermode=intermode, fieldmap=fieldmap, csm=csm, sim_method=sim_method, 
+        Nblocks=Nblocks, use_gpu=use_gpu, solver=solver, reg=reg, iter_max=iter_max, λ=λ, verbose=verbose);
 end
