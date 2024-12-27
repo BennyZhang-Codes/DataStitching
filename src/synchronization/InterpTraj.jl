@@ -8,6 +8,17 @@
 - `dt::Float64`: time delay between input samples
 - `delTime::Float64`: time delay to be added or subtracted from time
 
+# Keywords
+- `intermode::Interpolations.InterpolationType`: interpolation mode (default is AkimaMonotonicInterpolation). 
+        other Monotonic methods from Interpolations.jl are:
+    1. LinearMonotonicInterpolation
+    2. FiniteDifferenceMonotonicInterpolation
+    3. CardinalMonotonicInterpolation
+    4. AkimaMonotonicInterpolation
+    5. FritschCarlsonMonotonicInterpolation
+    6. FritschButlandMonotonicInterpolation
+    7. SteffenMonotonicInterpolation
+
 # Returns
 - `traj_interp::Array{Float64, 2}`: interpolated trajectory data (2D array, where each row is a point in the interpolated trajectory)
 
@@ -17,9 +28,11 @@ julia> traj_shifted = InterpTrajTime(traj, dt, delTime)
 ```
 """
 function InterpTrajTime(
-    traj::AbstractArray{<:Real, 2}, 
-    dt::Real, 
-    delTime::Real)
+    traj      ::AbstractArray{T, 2}      , 
+    dt        ::Real                     , 
+    delTime   ::Real                     ;
+    intermode ::Interpolations.InterpolationType = AkimaMonotonicInterpolation()
+    ) where {T<:Real}
     nSample, nTerm = size(traj)
 
     # Create time vector for input trajectory
@@ -31,11 +44,11 @@ function InterpTrajTime(
     # Perform Akima interpolation (assuming 1D interpolation for each row of the trajectory)
     traj_interp = []
     for i in 1:nTerm  # Loop over each column (dimension) of the trajectory
-        itp = interpolate(trajTim, traj[:, i], AkimaMonotonicInterpolation())
+        itp = interpolate(trajTim, traj[:, i], intermode)
         etp = extrapolate(itp, 0)  # Extrapolate to the beginning of the time vector
         push!(traj_interp, etp.(datatime))  # Store the interpolated result
     end
 
     # Convert the result back to an array (if necessary)
-    return hcat(traj_interp...)  # Combine the interpolated columns into a single matrix
+    return T.(hcat(traj_interp...))  # Combine the interpolated columns into a single matrix
 end
