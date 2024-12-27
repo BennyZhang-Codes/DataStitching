@@ -2,6 +2,11 @@ export HighOrderOp
 # recon
 using LinearOperators
 
+"""
+    A Julia implementation of the expanded signal encoding model.
+- This implementation using GPU with CUDA.jl to accelerate the calculation.
+- If the GPU memory is not enough, the calculation can be divided into blocks.
+"""
 mutable struct HighOrderOp{T,F1,F2} <: AbstractLinearOperator{T}
   nrow :: Int
   ncol :: Int

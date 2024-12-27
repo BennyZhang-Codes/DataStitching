@@ -89,16 +89,17 @@ function FindDelay(
         kspha_τ    = T.(InterpTrajTime(kspha   , dt, τ + StartTime, datatime, intermode=intermode)[1:nSample,1:9]');
         kspha_dt_τ = T.(InterpTrajTime(kspha_dt, dt, τ + StartTime, datatime, intermode=intermode)[1:nSample,1:9]');
         
+        weight = SampleDensity(kspha_τ[2:3,:], (gridding.nX, gridding.nY));
         HOOp    = HighOrderOp(gridding, kspha_τ, datatime; sim_method=sim_method, 
                     Nblocks=Nblocks, csm=csm, fieldmap=fieldmap, use_gpu=use_gpu, verbose=verbose);
         HOOp_dt = HighOrderOp(gridding, kspha_τ, datatime; sim_method=sim_method, tr_kspha_dt=kspha_dt_τ, 
                     Nblocks=Nblocks, csm=csm, fieldmap=fieldmap, use_gpu=use_gpu, verbose=verbose);
         
         # Update image
-        x = recon_HOOp(HOOp, data, recParams)
-        # if verbose
-        plt_image(abs.(x), title="Iteration $nIter", vmaxp=99.9)
-        # end
+        x = recon_HOOp(HOOp, data, weight, recParams)
+        if verbose
+            plt_image(abs.(x), title="Iteration $nIter", vmaxp=99.9)
+        end
         # Update delay
         y1 = vec(data) - HOOp * vec(x); # Y - Aₚxₚ
         y2 = HOOp_dt * vec(x);       # Bₚxₚ
@@ -115,7 +116,7 @@ function FindDelay(
         nIter  += 1;
         push!(τ_perIter, τ);
     end
-    return T.(τ)
+    return T.(τ - Δτ * (JumpFact - 1))
 end
 
 function FindDelay(
