@@ -30,16 +30,14 @@ julia> traj_shifted = InterpTrajTime(traj, dt, delTime)
 function InterpTrajTime(
     traj      ::AbstractArray{T, 2}      , 
     dt        ::Real                     , 
-    delTime   ::Real                     ;
+    delTime   ::Real                     ,
+    datatime  ::AbstractVector{T}        ;
     intermode ::Interpolations.InterpolationType = AkimaMonotonicInterpolation()
     ) where {T<:Real}
     nSample, nTerm = size(traj)
 
-    # Create time vector for input trajectory
-    datatime = dt * (0:nSample-1)
-
     # Calculate adjusted time (delayed)
-    trajTim = datatime .- delTime
+    trajTim = dt * (0:nSample-1) .- delTime
 
     # Perform Akima interpolation (assuming 1D interpolation for each row of the trajectory)
     traj_interp = []
@@ -51,4 +49,20 @@ function InterpTrajTime(
 
     # Convert the result back to an array (if necessary)
     return T.(hcat(traj_interp...))  # Combine the interpolated columns into a single matrix
+end
+
+"""
+    If dwell time is equal between trajectories and the sampling points.
+    You can use this method.
+"""
+function InterpTrajTime(
+    traj      ::AbstractArray{T, 2}      , 
+    dt        ::Real                     , 
+    delTime   ::Real                     ;
+    intermode ::Interpolations.InterpolationType = AkimaMonotonicInterpolation()
+    ) where {T<:Real}
+    nSample, nTerm = size(traj)
+    # Create time vector for input trajectory
+    datatime = dt * (0:nSample-1)
+    return InterpTrajTime(traj, dt, delTime, datatime; intermode=intermode)
 end
