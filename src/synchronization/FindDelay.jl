@@ -1,0 +1,112 @@
+import DSP: conv
+
+"""
+    τ = FindDelay(gridding, kspha, datatime, StartTime, dt, ...)
+    
+# Description
+A Julia implementation of the model-based synchronization delay estimation algorithm.
+The algorithm is based on the paper "Model-based determination of the synchronization delay between MRI and trajectory data"
+by Paul Dubovan and Corey Baron (2022, https://doi.org/10.1002/mrm.29460).
+
+This implementation utilizes our `HighOrderOp` to realize the expanded encoding model with dynamic fields.
+
+# Arguments
+- `gridding::Grid{T}`: gridding object containing the grid parameters
+- `data::AbstractArray{T, 2} [nSample, nCha]`: signal data
+- `kspha::AbstractArray{T, 2} [~, nCha]`: coefficients of spherical harmonics basis functions
+- `StartTime::T`: the time point of the first sample
+- `dt::T`: sampling interval
+
+# Keywords
+- `JumpFact::Int64 = 3`: scaling factor γ for acceleration of convergence
+- `fieldmap::AbstractArray{T, 2} [nX, nY]`: field map
+- `fieldmap::AbstractArray{T, 2} [nX, nY]`: field map
+- `csm::Array{Complex{T}, 3} [nX, nY, nCha]`: coil sensitivity map
+- `sim_method::BlochHighOrder = BlochHighOrder("111")`: simulation method
+- `Nblocks::Int64 = 50`: number of blocks for parallel processing
+- `use_gpu::Bool = true`: whether to use GPU acceleration
+- `solver::String = "cgnr"`: solver for the inverse problem
+- `reg::String = "L2"`: regularization method
+- `iter_max::Int64 = 10`: maximum number of iterations for the solver
+- `λ::T = 0.`: regularization parameter
+- `verbose::Bool = false`: whether to print verbose output
+
+# Returns
+- `τ::T`: synchronization delay
+
+# Example
+```julia
+julia> τ = FindDelay(gridding, kspha, datatime, StartTime, dt, ...)
+```
+"""
+function FindDelay(
+    gridding    :: Grid{T}                       ,
+    data        :: AbstractArray{Complex{T}, 2}  ,
+    kspha       :: AbstractArray{T, 2}           , 
+    StartTime   :: T                             ,
+    dt          :: T                             ;
+    JumpFact    :: Int64                = 3      ,
+    intermode   :: Interpolations.InterpolationType = AkimaMonotonicInterpolation(),
+    fieldmap    :: AbstractArray{T, 2}  = zeros(T,(gridding.nX, gridding.nY)), 
+    csm         :: Array{Complex{T}, 3} = ones(Complex{T},(gridding.nX, gridding.nY)..., 1), 
+    sim_method  :: BlochHighOrder       = BlochHighOrder("111"),
+    Nblocks     :: Int64                = 50     , 
+    use_gpu     :: Bool                 = true   , 
+    solver      :: String               = "cgnr" ,
+    reg         :: String               = "L2"   ,
+    iter_max    :: Int64                = 10     ,
+    λ           :: T                    = 0.     ,
+    verbose     :: Bool                 = false  , 
+    ) ::T where {T<:AbstractFloat} 
+    # 1. Initialize some variables
+    τ         = 0;
+    nIter     = 1;
+    Δτ_prev   = Δτ = Inf;
+    Δτ_min    = 0.005;        # [us]
+    τ_perIter = Vector{Float64}();
+    push!(τ_perIter, τ);
+    recParams = Dict{Symbol,Any}()
+    recParams[:reconSize]      = (gridding.nX, gridding.nY)
+    recParams[:regularization] = reg
+    recParams[:λ]              = λ
+    recParams[:iterations]     = iter_max
+    recParams[:solver]         = solver
+    datatime = T.(collect(dt * (0:nSample-1)));
+
+    # 2. Compute kspha_dt, which is "dk/dt"
+    kernel = [1/8 1/4 0 -1/4 -1/8]';
+    kspha_dt = conv(kspha, kernel)[3:end-2,:]/dt;
+    
+    while abs(Δτ) > Δτ_min
+        # Interpolate to match datatime
+        kspha_τ    = T.(InterpTrajTime(kspha   , dt, τ + StartTime, intermode=intermode)[1:nSample,1:9]');
+        kspha_dt_τ = T.(InterpTrajTime(kspha_dt, dt, τ + StartTime, intermode=intermode)[1:nSample,1:9]');
+        
+        HOOp    = HighOrderOp(gridding, kspha_τ, datatime; sim_method=sim_method, 
+                    Nblocks=Nblocks, csm=csm, fieldmap=fieldmap, use_gpu=use_gpu, verbose=verbose);
+        HOOp_dt = HighOrderOp(gridding, kspha_τ, datatime; sim_method=sim_method, tr_kspha_dt=kspha_dt_τ, 
+                    Nblocks=Nblocks, csm=csm, fieldmap=fieldmap, use_gpu=use_gpu, verbose=verbose);
+        
+        # Update image
+        x = recon_HOOp(HOOp, data, recParams)
+        # if verbose
+        plt_image(abs.(x), title="Iteration $nIter", vmaxp=99.9)
+        # end
+        # Update delay
+        y1 = vec(data) - HOOp * vec(x); # Y - Aₚxₚ
+        y2 = HOOp_dt * vec(x);       # Bₚxₚ
+        Δτ = JumpFact * real(y2 \ y1);
+        τ += Δτ;
+
+        @info "Iteration $nIter: Δτ = $(round(Δτ/dt, digits=5)) [us] | τ = $(round(τ/dt, digits=5)) [us] | JumpFact = $JumpFact"
+        
+        if (nIter>1) && (sign(Δτ_prev) != sign(Δτ))
+            println("Jumping back to previous solution")
+            JumpFact = maximum([1, JumpFact/2]);
+        end
+        Δτ_prev = Δτ;
+        nIter  += 1;
+        push!(τ_perIter, τ);
+    end
+    return T.(τ)
+end

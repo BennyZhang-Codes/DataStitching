@@ -5,9 +5,8 @@ import Base.*, Base.+, Base.-, Base./, Base.vcat, Base.size, Base.abs, Base.getp
 # IMPORT PACKAGES
 using CUDA, Interpolations, Statistics
 import ImageTransformations: imresize
-import MRISimulation: quadraticFieldmap
-
-using PyPlot, PlotlyJS  # 
+import MRISimulation: quadraticFieldmap   
+using PyPlot, PlotlyJS  
 
 using Parameters
 using ThreadsX

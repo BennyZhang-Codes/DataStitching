@@ -47,7 +47,7 @@ function HighOrderOp(
     grid        ::Grid{T},
     tr_kspha    ::AbstractArray{T, 2}, 
     times       ::AbstractVector{T};
-    fieldmap    ::Matrix{T}            = zeros(T,(grid.nX, grid.nY)), 
+    fieldmap    ::AbstractArray{T, 2}  = zeros(T,(grid.nX, grid.nY)), 
     csm         ::Array{Complex{T}, 3} = ones(Complex{T},(grid.nX, grid.nY)..., 1), 
     sim_method  ::BlochHighOrder       = BlochHighOrder("111"),
     tr_nominal  ::AbstractArray{T, 2}  = tr_kspha[2:4, :],
