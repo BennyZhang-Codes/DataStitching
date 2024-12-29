@@ -48,6 +48,7 @@ function FindDelay(
     StartTime   :: T                             ,
     dt          :: T                             ;
     JumpFact    :: Int64                = 3      ,
+    Δτ_min      :: T                    = 0.005  ,
     intermode   :: Interpolations.InterpolationType = AkimaMonotonicInterpolation(),
     fieldmap    :: AbstractArray{T, 2}  = zeros(T,(gridding.nX, gridding.nY)), 
     csm         :: Array{Complex{T}, 3} = ones(Complex{T},(gridding.nX, gridding.nY)..., 1), 
@@ -69,7 +70,7 @@ function FindDelay(
     τ         = 0;
     nIter     = 1;
     Δτ_prev   = Δτ = Inf;
-    Δτ_min    = 0.005;        # [us]
+    Δτ_min    = Δτ_min;        # [us]
     τ_perIter = Vector{Float64}();
     push!(τ_perIter, τ);
     recParams = Dict{Symbol,Any}()
@@ -126,6 +127,7 @@ function FindDelay(
     StartTime   :: T                             ,
     dt          :: T                             ;
     JumpFact    :: Int64                = 3      ,
+    Δτ_min      :: T                    = 0.005  ,
     intermode   :: Interpolations.InterpolationType = AkimaMonotonicInterpolation(),
     fieldmap    :: AbstractArray{T, 2}  = zeros(T,(gridding.nX, gridding.nY)), 
     csm         :: Array{Complex{T}, 3} = ones(Complex{T},(gridding.nX, gridding.nY)..., 1), 
@@ -141,6 +143,6 @@ function FindDelay(
     nSample, nCha = size(data);
     datatime = T.(collect(dt * (0:nSample-1)));
     return FindDelay(gridding, data, kspha, datatime, StartTime, dt; 
-        JumpFact=JumpFact, intermode=intermode, fieldmap=fieldmap, csm=csm, sim_method=sim_method, 
+        JumpFact=JumpFact, Δτ_min=Δτ_min, intermode=intermode, fieldmap=fieldmap, csm=csm, sim_method=sim_method, 
         Nblocks=Nblocks, use_gpu=use_gpu, solver=solver, reg=reg, iter_max=iter_max, λ=λ, verbose=verbose);
 end

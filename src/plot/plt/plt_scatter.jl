@@ -49,6 +49,9 @@ function plt_scatter(
     ticklength         = 1.5      ,
     pad_label          = 2        ,
     pad_labeltick      = 2        ,
+    marker             = "o"      ,
+    marker_size        = 1.0      ,
+    marker_linewidth   = 0.5      ,
     ) where T<:AbstractVector{<:Real}
     fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(width/2.53999863, height/2.53999863), facecolor=color_facecolor, squeeze=false)
     ax = ax[1]

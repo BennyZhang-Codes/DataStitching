@@ -58,14 +58,15 @@ weight = SampleDensity(pha_spha'[2:3,:], (nX, nY));
 # @time x1 = recon_HOOp(HOOp, Complex{T}.(data), Complex{T}.(weight), recParams);
 # plt_image(abs.(x1))
 
-τ = FindDelay1(gridding, Complex{T}.(data), T.(ksphaStitched), (delayStitched-dt)/dt, dt/dt;
-    intermode=AkimaMonotonicInterpolation(), JumpFact=1,
-    fieldmap=T.(b0)*dt, csm=Complex{T}.(csm), sim_method=BHO, Nblocks=Nblocks)
+# τ = FindDelay(gridding, Complex{T}.(data), T.(ksphaStitched), (delayStitched-dt)/dt, dt/dt;
+#     intermode=AkimaMonotonicInterpolation(), JumpFact=3,
+#     fieldmap=T.(b0)*dt, csm=Complex{T}.(csm), sim_method=BHO, Nblocks=Nblocks)
 
     
 ################################################################################
 # debug 
 ################################################################################
+datatime = T.(collect(dt * (0:nSample-1)));
 
 gridding    = gridding                      
 data        = Complex{T}.(data) 
@@ -81,7 +82,7 @@ Nblocks     = 10
 use_gpu     = true   
 solver      = "cgnr" 
 reg         = "L2"   
-iter_max    = 5     
+iter_max    = 10     
 λ           = 0.     
 verbose     = true  
 
@@ -100,11 +101,35 @@ recParams[:regularization] = reg
 recParams[:λ]              = λ
 recParams[:iterations]     = iter_max
 recParams[:solver]         = solver
-datatime = T.(collect(dt * (0:nSample-1)));
+
 
 # 2. Compute kspha_dt, which is "dk/dt"
 kernel = [1/8 1/4 0 -1/4 -1/8]';
 kspha_dt = conv(kspha, kernel)[3:end-2,:]/dt;
+
+kspha_τ    = T.(InterpTrajTime(kspha   , dt, τ + StartTime, datatime, intermode=intermode)[1:nSample,1:9]');
+kspha_dt_τ = T.(InterpTrajTime(kspha_dt, dt, τ + StartTime, datatime, intermode=intermode)[1:nSample,1:9]');
+
+weight = SampleDensity(kspha_τ[2:3,:], (gridding.nX, gridding.nY));
+W = WeightingOp(Complex{T}; weights=Complex{T}.(weight), rep=nCha)
+
+HOOp    = HighOrderOp(gridding, kspha_τ, datatime; sim_method=sim_method, 
+            Nblocks=Nblocks, csm=csm, fieldmap=fieldmap, use_gpu=use_gpu, verbose=verbose);
+HOOp_dt = HighOrderOp(gridding, kspha_τ, datatime; sim_method=sim_method, tr_kspha_dt=kspha_dt_τ, 
+            Nblocks=Nblocks, csm=csm, fieldmap=fieldmap, use_gpu=use_gpu, verbose=verbose);
+
+# Update image
+x = recon_HOOp(HOOp, data, weight, recParams)
+# if verbose
+plt_image(rotr90(abs.(x)), title="Iteration $nIter", vmaxp=99.9)
+# end
+# Update delay
+y1 = W*vec(data) - W*(HOOp * vec(x)); # Y - Aₚxₚ
+y2 = W*(HOOp_dt * vec(x));       # Bₚxₚ
+Δτ = JumpFact * real((W*y2) \ (W*y1))
+
+
+Δτ = JumpFact * real((y2) \ (y1))
 
 while abs(Δτ) > Δτ_min
     # Interpolate to match datatimes
