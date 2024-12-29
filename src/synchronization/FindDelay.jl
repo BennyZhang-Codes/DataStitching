@@ -2,7 +2,11 @@ import DSP: conv
 
 """
     τ = FindDelay(gridding, data, kspha, datatime, StartTime, dt, ...)
-    
+
+This is a modified version, minor differences are: 
+1. apply density weighting in the estimation of `x`; 
+2. final results are returned with τ - Δτ * (JumpFact - 1).
+
 # Description
 A Julia implementation of the model-based synchronization delay estimation algorithm.
 The algorithm is based on the paper "Model-based determination of the synchronization delay between MRI and trajectory data"
@@ -19,8 +23,9 @@ This implementation utilizes our `HighOrderOp` to realize the expanded encoding 
 - `dt::T`: sampling interval
 
 # Keywords
-- `JumpFact::Int64 = 3`: scaling factor γ for acceleration of convergence
-- `fieldmap::AbstractArray{T, 2} [nX, nY]`: field map
+- `JumpFact::Int64 = 3`: scaling factor for acceleration of convergence
+- `Δτ_min::T = 0.005`: [us] minimum delay increment
+- `intermode::Interpolations.InterpolationType = AkimaMonotonicInterpolation()`: interpolation method
 - `fieldmap::AbstractArray{T, 2} [nX, nY]`: field map
 - `csm::Array{Complex{T}, 3} [nX, nY, nCha]`: coil sensitivity map
 - `sim_method::BlochHighOrder = BlochHighOrder("111")`: simulation method

@@ -1,8 +1,10 @@
 import DSP: conv
 
 """
-    τ = FindDelay1(gridding, data, kspha, datatime, StartTime, dt, ...)
-    
+    τ = FindDelay_v2(gridding, data, kspha, datatime, StartTime, dt, ...)
+
+**This version aims to maintain consistency with `MatMRI` (https://doi.org/10.5281/zenodo.5708265).**
+
 # Description
 A Julia implementation of the model-based synchronization delay estimation algorithm.
 The algorithm is based on the paper "Model-based determination of the synchronization delay between MRI and trajectory data"
@@ -19,8 +21,9 @@ This implementation utilizes our `HighOrderOp` to realize the expanded encoding 
 - `dt::T`: sampling interval
 
 # Keywords
-- `JumpFact::Int64 = 3`: scaling factor γ for acceleration of convergence
-- `fieldmap::AbstractArray{T, 2} [nX, nY]`: field map
+- `JumpFact::Int64 = 3`: scaling factor for acceleration of convergence
+- `Δτ_min::T = 0.005`: [us] minimum delay increment
+- `intermode::Interpolations.InterpolationType = AkimaMonotonicInterpolation()`: interpolation method
 - `fieldmap::AbstractArray{T, 2} [nX, nY]`: field map
 - `csm::Array{Complex{T}, 3} [nX, nY, nCha]`: coil sensitivity map
 - `sim_method::BlochHighOrder = BlochHighOrder("111")`: simulation method
@@ -37,10 +40,10 @@ This implementation utilizes our `HighOrderOp` to realize the expanded encoding 
 
 # Example
 ```julia
-julia> τ = FindDelay1(gridding, data, kspha, datatime, StartTime, dt, ...)
+julia> τ = FindDelay_v2(gridding, data, kspha, datatime, StartTime, dt, ...)
 ```
 """
-function FindDelay1(
+function FindDelay_v2(
     gridding    :: Grid{T}                       ,
     data        :: AbstractArray{Complex{T}, 2}  ,
     kspha       :: AbstractArray{T, 2}           , 
@@ -120,7 +123,7 @@ function FindDelay1(
     return T.(τ)
 end
 
-function FindDelay1(
+function FindDelay_v2(
     gridding    :: Grid{T}                       ,
     data        :: AbstractArray{Complex{T}, 2}  ,
     kspha       :: AbstractArray{T, 2}           , 
@@ -142,7 +145,7 @@ function FindDelay1(
     ) ::T where {T<:AbstractFloat} 
     nSample, nCha = size(data);
     datatime = T.(collect(dt * (0:nSample-1)));
-    return FindDelay1(gridding, data, kspha, datatime, StartTime, dt; 
+    return FindDelay_v2(gridding, data, kspha, datatime, StartTime, dt; 
         JumpFact=JumpFact, Δτ_min=Δτ_min, intermode=intermode, fieldmap=fieldmap, csm=csm, sim_method=sim_method, 
         Nblocks=Nblocks, use_gpu=use_gpu, solver=solver, reg=reg, iter_max=iter_max, λ=λ, verbose=verbose);
 end
