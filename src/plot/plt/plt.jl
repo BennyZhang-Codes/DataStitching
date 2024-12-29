@@ -3,6 +3,9 @@ using PyPlot
 include("plt_plot.jl")
 export plt_plot
 
+include("plt_scatter.jl")
+export plt_scatter
+
 include("plt_image.jl")
 export plt_image, plt_images
 

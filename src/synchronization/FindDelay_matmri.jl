@@ -1,7 +1,7 @@
 import DSP: conv
 
 """
-    τ = FindDelay(gridding, data, kspha, datatime, StartTime, dt, ...)
+    τ = FindDelay1(gridding, data, kspha, datatime, StartTime, dt, ...)
     
 # Description
 A Julia implementation of the model-based synchronization delay estimation algorithm.
@@ -37,10 +37,10 @@ This implementation utilizes our `HighOrderOp` to realize the expanded encoding 
 
 # Example
 ```julia
-julia> τ = FindDelay(gridding, data, kspha, datatime, StartTime, dt, ...)
+julia> τ = FindDelay1(gridding, data, kspha, datatime, StartTime, dt, ...)
 ```
 """
-function FindDelay(
+function FindDelay1(
     gridding    :: Grid{T}                       ,
     data        :: AbstractArray{Complex{T}, 2}  ,
     kspha       :: AbstractArray{T, 2}           , 
@@ -90,14 +90,14 @@ function FindDelay(
         kspha_τ    = T.(InterpTrajTime(kspha   , dt, τ + StartTime, datatime, intermode=intermode)[1:nSample,1:9]');
         kspha_dt_τ = T.(InterpTrajTime(kspha_dt, dt, τ + StartTime, datatime, intermode=intermode)[1:nSample,1:9]');
         
-        weight = SampleDensity(kspha_τ[2:3,:], (gridding.nX, gridding.nY));
+        # weight = SampleDensity(kspha_τ[2:3,:], (gridding.nX, gridding.nY));
         HOOp    = HighOrderOp(gridding, kspha_τ, datatime; sim_method=sim_method, 
                     Nblocks=Nblocks, csm=csm, fieldmap=fieldmap, use_gpu=use_gpu, verbose=verbose);
         HOOp_dt = HighOrderOp(gridding, kspha_τ, datatime; sim_method=sim_method, tr_kspha_dt=kspha_dt_τ, 
                     Nblocks=Nblocks, csm=csm, fieldmap=fieldmap, use_gpu=use_gpu, verbose=verbose);
         
         # Update image
-        x = recon_HOOp(HOOp, data, weight, recParams)
+        x = recon_HOOp(HOOp, data, recParams)
         if verbose
             plt_image(abs.(x), title="Iteration $nIter", vmaxp=99.9)
         end
@@ -117,10 +117,10 @@ function FindDelay(
         nIter  += 1;
         push!(τ_perIter, τ);
     end
-    return T.(τ - Δτ * (JumpFact - 1))
+    return T.(τ)
 end
 
-function FindDelay(
+function FindDelay1(
     gridding    :: Grid{T}                       ,
     data        :: AbstractArray{Complex{T}, 2}  ,
     kspha       :: AbstractArray{T, 2}           , 
@@ -142,7 +142,7 @@ function FindDelay(
     ) ::T where {T<:AbstractFloat} 
     nSample, nCha = size(data);
     datatime = T.(collect(dt * (0:nSample-1)));
-    return FindDelay(gridding, data, kspha, datatime, StartTime, dt; 
+    return FindDelay1(gridding, data, kspha, datatime, StartTime, dt; 
         JumpFact=JumpFact, Δτ_min=Δτ_min, intermode=intermode, fieldmap=fieldmap, csm=csm, sim_method=sim_method, 
         Nblocks=Nblocks, use_gpu=use_gpu, solver=solver, reg=reg, iter_max=iter_max, λ=λ, verbose=verbose);
 end
