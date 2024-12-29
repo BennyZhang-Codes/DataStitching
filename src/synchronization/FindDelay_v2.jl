@@ -3,7 +3,9 @@ import DSP: conv
 """
     τ = FindDelay_v2(gridding, data, kspha, datatime, StartTime, dt, ...)
 
-**This version aims to maintain consistency with `MatMRI` (https://doi.org/10.5281/zenodo.5708265).**
+This is a modified version, minor differences are: 
+1. apply density weighting in the estimation of `x`; 
+2. final results are returned with (τ - Δτ / JumpFact * (JumpFact - 1)).
 
 # Description
 A Julia implementation of the model-based synchronization delay estimation algorithm.
@@ -93,14 +95,14 @@ function FindDelay_v2(
         kspha_τ    = T.(InterpTrajTime(kspha   , dt, τ + StartTime, datatime, intermode=intermode)[1:nSample,1:9]');
         kspha_dt_τ = T.(InterpTrajTime(kspha_dt, dt, τ + StartTime, datatime, intermode=intermode)[1:nSample,1:9]');
         
-        # weight = SampleDensity(kspha_τ[2:3,:], (gridding.nX, gridding.nY));
+        weight = SampleDensity(kspha_τ[2:3,:], (gridding.nX, gridding.nY));
         HOOp    = HighOrderOp(gridding, kspha_τ, datatime; sim_method=sim_method, 
                     Nblocks=Nblocks, csm=csm, fieldmap=fieldmap, use_gpu=use_gpu, verbose=verbose);
         HOOp_dt = HighOrderOp(gridding, kspha_τ, datatime; sim_method=sim_method, tr_kspha_dt=kspha_dt_τ, 
                     Nblocks=Nblocks, csm=csm, fieldmap=fieldmap, use_gpu=use_gpu, verbose=verbose);
         
         # Update image
-        x = recon_HOOp(HOOp, data, recParams)
+        x = recon_HOOp(HOOp, data, weight, recParams)
         if verbose
             plt_image(abs.(x), title="Iteration $nIter", vmaxp=99.9)
         end
@@ -120,7 +122,7 @@ function FindDelay_v2(
         nIter  += 1;
         push!(τ_perIter, τ);
     end
-    return T.(τ)
+    return T.(τ - Δτ / JumpFact * (JumpFact - 1))
 end
 
 function FindDelay_v2(
