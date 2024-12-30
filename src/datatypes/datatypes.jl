@@ -10,7 +10,8 @@ include("HO_Sequence.jl")
 include("HO_DiscreteSequence.jl") 
 include("HO_Phantom.jl")
 include("SphericalHarmonics.jl")
-
+# grid for reconstruction
+include("grid/grid.jl")
 
 export HO_DiscreteSequence
 export HO_Sequence

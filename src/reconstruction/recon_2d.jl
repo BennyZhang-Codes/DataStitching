@@ -1,14 +1,14 @@
-function recon_2d(raw::RawAcquisitionData; Nx=nothing, Ny=nothing, outtype::Symbol=:mag, verbose=false)
+function recon_2d(raw::RawAcquisitionData; nX=nothing, nY=nothing, outtype::Symbol=:mag, verbose=false)
     @assert outtype in [:mag, :pha, :raw] "outtype must be :mag, :pha, :raw"
     acqData = AcquisitionData(raw)
     acqData.traj[1].circular = false #Removing circular window
     C = maximum(2*abs.(acqData.traj[1].nodes[:]))  #Normalize k-space to -.5 to .5 for NUFFT
     acqData.traj[1].nodes = acqData.traj[1].nodes[1:2,:] ./ C
-    if isnothing(Nx) || isnothing(Ny)
-        Nx, Ny = raw.params["reconSize"][1:2]
+    if isnothing(nX) || isnothing(nY)
+        nX, nY = raw.params["reconSize"][1:2]
     end
     recParams = Dict{Symbol,Any}()
-    recParams[:reconSize] = (Nx, Ny)
+    recParams[:reconSize] = (nX, nY)
     recParams[:densityWeighting] = true
     rec = reconstruction(acqData, recParams)
     # nX, nY, nZ, nCon, nCoil, nRep = size(rec)
