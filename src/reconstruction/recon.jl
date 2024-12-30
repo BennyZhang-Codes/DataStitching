@@ -1,8 +1,6 @@
 # spatial basis functions
 include("SphericalHarmonics/basisfunction.jl")
 
-# grid for reconstruction
-include("grid/grid.jl")
 
 # get sampling density
 include("SampleDensity/SampleDensity.jl")
