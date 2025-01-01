@@ -62,6 +62,9 @@ plot_seq(hoseqStandard)
 #     a. we use dynamic fields from field monitoring (stitching)
 #     b. recon the signal with NuFFT immeadiately after simulation
 #########################################################################################
+nX = nY = 150; nZ = 1;  # matrix size for recon
+Δx = Δy = 1e-3; Δz = 2e-3;
+
 # settings for Simulation
 B0 = true     # turn on B0
 T2 = false    # turn off T2
@@ -70,39 +73,36 @@ location = 0.8
 BHO = BlochHighOrder("111", true, true)                          # ["111"] turn on all order terms of dynamic field change. turn on Δw_excitation, Δw_precession
 phantom = BrainPhantom(prefix="brain3D724", x=0.2, y=0.2, z=0.2) # setting for Phantom: decide which phantom file to use, loading phantom from src/phantom/mat folder
 # settings for phantom
-csm_type  = :fan;      # a simulated birdcage coil-sensitivity
-csm_nCoil = 1;         # only 1-channel
+csm_type  = :fan;      # all values are 1.0 + 0.0im, single channel
+csm_nCoil = 1;         
 csm_nRow  = 1;
 csm_nCol  = 1;
 
 db0_type  = :quadratic;     
 db0_max   = :100.;
 
-# 1. sequence
-plot_seq(hoseqStitched)
-Nx=Ny=150;     # matrix size for recon
-
-# 2. phantom
+# 1. phantom
 obj = brain_hophantom2D(phantom; ss=ss, location=location, 
                         csm_type=csm_type, csm_nCoil=csm_nCoil, csm_nRow=csm_nRow, csm_nCol=csm_nCol, 
                         db0_type=db0_type, db0_max=db0_max); 
 obj.Δw .= B0 ? obj.Δw : obj.Δw * 0;     # γ*1.5 T*(-3.45 ppm)*1e-6 * 2π
 obj.T2 .= T2 ? obj.T2 : obj.T2 * Inf;   # cancel T2 relaxiation
 
-# 3. scanner & sim_params
+# 2. scanner & sim_params
 sys = Scanner();
 sim_params = KomaMRICore.default_sim_params();
 sim_params["sim_method"]  = BHO;      # using "BlochHighOrder" for simulation with high-order terms
 sim_params["return_type"] = "mat";    # setting with "mat", return the signal data for all channel
 sim_params["precision"]   = "f64"
+sim_params["gpu_device"]  = 0;       
 
-# 4. simulate
+# 3. simulate
 signal = simulate(obj, hoseqStitched, sys; sim_params);
 raw = signal_to_raw_data(signal, hoseqStitched, :nominal; sim_params=copy(sim_params));
 img_nufft = recon_2d(raw);      
 fig_nufft = plt_image(rotl90(img_nufft))
 
-# 5. Adding noise to signal data
+# 4. Adding noise to signal data
 snr = 15;
 data = signal[:,:,1];
 nSample, nCha = size(data);
@@ -122,45 +122,82 @@ fig_nufft = plt_image(rotl90(img_nufft))
 #     c. reconstruct the signal with the encoding operator
 #########################################################################################
 # ΔB₀ map (the same as the one used for simulation), we will use this map in reconstruction
-B0map = brain_phantom2D_reference(phantom, :Δw, (150., 150.), (1., 1.); location=location, ss=ss, db0_type=db0_type, db0_max=db0_max);
-fig_b0map = plt_image(rotl90(B0map))
-# Proton-density map (reference)
+b0map = brain_phantom2D_reference(phantom, :Δw, (150., 150.), (1., 1.); location=location, ss=ss, db0_type=db0_type, db0_max=db0_max);
+b0map = rotl90(b0map);
+fig_b0map = plt_B0map(b0map)
+
+# Proton-density map (the reference of recon, because we didn't consider T2 in simulation of single-shot spiral)
 x_ref = brain_phantom2D_reference(phantom, :ρ, (150., 150.), (1., 1.); location=location, ss=ss);
-fig_ref = plt_image(rotl90(x_ref))
-
-acqData = AcquisitionData(raw, BHO; sim_params=sim_params);
-acqData.traj[1].circular = false;
-
-# get the k coefficients for the nominal (x,y,z) and the stitching measurement (up to second order)
-_, K_nominal_adc, _, K_dfc_adc_stitched = get_kspace(hoseqStitched; Δt=1);
-times = KomaMRIBase.get_adc_sampling_times(hoseqStitched.SEQ);
-
-# create the trajectories for the nominal and the stitching measurement
-tr_nominal      = Trajectory(   K_nominal_adc'[1:3,:], acqData.traj[1].numProfiles, acqData.traj[1].numSamplingPerProfile; circular=false, times=times);
-tr_dfc_stitched = Trajectory(K_dfc_adc_stitched'[:,:], acqData.traj[1].numProfiles, acqData.traj[1].numSamplingPerProfile; circular=false, times=times);
-
+x_ref = rotl90(x_ref);
+fig_ref = plt_image(x_ref)
 
 #############################################################################
 # HighOrderOp, the extended signal model for high-order terms
 #############################################################################
-# Construct the encoding operator (HighOrderOp)
-Op = HighOrderOp((Nx, Ny), tr_nominal, tr_dfc_stitched , BlochHighOrder("111"); Nblocks=9, fieldmap=Matrix(B0map), grid=1);
+# get the k coefficients for the nominal (x,y,z) and the stitching measurement (up to second order)
+_, kspha_nominal, _, kspha_stitched = get_kspace(hoseqStitched; Δt=1);
+datatime = KomaMRIBase.get_adc_sampling_times(hoseqStitched.SEQ);
 
-# Reconstruction parameters
-solver = "admm"; regularization = "TV"; iter = 50; λ = 1e-4;
-solver = "cgnr"; regularization = "L2"; iter = 50; λ = 1e-3;
+kspha         = -kspha_stitched;        # Add a negative sign, as the phase term used in the model is positive.
+kspha_nominal = -kspha_nominal;
+b0            = -b0map;            
 
-recParams = Dict{Symbol,Any}(); #recParams = merge(defaultRecoParams(), recParams)
-recParams[:reconSize] = (Nx, Ny)  # 150, 150
-recParams[:densityWeighting] = true
-recParams[:reco] = "standard"
+nSample, nCha = size(data);
+
+# For HighOrderOp
+T = Float64;
+
+x, y = 1:nX, 1:nY;
+x, y, z = vec(x*0.0 .+ y'), vec(x[end:-1:1] .+ 0.0*y'), vec(x*0.0 .+ y'*0.0) #grid points
+x, y = x .- nX/2 .- 1, y .- nY/2 .- 1
+x, y = x * Δx, y * Δy; 
+gridding = Grid(nX=nX, nY=nY, nZ=nZ, Δx=Δx, Δy=Δy, Δz=Δz, x=T.(x), y=T.(y), z=T.(z));
+
+BHO = BlochHighOrder("111");  
+#= The string "111" is a three-digit flag that indicates whether the 0th, 1st, and 2nd order terms of 
+a measurement are used. For example, "110" means only the 0th and 1st order terms are used. =#
+Nblocks = 20;   # the number is set according to the GPU memory.
+use_gpu = true;
+verbose = true;
+
+# solver = "admm"; regularization = "TV"; iter = 20; λ = 1e-9;
+solver = "cgnr"; regularization = "L2"; iter = 20; λ = 1e-9;
+recParams = Dict{Symbol,Any}()
+recParams[:reconSize]      = (nX, nY)
 recParams[:regularization] = regularization  # ["L2", "L1", "L21", "TV", "LLR", "Positive", "Proj", "Nuclear"]
-recParams[:λ] = λ
-recParams[:iterations] = iter
-recParams[:solver] = solver  # "cgnr", "admm"
-recParams[:solverInfo] = SolverInfo(vec(ComplexF32.(x_ref)), store_solutions=true);
-recParams[:encodingOps] = reshape([Op], 1,1);
+recParams[:λ]              = λ
+recParams[:iterations]     = iter
+recParams[:solver]         = solver
+recParams[:solverInfo] = SolverInfo(vec(Complex{T}.(x_ref)), store_solutions=true)
 
-# Run reconstruction
-@time img_HOOP = abs.(reconstruction(acqData, recParams).data[:,:]);
-plt_image(rotl90(img_HOOP); title="w/  ΔB₀, stitched: 111")
+weight = SampleDensity(kspha'[2:3,:], (nX, nY));
+
+HOOp = HighOrderOp(gridding, T.(kspha[:, 1:9]'), T.(datatime); sim_method=BHO, tr_nominal=T.(kspha_nominal'), 
+                        Nblocks=Nblocks, fieldmap=T.(b0), use_gpu=use_gpu, verbose=verbose);
+
+# recon with stitched measurement, with density weighting, with ΔB₀
+@time x1 = recon_HOOp(HOOp, Complex{T}.(signal[:,:,1]), Complex{T}.(weight), recParams);
+plt_image(abs.(x1); vmaxp=99.9, title="w/  ΔB₀, stitched: 111, w/  density weighting")
+
+solverinfo = recParams[:solverInfo];
+solverinfo.
+
+# recon with stitched measurement, without density weighting, with ΔB₀
+@time x2 = recon_HOOp(HOOp, Complex{T}.(signal[:,:,1]), recParams);
+plt_image(abs.(x2); vmaxp=99.9, title="w/  ΔB₀, stitched: 111, w/o  density weighting")
+
+
+# recon with stitched measurement, with density weighting, without ΔB₀
+HOOp = HighOrderOp(gridding, T.(kspha[:, 1:9]'), T.(datatime); sim_method=BHO, tr_nominal=T.(kspha_nominal'), 
+                        Nblocks=Nblocks, fieldmap=T.(b0.*0), use_gpu=use_gpu, verbose=verbose);
+@time x = recon_HOOp(HOOp, Complex{T}.(signal[:,:,1]), Complex{T}.(weight), recParams);
+plt_image(abs.(x); vmaxp=99.9, title="w/o ΔB₀, stitched: 111, w/  density weighting")
+
+
+# recon with nominal trajectory, with density weighting, with ΔB₀
+BHO = BlochHighOrder("000");  # "000" indicates that no measured field dynamics are used, only nominal kspace trajectory is used.
+HOOp = HighOrderOp(gridding, T.(kspha[:, 1:9]'), T.(datatime); sim_method=BHO, tr_nominal=T.(kspha_nominal'), 
+                        Nblocks=Nblocks, fieldmap=T.(b0), use_gpu=use_gpu, verbose=verbose);
+@time x = recon_HOOp(HOOp, Complex{T}.(signal[:,:,1]), Complex{T}.(weight), recParams);
+plt_image(abs.(x); vmaxp=99.9, title="w/  ΔB₀, nominal, w/  density weighting")
+# you can try different recons like: "011", "101", "110"...

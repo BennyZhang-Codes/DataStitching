@@ -115,7 +115,6 @@ function FindDelay_v2(
         @info "Iteration $nIter: Δτ = $(round(Δτ/dt, digits=5)) [us] | τ = $(round(τ/dt, digits=5)) [us] | JumpFact = $JumpFact"
         
         if (nIter>1) && (sign(Δτ_prev) != sign(Δτ))
-            println("Jumping back to previous solution")
             JumpFact = maximum([1, JumpFact/2]);
         end
         Δτ_prev = Δτ;

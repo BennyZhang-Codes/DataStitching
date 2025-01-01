@@ -5,6 +5,8 @@ using PyPlot
 using MRIReco
 using RegularizedLeastSquares
 import DSP: conv
+using CUDA
+CUDA.device!(0)
 
 T=Float64;
 path = "$(@__DIR__)/workplace/AutoDelay/data"
@@ -37,7 +39,7 @@ pha_spha = InterpTrajTime(ksphaStitched,dt,delayStitched)[1:nSample,:];
 datatime = collect(dt * (0:nSample-1));
 
 
-# For HighOrderOp_v2
+# For HighOrderOp
 gridding = Grid(nX, nY, nZ, Δx, Δy, Δz; exchange_xy=true, reverse_x=false, reverse_y=true)
 BHO = BlochHighOrder("111")
 Nblocks = 10;
@@ -56,35 +58,112 @@ weight = SampleDensity(pha_spha'[2:3,:], (nX, nY));
 
 # HOOp = HighOrderOp(gridding, T.(pha_spha[:, 1:9]'), T.(datatime); sim_method=BHO, Nblocks=Nblocks, csm=Complex{T}.(csm), fieldmap=T.(b0), use_gpu=use_gpu, verbose=verbose);
 # @time x1 = recon_HOOp(HOOp, Complex{T}.(data), Complex{T}.(weight), recParams);
-# plt_image(abs.(x1))
+# plt_image(abs.(x1), vmaxp=99.9)
 
-# τ = FindDelay(gridding, Complex{T}.(data), T.(ksphaStitched), (delayStitched-dt)/dt, dt/dt;
-#     intermode=AkimaMonotonicInterpolation(), JumpFact=3,
+# HOOp = HighOrderOp(gridding, T.(pha_spha[:, 1:9]'), T.(datatime); sim_method=BHO, Nblocks=Nblocks, csm=Complex{T}.(csm), fieldmap=T.(b0), use_gpu=use_gpu, verbose=verbose);
+# @time x1 = recon_HOOp(HOOp, Complex{T}.(data), recParams);
+# plt_image(abs.(x1), vmaxp=99.9)
+
+τ = FindDelay(gridding, Complex{T}.(data), T.(ksphaStitched), (delayStitched-dt)/dt, dt/dt;
+    intermode=AkimaMonotonicInterpolation(), JumpFact=3, iter_max=20,
+    fieldmap=T.(b0)*dt, csm=Complex{T}.(csm), sim_method=BHO, Nblocks=Nblocks)
+
+τ = FindDelay_v2(gridding, Complex{T}.(data), T.(ksphaStitched), (delayStitched-dt)/dt, dt/dt;
+    intermode=AkimaMonotonicInterpolation(), JumpFact=3, iter_max=20,
+    fieldmap=T.(b0)*dt, csm=Complex{T}.(csm), sim_method=BHO, Nblocks=Nblocks)
+    
+τ = FindDelay(gridding, Complex{T}.(data), T.(ksphaStitched), (delayStitched-dt)/dt, dt/dt;
+    intermode=AkimaMonotonicInterpolation(), JumpFact=3, iter_max=20, Δτ_min=0.0001,
+    fieldmap=T.(b0)*dt, csm=Complex{T}.(csm), sim_method=BHO, Nblocks=Nblocks)
+
+# τ2 = FindDelay(gridding, Complex{T}.(data), T.(ksphaStitched), (delayStitched-dt)/dt + τ, dt/dt;
+#     intermode=AkimaMonotonicInterpolation(), JumpFact=3, iter_max=20, Δτ_min=0.0001,
 #     fieldmap=T.(b0)*dt, csm=Complex{T}.(csm), sim_method=BHO, Nblocks=Nblocks)
 
-    
+
+########################################################################################
+# Comparison (Stitched): FindDelay vs. FindDelay_v2, when Δτ_min=0.0001
+########################################################################################
+τ_dt    = FindDelay(gridding, Complex{T}.(data), T.(ksphaStitched), (delayStitched-dt)/dt, dt/dt;
+    intermode=AkimaMonotonicInterpolation(), JumpFact=3, iter_max=20, Δτ_min=0.0001,
+    fieldmap=T.(b0)*dt, csm=Complex{T}.(csm), sim_method=BHO, Nblocks=Nblocks)
+
+τ_dt_v2 = FindDelay_v2(gridding, Complex{T}.(data), T.(ksphaStitched), (delayStitched-dt)/dt, dt/dt;
+    intermode=AkimaMonotonicInterpolation(), JumpFact=3, iter_max=20, Δτ_min=0.0001,
+    fieldmap=T.(b0)*dt, csm=Complex{T}.(csm), sim_method=BHO, Nblocks=Nblocks)
+
+τ    = FindDelay(gridding, Complex{T}.(data), T.(ksphaStitched), (delayStitched)/dt, dt/dt;
+    intermode=AkimaMonotonicInterpolation(), JumpFact=3, iter_max=20, Δτ_min=0.0001,
+    fieldmap=T.(b0)*dt, csm=Complex{T}.(csm), sim_method=BHO, Nblocks=Nblocks)
+
+τ_v2 = FindDelay_v2(gridding, Complex{T}.(data), T.(ksphaStitched), (delayStitched)/dt, dt/dt;
+    intermode=AkimaMonotonicInterpolation(), JumpFact=3, iter_max=20, Δτ_min=0.0001,
+    fieldmap=T.(b0)*dt, csm=Complex{T}.(csm), sim_method=BHO, Nblocks=Nblocks)
+
+########################################################################################
+# Comparison: FindDelay vs. FindDelay_v2 vs. findDelAuto (matmri), Stitched and Standard
+########################################################################################
+iter_max = 10;
+JumpFact = 6;
+Δτ_min = 0.0001;
+
+# FindDelay
+τ = FindDelay(gridding, Complex{T}.(data), T.(ksphaStitched), (delayStitched-dt)/dt, dt/dt;
+    intermode=AkimaMonotonicInterpolation(), JumpFact=JumpFact, iter_max=iter_max, Δτ_min=Δτ_min,
+    fieldmap=T.(b0)*dt, csm=Complex{T}.(csm), sim_method=BHO, Nblocks=Nblocks)
+
+τ = FindDelay(gridding, Complex{T}.(data), T.(ksphaStandard), (delayStandard-dt)/dt, dt/dt;
+    intermode=AkimaMonotonicInterpolation(), JumpFact=JumpFact, iter_max=iter_max, Δτ_min=Δτ_min,
+    fieldmap=T.(b0)*dt, csm=Complex{T}.(csm), sim_method=BHO, Nblocks=Nblocks)
+
+τ = FindDelay(gridding, Complex{T}.(data), T.(ksphaStitched), (delayStitched)/dt, dt/dt;
+    intermode=AkimaMonotonicInterpolation(), JumpFact=JumpFact, iter_max=iter_max, Δτ_min=Δτ_min,
+    fieldmap=T.(b0)*dt, csm=Complex{T}.(csm), sim_method=BHO, Nblocks=Nblocks)
+
+τ = FindDelay(gridding, Complex{T}.(data), T.(ksphaStandard), (delayStandard)/dt, dt/dt;
+    intermode=AkimaMonotonicInterpolation(), JumpFact=JumpFact, iter_max=iter_max, Δτ_min=Δτ_min,
+    fieldmap=T.(b0)*dt, csm=Complex{T}.(csm), sim_method=BHO, Nblocks=Nblocks)
+
+# FindDelay_v2
+τ = FindDelay_v2(gridding, Complex{T}.(data), T.(ksphaStitched), (delayStitched-dt)/dt, dt/dt;
+    intermode=AkimaMonotonicInterpolation(), JumpFact=JumpFact, iter_max=iter_max, Δτ_min=Δτ_min,
+    fieldmap=T.(b0)*dt, csm=Complex{T}.(csm), sim_method=BHO, Nblocks=Nblocks)
+
+τ = FindDelay_v2(gridding, Complex{T}.(data), T.(ksphaStandard), (delayStandard-dt)/dt, dt/dt;
+    intermode=AkimaMonotonicInterpolation(), JumpFact=JumpFact, iter_max=iter_max, Δτ_min=Δτ_min,
+    fieldmap=T.(b0)*dt, csm=Complex{T}.(csm), sim_method=BHO, Nblocks=Nblocks)
+
+τ = FindDelay_v2(gridding, Complex{T}.(data), T.(ksphaStitched), (delayStitched)/dt, dt/dt;
+    intermode=AkimaMonotonicInterpolation(), JumpFact=JumpFact, iter_max=iter_max, Δτ_min=Δτ_min,
+    fieldmap=T.(b0)*dt, csm=Complex{T}.(csm), sim_method=BHO, Nblocks=Nblocks)
+
+τ = FindDelay_v2(gridding, Complex{T}.(data), T.(ksphaStandard), (delayStandard)/dt, dt/dt;
+    intermode=AkimaMonotonicInterpolation(), JumpFact=JumpFact, iter_max=iter_max, Δτ_min=Δτ_min,
+    fieldmap=T.(b0)*dt, csm=Complex{T}.(csm), sim_method=BHO, Nblocks=Nblocks)
+
+
 ################################################################################
 # debug 
 ################################################################################
-datatime = T.(collect(dt * (0:nSample-1)));
+datatime = T.(collect(1 * (0:nSample-1)));
 
-gridding    = gridding                      
-data        = Complex{T}.(data) 
-kspha       = T.(ksphaStitched)           
-StartTime   = delayStitched-dt                         
-dt          = dt               
+gridding    = gridding;                      
+data        = Complex{T}.(data); 
+kspha       = T.(ksphaStitched);           
+StartTime   = (delayStitched-1e-6)/1e-6                         
+dt          = 1               
 JumpFact    = 3      
 intermode   = AkimaMonotonicInterpolation()
-fieldmap    = T.(b0)
-csm         = Complex{T}.(csm)
+fieldmap    = T.(b0)*1e-6 ;
+csm         = Complex{T}.(csm);
 sim_method  = BlochHighOrder("111")
-Nblocks     = 10     
+Nblocks     = 5   
 use_gpu     = true   
 solver      = "cgnr" 
 reg         = "L2"   
 iter_max    = 10     
 λ           = 0.     
-verbose     = true  
+verbose     = false  
 
 
 
@@ -119,13 +198,15 @@ HOOp_dt = HighOrderOp(gridding, kspha_τ, datatime; sim_method=sim_method, tr_ks
             Nblocks=Nblocks, csm=csm, fieldmap=fieldmap, use_gpu=use_gpu, verbose=verbose);
 
 # Update image
-x = recon_HOOp(HOOp, data, weight, recParams)
+# x = recon_HOOp(HOOp, data, weight, recParams)
+
+x = recon_HOOp(HOOp, data, recParams)
 # if verbose
-plt_image(rotr90(abs.(x)), title="Iteration $nIter", vmaxp=99.9)
+plt_image(abs.(x), title="Iteration $nIter", vmaxp=99.9)
 # end
 # Update delay
-y1 = W*vec(data) - W*(HOOp * vec(x)); # Y - Aₚxₚ
-y2 = W*(HOOp_dt * vec(x));       # Bₚxₚ
+y1 = vec(data) - HOOp * vec(x); # Y - Aₚxₚ
+y2 = HOOp_dt * vec(x);       # Bₚxₚ
 Δτ = JumpFact * real((W*y2) \ (W*y1))
 
 
