@@ -9,7 +9,7 @@ import RegularizedLeastSquares: SolverInfo
 #        sequence and dynamic field data.
 #########################################################################################
 
-seq_file = "$(@__DIR__)/demo/MultiChannel/xw_sp2d_7T-1mm-200-r3-noSync-fa90.seq"   # *.seq file is the pulseq's sequence file
+seq_file = "$(@__DIR__)/demo/MultiChannel/xw_sp2d_7T-1mm-200-r3.seq"   # *.seq file is the pulseq's sequence file
 # under-sampling factor: R = 4
 # inplane resolution: 1 mm x 1 mm
 # FOV: 200 mm x 200 mm
@@ -64,6 +64,7 @@ plot_seq(hoseqStandard)
 #     b. we use dynamic fields from field monitoring (stitching)
 #     c. recon the signal with NuFFT immeadiately after simulation
 #########################################################################################
+T = Float64;
 nX = nY = 200; nZ = 1;  # matrix size for recon
 Δx = Δy = 1e-3; Δz = 2e-3;
 # settings for Simulation
@@ -108,15 +109,13 @@ fig_sos = plt_image(rotl90(sqrt.(sum(img_nufft.^2; dims=3))[:,:,1]))
 fig_cha = plt_images(mapslices(rotl90, img_nufft,dims=[1,2]); dim=3, nRow= csm_nRow, nCol=csm_nCol)
 
 # 4. Adding noise to signal data
-snr = 15;
-data = signal[:,:,1];
+snr = 10;
+data = AddNoise(signal[:,:,1], snr);
 nSample, nCha = size(data);
-
-signalAmpl = sum(abs.(data), dims=1)/ nSample;
-data = data + signalAmpl/snr .* ( randn(size(data))+ 1im*randn(size(data)));
 
 # show the effect of noise
 raw = signal_to_raw_data(reshape(data, (nSample, nCha, 1)), hoseqStitched, :nominal; sim_params=copy(sim_params));
+
 img_nufft = recon_2d(raw, nX=nX, nY=nY);
 fig_sos = plt_image(rotl90(sqrt.(sum(img_nufft.^2; dims=3))[:,:,1]))
 fig_cha = plt_images(mapslices(rotl90, img_nufft,dims=[1,2]); dim=3, nRow= csm_nRow, nCol=csm_nCol)
@@ -132,14 +131,18 @@ csm  = get_center_crop(coil, nX, nY)[end:-1:1, :, :];
 fig_csm = plt_images(abs.(csm); dim=3, nRow=csm_nRow, nCol=csm_nCol)
 
 # ΔB₀ map (the same as the one used for simulation), we will use this map in reconstruction
-b0map = brain_phantom2D_reference(phantom, :Δw, (200., 200.), (1., 1.); location=location, ss=ss, db0_type=db0_type, db0_max=db0_max);
+b0map = brain_phantom2D_reference(phantom, :Δw, (T.(nX), T.(nY)), (T.(Δx*1e3), T.(Δy*1e3)); location=location, ss=ss, db0_type=db0_type, db0_max=db0_max);
 b0map = rotl90(b0map);
 fig_b0map = plt_B0map(b0map)
 
 # Proton-density map (reference)
-x_ref = brain_phantom2D_reference(phantom, :ρ, (200., 200.), (1., 1.); location=location, ss=ss);
-fig_ref = plt_image(rotl90(x_ref))
+x_ref = brain_phantom2D_reference(phantom, :ρ, (T.(nX), T.(nY)), (T.(Δx*1e3), T.(Δy*1e3)); location=location, ss=ss);
+x_ref = rotl90(x_ref);
+fig_ref = plt_image(x_ref)
 
+headmask = brain_phantom2D_reference(phantom, :headmask, (T.(nX), T.(nY)), (T.(Δx*1e3), T.(Δy*1e3)); location=location, ss=ss);
+headmask = rotl90(headmask);
+fig_headmask = plt_image(headmask)
 #############################################################################
 # HighOrderOp, the extended signal model for high-order terms
 #############################################################################
@@ -156,13 +159,6 @@ b0             = -b0map;
 nSample, nCha = size(data);
 
 # For HighOrderOp
-T = Float64;
-
-x, y = 1:nX, 1:nY;
-x, y, z = vec(x .+ y'*0.0), vec(x*0.0 .+ y'), vec(x*0.0 .+ y'*0.0) #grid points
-x, y = x .- nX/2 .- 1, y .- nY/2 .- 1
-
-
 x, y = 1:nX, 1:nY;
 x, y, z = vec(x*0.0 .+ y'), vec(x[end:-1:1] .+ 0.0*y'), vec(x*0.0 .+ y'*0.0) #grid points
 x, y = x .- nX/2 .- 1, y .- nY/2 .- 1
@@ -174,17 +170,17 @@ BHO = BlochHighOrder("111");
 a measurement are used. For example, "110" means only the 0th and 1st order terms are used. =#
 Nblocks = 20;   # the number is set according to the GPU memory.
 use_gpu = true;
-verbose = true;
+verbose = false;
 
-solver = "admm"; regularization = "TV"; iter = 5; λ = 1e-15;
-solver = "cgnr"; regularization = "L2"; iter = 5; λ = 0*1e-9;
+solver = "admm"; regularization = "TV"; iter = 5; λ = 1e-1;
+solver = "cgnr"; regularization = "L2"; iter = 100; λ = 0*1e-9;
 recParams = Dict{Symbol,Any}()
 recParams[:reconSize]      = (nX, nY)
 recParams[:regularization] = regularization  # ["L2", "L1", "L21", "TV", "LLR", "Positive", "Proj", "Nuclear"]
 recParams[:λ]              = λ
 recParams[:iterations]     = iter
 recParams[:solver]         = solver
-# recParams[:solverInfo] = SolverInfo(vec(Complex{T}.(x_ref)), store_solutions=false)
+recParams[:solverInfo] = SolverInfo(vec(Complex{T}.(x_ref)), store_solutions=true)
 
 weight = SampleDensity(kspha_stitched'[2:3,:], (nX, nY));
 
@@ -192,86 +188,73 @@ HOOp = HighOrderOp(gridding, T.(kspha_stitched[:, 1:9]'), T.(datatime); sim_meth
                         Nblocks=Nblocks, fieldmap=T.(b0), csm=Complex{T}.(csm), use_gpu=use_gpu, verbose=verbose);
 
 # recon with stitched measurement, with density weighting, with ΔB₀
-@time x1 = recon_HOOp(HOOp, Complex{T}.(data), Complex{T}.(weight), recParams);
-plt_image(abs.(x1); vmaxp=99.9, title="w/  ΔB₀, stitched: 111, w/  density weighting")
+@time x = recon_HOOp(HOOp, Complex{T}.(data), Complex{T}.(weight), recParams);
+plt_image(abs.(x); vmaxp=99.9, title="w/  ΔB₀, stitched: 111, w/  density weighting")
+
+# ssim, compared with the ground truth
+println("SSIM: ", HO_SSIM(x_ref, abs.(x)))
 
 solverinfo = recParams[:solverInfo];
-solverinfo.
-
-# recon with stitched measurement, without density weighting, with ΔB₀
-@time x2 = recon_HOOp(HOOp, Complex{T}.(data), recParams);
-plt_image(abs.(x2); vmaxp=99.9, title="w/  ΔB₀, stitched: 111, w/o  density weighting")
-
-
-# recon with stitched measurement, with density weighting, without ΔB₀
-HOOp = HighOrderOp(gridding, T.(kspha_stitched[:, 1:9]'), T.(datatime); sim_method=BHO, tr_nominal=T.(kspha_nominal'), 
-                        Nblocks=Nblocks, fieldmap=T.(b0.*0), csm=Complex{T}.(csm), use_gpu=use_gpu, verbose=verbose);
-@time x = recon_HOOp(HOOp, Complex{T}.(data), Complex{T}.(weight), recParams);
-plt_image(abs.(x); vmaxp=99.9, title="w/o ΔB₀, stitched: 111, w/  density weighting")
-
-
-# recon with nominal trajectory, with density weighting, with ΔB₀
-BHO = BlochHighOrder("000");  # "000" indicates that no measured field dynamics are used, only nominal kspace trajectory is used.
-HOOp = HighOrderOp(gridding, T.(kspha_stitched[:, 1:9]'), T.(datatime); sim_method=BHO, tr_nominal=T.(kspha_nominal'), 
-                        Nblocks=Nblocks, fieldmap=T.(b0), csm=Complex{T}.(csm), use_gpu=use_gpu, verbose=verbose);
-@time x = recon_HOOp(HOOp, Complex{T}.(data), Complex{T}.(weight), recParams);
-plt_image(abs.(x); vmaxp=99.9, title="w/  ΔB₀, nominal, w/  density weighting")
-# you can try different recons like: "011", "101", "110"...
+println(solverinfo.convMeas)
+# to see the reconstructed images at each iteration
+iter = 25;
+plt_image(reshape(abs.(solverinfo.x_iter[iter+1]), nX, nY); vmaxp=99.9)
 
 
 
-
-
-Nblocks=10;
 ##### with ΔB₀
 # 1. nominal trajectory, BlochHighOrder("000")
-Op1 = HighOrderOp((nX, nY), tr_nominal, tr_ksphaStitched , BlochHighOrder("000"); Nblocks=Nblocks, fieldmap=Matrix(B0map), grid=1);
+HOOp1 = HighOrderOp(gridding, T.(kspha_stitched[:, 1:9]'), T.(datatime); sim_method=BlochHighOrder("000"), tr_nominal=T.(kspha_nominal'), 
+                        Nblocks=Nblocks, fieldmap=T.(b0), csm=Complex{T}.(csm), use_gpu=use_gpu, verbose=verbose);
 # 2. stitched trajectory, BlochHighOrder("110")
-Op2 = HighOrderOp((nX, nY), tr_nominal, tr_ksphaStitched , BlochHighOrder("110"); Nblocks=Nblocks, fieldmap=Matrix(B0map), grid=1);
+HOOp2 = HighOrderOp(gridding, T.(kspha_stitched[:, 1:9]'), T.(datatime); sim_method=BlochHighOrder("110"), tr_nominal=T.(kspha_nominal'), 
+                        Nblocks=Nblocks, fieldmap=T.(b0), csm=Complex{T}.(csm), use_gpu=use_gpu, verbose=verbose);
 # 3. stitched trajectory, BlochHighOrder("111")
-Op3 = HighOrderOp((nX, nY), tr_nominal, tr_ksphaStitched , BlochHighOrder("111"); Nblocks=Nblocks, fieldmap=Matrix(B0map), grid=1);
+HOOp3 = HighOrderOp(gridding, T.(kspha_stitched[:, 1:9]'), T.(datatime); sim_method=BlochHighOrder("111"), tr_nominal=T.(kspha_nominal'), 
+                        Nblocks=Nblocks, fieldmap=T.(b0), csm=Complex{T}.(csm), use_gpu=use_gpu, verbose=verbose);
 # 4. standard trajectory, BlochHighOrder("111")
-Op4 = HighOrderOp((nX, nY), tr_nominal, tr_ksphaStandard , BlochHighOrder("111"); Nblocks=Nblocks, fieldmap=Matrix(B0map), grid=1);
-
-
+HOOp4 = HighOrderOp(gridding, T.(kspha_standard[:, 1:9]'), T.(datatime); sim_method=BlochHighOrder("111"), tr_nominal=T.(kspha_nominal'), 
+                        Nblocks=Nblocks, fieldmap=T.(b0), csm=Complex{T}.(csm), use_gpu=use_gpu, verbose=verbose);
 ##### w/o ΔB₀
 # 5. nominal trajectory, BlochHighOrder("000")
-Op5 = HighOrderOp((nX, nY), tr_nominal, tr_ksphaStitched , BlochHighOrder("000"); Nblocks=Nblocks, fieldmap=Matrix(B0map).*0, grid=1);
+HOOp5 = HighOrderOp(gridding, T.(kspha_stitched[:, 1:9]'), T.(datatime); sim_method=BlochHighOrder("000"), tr_nominal=T.(kspha_nominal'), 
+                        Nblocks=Nblocks, fieldmap=T.(b0.*0), csm=Complex{T}.(csm), use_gpu=use_gpu, verbose=verbose);
 # 6. stitched trajectory, BlochHighOrder("110")
-Op6 = HighOrderOp((nX, nY), tr_nominal, tr_ksphaStitched , BlochHighOrder("110"); Nblocks=Nblocks, fieldmap=Matrix(B0map).*0, grid=1);
+HOOp6 = HighOrderOp(gridding, T.(kspha_stitched[:, 1:9]'), T.(datatime); sim_method=BlochHighOrder("110"), tr_nominal=T.(kspha_nominal'), 
+                        Nblocks=Nblocks, fieldmap=T.(b0.*0), csm=Complex{T}.(csm), use_gpu=use_gpu, verbose=verbose);
 # 7. stitched trajectory, BlochHighOrder("111")
-Op7 = HighOrderOp((nX, nY), tr_nominal, tr_ksphaStitched , BlochHighOrder("111"); Nblocks=Nblocks, fieldmap=Matrix(B0map).*0, grid=1);
+HOOp7 = HighOrderOp(gridding, T.(kspha_stitched[:, 1:9]'), T.(datatime); sim_method=BlochHighOrder("111"), tr_nominal=T.(kspha_nominal'), 
+                        Nblocks=Nblocks, fieldmap=T.(b0.*0), csm=Complex{T}.(csm), use_gpu=use_gpu, verbose=verbose);
 # 8. standard trajectory, BlochHighOrder("111")
-Op8 = HighOrderOp((nX, nY), tr_nominal, tr_ksphaStandard , BlochHighOrder("111"); Nblocks=Nblocks, fieldmap=Matrix(B0map).*0, grid=1);
+HOOp8 = HighOrderOp(gridding, T.(kspha_standard[:, 1:9]'), T.(datatime); sim_method=BlochHighOrder("111"), tr_nominal=T.(kspha_nominal'), 
+                        Nblocks=Nblocks, fieldmap=T.(b0.*0), csm=Complex{T}.(csm), use_gpu=use_gpu, verbose=verbose);
 
-Ops = [Op1, Op2, Op3, Op4, Op5, Op6, Op7, Op8];
+Ops = [HOOp1, HOOp2, HOOp3, HOOp4, HOOp5, HOOp6, HOOp7, HOOp8];
 
 
-imgs = Array{T,3}(undef, length(Ops), nX, nY);
+imgs = Array{Complex{T},3}(undef, length(Ops), nX, nY);
 labels = [ "wB0_nominal",  "wB0_stitched_110",  "wB0_stitched_111",  "wB0_standard_111",
           "woB0_nominal", "woB0_stitched_110", "woB0_stitched_111", "woB0_standard_111",];
-for idx in eachindex(Ops)
-    Op = DiagOp(Ops[idx], numChan) ∘ S 
-    recParams[:encodingOps] = reshape([Op], 1,1);
-    @time rec = abs.(reconstruction(acqData, recParams).data[:,:]);
-    imgs[idx, :, :] = rotl90(rec);
-    plt_image(rotl90(rec); title=labels[idx])
-end
 
+solver = "cgnr"; regularization = "L2"; iter = 40; λ = 0.;
+recParams = Dict{Symbol,Any}()
+recParams[:reconSize]      = (nX, nY)
+recParams[:regularization] = regularization  # ["L2", "L1", "L21", "TV", "LLR", "Positive", "Proj", "Nuclear"]
+recParams[:λ]              = λ
+recParams[:iterations]     = iter
+recParams[:solver]         = solver
+
+for idx in eachindex(Ops)
+    @info "Recon with $(labels[idx])"
+    HOOp = Ops[idx]
+    @time x = recon_HOOp(HOOp, Complex{T}.(data), Complex{T}.(weight), recParams);
+    imgs[idx, :, :] = x;
+    plt_image(abs.(x); vmaxp=99.9, title=labels[idx])
+end
 
 
 #############################################################################
 # Save the results
 #############################################################################
-# ΔB₀ map
-B0map = brain_phantom2D_reference(phantom, :Δw, (200., 200.), (1., 1.); location=location, ss=ss, db0_type=db0_type, db0_max=db0_max);
-B0map = rotl90(B0map);
-
-x_ref = brain_phantom2D_reference(phantom, :ρ, (200., 200.), (1., 1.); location=location, ss=ss);
-x_ref = rotl90(x_ref);
-
-headmask = brain_phantom2D_reference(phantom, :headmask, (200., 200.), (1., 1.); location=location, ss=ss);
-headmask = rotl90(headmask);
-
 MAT.matwrite("$(@__DIR__)/demo/MultiChannel/snr$(snr)_$(solver)_$(iter)_$(regularization)_$(λ).mat", 
-            Dict("imgs"=>imgs, "labels"=>labels, "csm"=>csm, "signal"=>data, "B0map"=>B0map, "x_ref"=>x_ref, "headmask"=>headmask))
+            Dict("imgs"=>imgs, "labels"=>labels, "csm"=>csm, "signal"=>data, "b0map"=>b0map, "x_ref"=>x_ref, "headmask"=>headmask))

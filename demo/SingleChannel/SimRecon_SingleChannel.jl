@@ -62,6 +62,7 @@ plot_seq(hoseqStandard)
 #     a. we use dynamic fields from field monitoring (stitching)
 #     b. recon the signal with NuFFT immeadiately after simulation
 #########################################################################################
+T = Float64;
 nX = nY = 150; nZ = 1;  # matrix size for recon
 Δx = Δy = 1e-3; Δz = 2e-3;
 
@@ -93,8 +94,7 @@ sys = Scanner();
 sim_params = KomaMRICore.default_sim_params();
 sim_params["sim_method"]  = BHO;      # using "BlochHighOrder" for simulation with high-order terms
 sim_params["return_type"] = "mat";    # setting with "mat", return the signal data for all channel
-sim_params["precision"]   = "f64"
-sim_params["gpu_device"]  = 0;       
+sim_params["precision"]   = "f64"   
 
 # 3. simulate
 signal = simulate(obj, hoseqStitched, sys; sim_params);
@@ -103,15 +103,12 @@ img_nufft = recon_2d(raw);
 fig_nufft = plt_image(rotl90(img_nufft))
 
 # 4. Adding noise to signal data
-snr = 15;
-data = signal[:,:,1];
+snr = 10;
+data = AddNoise(signal[:,:,1], snr);
 nSample, nCha = size(data);
-
-signalAmpl = sum(abs.(data), dims=1)/ nSample;
-data = data + signalAmpl/snr .* ( randn(size(data))+ 1im*randn(size(data)));
-
 # show the effect of noise
 raw = signal_to_raw_data(reshape(data, (nSample, nCha, 1)), hoseqStitched, :nominal; sim_params=copy(sim_params));
+
 img_nufft = recon_2d(raw);
 fig_nufft = plt_image(rotl90(img_nufft))
 
@@ -122,12 +119,12 @@ fig_nufft = plt_image(rotl90(img_nufft))
 #     c. reconstruct the signal with the encoding operator
 #########################################################################################
 # ΔB₀ map (the same as the one used for simulation), we will use this map in reconstruction
-b0map = brain_phantom2D_reference(phantom, :Δw, (150., 150.), (1., 1.); location=location, ss=ss, db0_type=db0_type, db0_max=db0_max);
+b0map = brain_phantom2D_reference(phantom, :Δw, (T.(nX), T.(nY)), (T.(Δx*1e3), T.(Δy*1e3)); location=location, ss=ss, db0_type=db0_type, db0_max=db0_max);
 b0map = rotl90(b0map);
 fig_b0map = plt_B0map(b0map)
 
 # Proton-density map (the reference of recon, because we didn't consider T2 in simulation of single-shot spiral)
-x_ref = brain_phantom2D_reference(phantom, :ρ, (150., 150.), (1., 1.); location=location, ss=ss);
+x_ref = brain_phantom2D_reference(phantom, :ρ, (T.(nX), T.(nY)), (T.(Δx*1e3), T.(Δy*1e3)); location=location, ss=ss);
 x_ref = rotl90(x_ref);
 fig_ref = plt_image(x_ref)
 
@@ -145,8 +142,6 @@ b0            = -b0map;
 nSample, nCha = size(data);
 
 # For HighOrderOp
-T = Float64;
-
 x, y = 1:nX, 1:nY;
 x, y, z = vec(x*0.0 .+ y'), vec(x[end:-1:1] .+ 0.0*y'), vec(x*0.0 .+ y'*0.0) #grid points
 x, y = x .- nX/2 .- 1, y .- nY/2 .- 1
@@ -158,10 +153,10 @@ BHO = BlochHighOrder("111");
 a measurement are used. For example, "110" means only the 0th and 1st order terms are used. =#
 Nblocks = 20;   # the number is set according to the GPU memory.
 use_gpu = true;
-verbose = true;
+verbose = false;
 
-# solver = "admm"; regularization = "TV"; iter = 20; λ = 1e-9;
-solver = "cgnr"; regularization = "L2"; iter = 20; λ = 1e-9;
+solver = "admm"; regularization = "TV"; iter = 20; λ = 1e-1;
+solver = "cgnr"; regularization = "L2"; iter = 20; λ = 1e-7;
 recParams = Dict{Symbol,Any}()
 recParams[:reconSize]      = (nX, nY)
 recParams[:regularization] = regularization  # ["L2", "L1", "L21", "TV", "LLR", "Positive", "Proj", "Nuclear"]
@@ -176,21 +171,29 @@ HOOp = HighOrderOp(gridding, T.(kspha[:, 1:9]'), T.(datatime); sim_method=BHO, t
                         Nblocks=Nblocks, fieldmap=T.(b0), use_gpu=use_gpu, verbose=verbose);
 
 # recon with stitched measurement, with density weighting, with ΔB₀
-@time x1 = recon_HOOp(HOOp, Complex{T}.(signal[:,:,1]), Complex{T}.(weight), recParams);
+@time x1 = recon_HOOp(HOOp, Complex{T}.(data), Complex{T}.(weight), recParams);
 plt_image(abs.(x1); vmaxp=99.9, title="w/  ΔB₀, stitched: 111, w/  density weighting")
+solverinfo1 = recParams[:solverInfo];
+solverinfo1.convMeas
 
-solverinfo = recParams[:solverInfo];
-solverinfo.
 
+recParams = Dict{Symbol,Any}()
+recParams[:reconSize]      = (nX, nY)
+recParams[:regularization] = regularization  # ["L2", "L1", "L21", "TV", "LLR", "Positive", "Proj", "Nuclear"]
+recParams[:λ]              = λ
+recParams[:iterations]     = iter
+recParams[:solver]         = solver
+recParams[:solverInfo] = SolverInfo(vec(Complex{T}.(x_ref)), store_solutions=true)
 # recon with stitched measurement, without density weighting, with ΔB₀
-@time x2 = recon_HOOp(HOOp, Complex{T}.(signal[:,:,1]), recParams);
+@time x2 = recon_HOOp(HOOp, Complex{T}.(data), recParams);
 plt_image(abs.(x2); vmaxp=99.9, title="w/  ΔB₀, stitched: 111, w/o  density weighting")
-
+solverinfo2 = recParams[:solverInfo];
+solverinfo2.convMeas
 
 # recon with stitched measurement, with density weighting, without ΔB₀
 HOOp = HighOrderOp(gridding, T.(kspha[:, 1:9]'), T.(datatime); sim_method=BHO, tr_nominal=T.(kspha_nominal'), 
                         Nblocks=Nblocks, fieldmap=T.(b0.*0), use_gpu=use_gpu, verbose=verbose);
-@time x = recon_HOOp(HOOp, Complex{T}.(signal[:,:,1]), Complex{T}.(weight), recParams);
+@time x = recon_HOOp(HOOp, Complex{T}.(data), Complex{T}.(weight), recParams);
 plt_image(abs.(x); vmaxp=99.9, title="w/o ΔB₀, stitched: 111, w/  density weighting")
 
 
@@ -198,6 +201,6 @@ plt_image(abs.(x); vmaxp=99.9, title="w/o ΔB₀, stitched: 111, w/  density wei
 BHO = BlochHighOrder("000");  # "000" indicates that no measured field dynamics are used, only nominal kspace trajectory is used.
 HOOp = HighOrderOp(gridding, T.(kspha[:, 1:9]'), T.(datatime); sim_method=BHO, tr_nominal=T.(kspha_nominal'), 
                         Nblocks=Nblocks, fieldmap=T.(b0), use_gpu=use_gpu, verbose=verbose);
-@time x = recon_HOOp(HOOp, Complex{T}.(signal[:,:,1]), Complex{T}.(weight), recParams);
+@time x = recon_HOOp(HOOp, Complex{T}.(data), Complex{T}.(weight), recParams);
 plt_image(abs.(x); vmaxp=99.9, title="w/  ΔB₀, nominal, w/  density weighting")
 # you can try different recons like: "011", "101", "110"...
