@@ -4,7 +4,7 @@ using PyPlot
 using MRIReco
 using CUDA
 
-CUDA.device!(1)
+CUDA.device!(2)
 
 T=Float64;
 path = "$(@__DIR__)/workplace/AutoDelay/comparison_matmri"
@@ -63,11 +63,11 @@ for snr in [Inf, 10, 5];
         end
 
         τ = FindDelay_v2(g, Complex{T}.(data_in), T.(kspha_raw), T.(datatime), T.(StartTime - delay_applied), T.(dt);
-            JumpFact=JumpFact, fieldmap=T.(b0), csm=Complex{T}.(csm), sim_method=BHO, Nblocks=Nblocks, iter_max=iter_max, Δτ_min=0.005)
+            JumpFact=JumpFact, fieldmap=T.(b0), csm=Complex{T}.(csm), sim_method=BHO, Nblocks=Nblocks, iter_max=iter_max, Δτ_min=0.0001)
         τ_auto[i, j] = τ
         @info "JumpFact: $(JumpFact), delay_applied: $(delay_applied), delay_auto: $(τ)"
     end
-    matwrite("$(path)/20241231/FindDelay_v2_data_itermax$(iter_max)_snr$(snr)_min5e-3.mat", Dict("JumpFacts"=>JumpFacts, "tau_true"=>τ_true, "tau_auto"=>τ_auto))
+    matwrite("$(path)/20241231/FindDelay_v2_data_itermax$(iter_max)_snr$(snr)_min1e-4.mat", Dict("JumpFacts"=>JumpFacts, "tau_true"=>τ_true, "tau_auto"=>τ_auto))
     err = (Float64.(τ_auto) .- τ_true') .* 1e3; # [ns]
     ys = [err[idx,:] for idx=eachindex(JumpFacts)];
     xs = [τ_true       for idx=eachindex(JumpFacts)];
@@ -77,7 +77,7 @@ for snr in [Inf, 10, 5];
         fontsize_label=9, fontsize_legend=7, fontsize_ticklabel=7)
     ax = fig.axes[1]
     ax.xaxis.set_ticks(-5:1:5)
-    fig.savefig("$(path)/20241231/FindDelay_v2_fig_itermax$(iter_max)_snr$(snr)_min5e-3.png", dpi=900, transparent=false, bbox_inches="tight", pad_inches=0.0)
+    fig.savefig("$(path)/20241231/FindDelay_v2_fig_itermax$(iter_max)_snr$(snr)_min1e-4.png", dpi=900, transparent=false, bbox_inches="tight", pad_inches=0.0)
 end
 
 # width = height = 8

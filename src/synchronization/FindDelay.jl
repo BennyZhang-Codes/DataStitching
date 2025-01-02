@@ -15,7 +15,7 @@ This implementation utilizes our `HighOrderOp` to realize the expanded encoding 
 # Arguments
 - `gridding::Grid{T}`: gridding object containing the grid parameters
 - `data::AbstractArray{T, 2} [nSample, nCha]`: signal data
-- `kspha::AbstractArray{T, 2} [~, nCha]`: coefficients of spherical harmonics basis functions
+- `kspha::AbstractArray{T, 2} [nSample, nTerm]`: coefficients of spherical harmonics basis functions
 - `datatime::AbstractVector [nSample]`: sampling time points of the signal data
 - `StartTime::T`: the time point of the first sample
 - `dt::T`: sampling interval
@@ -85,7 +85,7 @@ function FindDelay(
 
 
     # 2. Compute kspha_dt, which is "dk/dt"
-    kernel = [1/8 1/4 0 -1/4 -1/8]';
+    kernel = T.([1/8 1/4 0 -1/4 -1/8]');
     kspha_dt = conv(kspha, kernel)[3:end-2,:]/dt;  # crop both sides to match size of kspha
     
     while abs(Δτ) > Δτ_min
