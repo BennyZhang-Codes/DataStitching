@@ -80,11 +80,11 @@ function plt_plot(
     else
         if length(xs) == length(ys)
             for idx = eachindex(ys)
-                ax.plot(xs[idx], ys[idx], label=labels[idx], linewidth=linewidth)
+                ax.plot(xs[idx][1:length(ys[idx])], ys[idx], label=labels[idx], linewidth=linewidth)
             end
         else
             for idx = eachindex(ys)
-                ax.plot(xs[1], ys[idx], label=labels[idx], linewidth=linewidth)
+                ax.plot(xs[1][1:length(ys[idx])], ys[idx], label=labels[idx], linewidth=linewidth)
             end
         end
     end
