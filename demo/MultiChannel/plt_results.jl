@@ -4,11 +4,11 @@ using PyPlot, PyCall
 mpl_axes_grid1 = pyimport("mpl_toolkits.axes_grid1")
 mcolors = matplotlib.colors
 
-mat_file = "$(@__DIR__)/demo/MultiChannel/snr15_cgnr_30_L2_0.001.mat"   # *.mat file path
+mat_file = "$(@__DIR__)/demo/MultiChannel/snrInf_cgnr_40_L2_0.0.mat"   # *.mat file path
 results = MAT.matread(mat_file);
 #=
 "csm"      => [a.u.] Coil-Sensitivity
-"B0map"    => [Hz] B0 map
+"b0map"    => [Hz] B0 map
 "headmask" => Head mask
 "x_ref"    => Proton density map
 "imgs"     => [a.u.] Image data, reconstruction results
@@ -16,7 +16,7 @@ results = MAT.matread(mat_file);
 "labels"   => Image labels
 =#
 csm      = results["csm"];
-B0map    = results["B0map"];
+B0map    = results["b0map"];
 headmask = results["headmask"];
 x_ref    = results["x_ref"];
 imgs     = results["imgs"];
