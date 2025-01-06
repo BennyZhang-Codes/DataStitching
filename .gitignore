@@ -1,5 +1,7 @@
 .vscode/
 /Figures/out
+/Figures/Fig5/data
+/Figures/Fig6/data
 /workplace/Parallel_Imaging/debug/out
 /Figures/debug/out
 /workplace/AutoDelay/out
