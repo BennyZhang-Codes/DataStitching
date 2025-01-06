@@ -1,4 +1,5 @@
 function read_gre(seqfile::String, mrdfile::String) :: Tuple
+    T = Float32;
     @assert isfile(seqfile) "sequence file not found: $seqfile"
     @assert isfile(mrdfile) "raw data file not found: $mrdfile"
 

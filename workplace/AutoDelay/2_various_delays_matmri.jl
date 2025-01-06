@@ -104,7 +104,7 @@ fig.savefig("$(path)/fig_matmri_tau_snrInf.png", dpi=900, transparent=false, bbo
 
 matplotlib.rc("mathtext", default="regular")
 for snr in [5, 10, Inf], Δτ_min in ["5e-3", "1e-3", "1e-4"]
-    matfile = "$(path)/20241231/FindDelay_v2_data_itermax10_snr$(snr)_min$(Δτ_min).mat"
+    matfile = "$(path)/20241231/FindDelay_v2_data_itermax30_snr$(snr)_min$(Δτ_min).mat"
     τ_true = matread(matfile)["tau_true"]
     τ_auto = matread(matfile)["tau_auto"]
     err = (Float64.(τ_auto) .- τ_true') .* 1e3; # [ns]
@@ -116,5 +116,5 @@ for snr in [5, 10, Inf], Δτ_min in ["5e-3", "1e-3", "1e-4"]
         fontsize_label=9, fontsize_legend=7, fontsize_ticklabel=7)
     ax = fig.axes[1]
     ax.xaxis.set_ticks(-5:1:5)
-    fig.savefig("$(path)/20241231/FindDelay_v2_fig_itermax10_snr$(snr)_min$(Δτ_min).png", dpi=900, transparent=false, bbox_inches="tight", pad_inches=0.0)
+    fig.savefig("$(path)/20241231/FindDelay_v2_fig_itermax30_snr$(snr)_min$(Δτ_min).png", dpi=900, transparent=false, bbox_inches="tight", pad_inches=0.0)
 end

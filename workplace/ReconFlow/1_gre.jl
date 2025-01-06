@@ -1,6 +1,8 @@
 using KomaHighOrder, MRIReco, MRICoilSensitivities, PyPlot, MAT
 import KomaHighOrder.MRIBase: AcquisitionData
 using Statistics
+
+T = Float32
 #=
 data format:
 {resolution}_{matrixsize}_{undersamplingrate}, e.g., "0p5_400_r4"
@@ -39,7 +41,6 @@ for (gre_seq, gre_mrd, filename) in zip(gre_seqs, gre_mrds, filenames)
     gre_seq_file = "$(path)/seq/$(gre_seq)" 
     gre_mrd_file = "$(path)/mrd/$(gre_mrd)"
 
-    T = Float32
 
     kdata, ktraj, kdims, shape, TE, ReadoutMode, acqData, raw = read_gre(gre_seq_file, gre_mrd_file);
     nCha, nZ, nY, nX, nAvg, nSli, nCon, nPha, nRep, nSet, nSeg = shape;
