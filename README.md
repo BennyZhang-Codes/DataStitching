@@ -1,7 +1,8 @@
-# KomaHighOrder
+# KomaHighOrder.jl
 
 This is a Julia toolbox for MR simulation that can incorporate dynamic field changes associated with the gradients throughout the sequence.
 This is an extension of KomaMRI.jl (https://github.com/JuliaHealth/KomaMRI.jl), a Julia package for highly efficient MR simulations.
+This repository provides a set of demo scripts that allow users to perform simulations and reconstructions using both our data stitching method and the standard approach.
 You may run the [demos](https://github.com/BennyZhang-Codes/KomaHighOrder/blob/master/demo), to grab an idea of how this toolbox can be used to simulate MRI signals given a pulseq sequence and dynamic field changes measured using a field camera.
 
 If you use the toolbox, please consider citing the following abstract:
@@ -36,6 +37,8 @@ where $k_l(t)$ are the coefficients measured by NMR probes and $m$ represents ma
 3. [Multi-echo Gradient Echo (ME-GRE)](https://github.com/BennyZhang-Codes/KomaHighOrder/blob/master/demo/Muti-echo_GRE): estimating ΔB₀ map (MRIFieldmaps.jl) and coil-sensitivity map (ESPIRiT) from the ME-GRE data in the [ISMRMRD](https://github.com/ismrmrd/ismrmrd) format. Additionally, the ME-GRE sequence can be modified within the [source code](https://github.com/BennyZhang-Codes/KomaHighOrder/blob/master/demo/Muti-echo_GRE/pulseq) ([Pulseq](https://github.com/pulseq/pulseq), MATLAB version).
 
 ### Required dependencies:
+
+The current version is mainly based on two other packages: KomaMRI.jl (version: 0.8.0) and MRIReco.jl (version: 0.8.0).
 
 - `Julia` 1.9.4
 - `KomaMRI` 0.8.0
