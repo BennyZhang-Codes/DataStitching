@@ -3,6 +3,9 @@ using MRIReco
 using MAT
 import RegularizedLeastSquares: SolverInfo
 using ImageDistances
+using CUDA
+gpu_idx = 3
+CUDA.device!(gpu_idx)
 
 outpath = "$(@__DIR__)/Figures/Fig6/out"; if ispath(outpath) == false mkpath(outpath) end     # output directory
 ############################################################################################## 
@@ -14,24 +17,24 @@ nX = nY = 500; nZ = 1;  # matrix size for recon
 # settings for Simulation
 B0 = true     # turn on B0
 T2 = false    # turn off T2
-ss = 3        # set phantom down-sample factor to 3
+ss = 1        # set phantom down-sample factor to 3
 location = 0.8;                                              
 BHO = BlochHighOrder("111", true, true)                          # turn on all order terms of dynamic field change, turn on Δw_excitation, Δw_precession
 phantom = BrainPhantom(prefix="brain3D724", x=0.1, y=0.1, z=0.2) # decide which phantom file to use
 
 # setting the coil sensitivity used in the simulation
-csm_type  = :gaussian_grid_block;      
-# csm_nCoil = 256;
-# csm_nRow  = 16;
-# csm_nCol  = 16;
-# csm_nBlock = 4;
-# csm_radius = 5;
-
-csm_nCoil = 100;             
-csm_nRow  = 10;
-csm_nCol  = 10;
+csm_type   = :gaussian_grid_block;      
+csm_nCoil  = 100;
+csm_nRow   = 10;
+csm_nCol   = 10;
 csm_nBlock = 4;
 csm_radius = 4.5;
+
+# csm_nCoil = 100;             
+# csm_nRow  = 10;
+# csm_nCol  = 10;
+# csm_nBlock = 4;
+# csm_radius = 4.5;
 csm_gpu   = true;
 
 
@@ -60,9 +63,9 @@ sim_params["sim_method"] = BHO;
 sim_params["gpu"] = true;
 sim_params["return_type"]="mat";
 sim_params["precision"]   = "f64"
-sim_params["Nblocks"] = 200;
+sim_params["Nblocks"] = 2000;
 sim_params["Nthreads"] = 1;
-sim_params["gpu_device"]  = 7;    
+sim_params["gpu_device"]  = gpu_idx;    
 
 # 4. simulate
 signal = simulate(obj, hoseqStitched, sys; sim_params);
@@ -142,23 +145,23 @@ Nblocks = 100;   # the number is set according to the GPU memory.
 use_gpu = true;
 verbose = false;
 
-# solver = "admm"; regularization = "TV"; iter = 20; λ = 5e-1;
-# solver = "cgnr"; regularization = "L2"; iter = 20; λ = 0.;
-# recParams = Dict{Symbol,Any}()
-# recParams[:reconSize]      = (nX, nY)
-# recParams[:regularization] = regularization  # ["L2", "L1", "L21", "TV", "LLR", "Positive", "Proj", "Nuclear"]
-# recParams[:λ]              = λ
-# recParams[:iterations]     = iter
-# recParams[:solver]         = solver
-# recParams[:solverInfo] = SolverInfo(vec(Complex{T}.(x_ref)), store_solutions=true)
+solver = "admm"; regularization = "TV"; iter = 20; λ = 5e-1;
+solver = "cgnr"; regularization = "L2"; iter = 20; λ = 1e-8;
+recParams = Dict{Symbol,Any}()
+recParams[:reconSize]      = (nX, nY)
+recParams[:regularization] = regularization  # ["L2", "L1", "L21", "TV", "LLR", "Positive", "Proj", "Nuclear"]
+recParams[:λ]              = λ
+recParams[:iterations]     = iter
+recParams[:solver]         = solver
+recParams[:solverInfo] = SolverInfo(vec(Complex{T}.(x_ref)), store_solutions=true)
 
-# HOOp = HighOrderOp(gridding, T.(kspha_stitched[:, 1:9]'), T.(datatime); sim_method=BHO, tr_nominal=T.(kspha_nominal'), 
-#                         Nblocks=Nblocks, fieldmap=T.(b0), csm=Complex{T}.(csm), use_gpu=use_gpu, verbose=verbose);
+HOOp = HighOrderOp(gridding, T.(kspha_stitched[:, 1:9]'), T.(datatime); sim_method=BHO, tr_nominal=T.(kspha_nominal'), 
+                        Nblocks=Nblocks, fieldmap=T.(b0), csm=Complex{T}.(csm), use_gpu=use_gpu, verbose=verbose);
 
-# # # recon with stitched measurement, with density weighting, with ΔB₀
-# @time x = recon_HOOp(HOOp, Complex{T}.(kdata), Complex{T}.(weight), recParams);
-# plt_image(abs.(x); vmaxp=99.9, title="w/  ΔB₀, stitched: 111, w/  density weighting")
-# println("SSIM: ", HO_SSIM(x_ref, abs.(x)))
+# # recon with stitched measurement, with density weighting, with ΔB₀
+@time x = recon_HOOp(HOOp, Complex{T}.(kdata), Complex{T}.(weight), recParams);
+plt_image(abs.(x); vmaxp=99.9, title="w/  ΔB₀, stitched: 111, w/  density weighting")
+println("SSIM: ", HO_SSIM(x_ref, abs.(x)))
 
 # # recon with stitched measurement, without density weighting, with ΔB₀
 # @time x = recon_HOOp(HOOp, Complex{T}.(kdata), recParams);
@@ -207,7 +210,7 @@ labels = [ "wB0_nominal",  "wB0_stitched_110",  "wB0_stitched_111",  "wB0_standa
           "woB0_nominal", "woB0_stitched_110", "woB0_stitched_111", "woB0_standard_111",];
 
 solver = "cgnr"; regularization = "L2"; iter = 20; λ = 1e-7;
-solver = "admm"; regularization = "TV"; iter = 20; λ = 5e-1;
+# solver = "admm"; regularization = "TV"; iter = 20; λ = 5e-1;
 recParams = Dict{Symbol,Any}()
 recParams[:reconSize]      = (nX, nY)
 recParams[:regularization] = regularization  # ["L2", "L1", "L21", "TV", "LLR", "Positive", "Proj", "Nuclear"]
@@ -225,7 +228,8 @@ for idx in eachindex(Ops)
 end
 
 results = Dict("imgs"=>imgs, "labels"=>labels, "csm"=>csm, "b0"=>b0, "datatime"=>datatime, "snr"=>snr, 
+            "x_ref" =>x_ref, "headmask"=>headmask,            
             "solver"=>solver, "iter"=>iter, "regularization"=>regularization, "lambda"=>λ,
             "ksphaNominal"=>kspha_nominal, "ksphaStandard"=>kspha_standard, "ksphaStitched"=>kspha_stitched);
 
-MAT.matwrite("$(outpath)/0p3_500_r30_snr$(snr)_$(solver)_$(iter)_$(regularization)_$(λ).mat", results)
+MAT.matwrite("$(outpath)/0p3_500_r30_ss$(ss)_snr$(snr)_$(solver)_$(iter)_$(regularization)_$(λ).mat", results)

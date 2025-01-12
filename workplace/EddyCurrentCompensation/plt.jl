@@ -69,11 +69,6 @@ csm = imresize(csm, (nY, nX, nCha))
 k0_ecc = matread(ECC_file)["phase_drift"];
 
 
-fig, ax = plt.subplots(1,1)
-ax.plot(k0_ecc', label="model")
-ax.plot(kStitched[:, 1]*2π, label="Stitched")
-ax.legend()
-
 labels = ["model", "Stitched", "Standard"]
 xs = [times.*1e3]
 ys = [vec(k0_ecc), kStitched[:, 1]*2π, kStandard[:, 1]*2π]
