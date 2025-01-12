@@ -10,7 +10,7 @@ A Julia implementation of the model-based synchronization delay estimation algor
 The algorithm is based on the paper "Model-based determination of the synchronization delay between MRI and trajectory data"
 by Paul Dubovan and Corey Baron (2022, https://doi.org/10.1002/mrm.29460).
 
-This implementation utilizes our `HighOrderOp` to realize the expanded encoding model with dynamic fields.
+This implementation utilizes our `HighOrderOp` to realize the expanded encoding model with field dynamics.
 
 # Arguments
 - `gridding::Grid{T}`: gridding object containing the grid parameters
@@ -44,25 +44,25 @@ julia> τ = FindDelay(gridding, data, kspha, datatime, StartTime, dt, ...)
 ```
 """
 function FindDelay(
-    gridding    :: Grid{T}                       ,
-    data        :: AbstractArray{Complex{T}, 2}  ,
-    kspha       :: AbstractArray{T, 2}           , 
-    datatime    :: AbstractVector{T}             ,
-    StartTime   :: T                             ,
-    dt          :: T                             ;
-    JumpFact    :: Int64                = 3      ,
-    Δτ_min      :: T                    = 0.005  ,
-    intermode   :: Interpolations.InterpolationType = AkimaMonotonicInterpolation(),
-    fieldmap    :: AbstractArray{T, 2}  = zeros(T,(gridding.nX, gridding.nY)), 
-    csm         :: Array{Complex{T}, 3} = ones(Complex{T},(gridding.nX, gridding.nY)..., 1), 
-    sim_method  :: BlochHighOrder       = BlochHighOrder("111"),
-    Nblocks     :: Int64                = 50     , 
-    use_gpu     :: Bool                 = true   , 
-    solver      :: String               = "cgnr" ,
-    reg         :: String               = "L2"   ,
-    iter_max    :: Int64                = 10     ,
-    λ           :: T                    = 0.     ,
-    verbose     :: Bool                 = false  , 
+    gridding    :: Grid{T}                                                                  ,
+    data        :: AbstractArray{Complex{T}, 2}                                             ,
+    kspha       :: AbstractArray{T, 2}                                                      , 
+    datatime    :: AbstractVector{T}                                                        ,
+    StartTime   :: T                                                                        ,
+    dt          :: T                                                                        ;
+    JumpFact    :: Int64                = 3                                                 ,
+    Δτ_min      :: T                    = 0.005                                             ,
+    intermode   :: Interpolations.InterpolationType = AkimaMonotonicInterpolation()         ,
+    fieldmap    :: AbstractArray{T, 2}  = zeros(T,(gridding.nX, gridding.nY))               , 
+    csm         :: Array{Complex{T}, 3} = ones(Complex{T},(gridding.nX, gridding.nY)..., 1) , 
+    sim_method  :: BlochHighOrder       = BlochHighOrder("111")                             ,
+    Nblocks     :: Int64                = 50                                                , 
+    use_gpu     :: Bool                 = true                                              , 
+    solver      :: String               = "cgnr"                                            ,
+    reg         :: String               = "L2"                                              ,
+    iter_max    :: Int64                = 10                                                ,
+    λ           :: T                    = 0.                                                ,
+    verbose     :: Bool                 = false                                             , 
     ) ::T where {T<:AbstractFloat}
     @assert size(data,2) == size(csm,3) "data and csm must have the same number of coil channels"
     @assert size(data,1) == size(datatime, 1) "data and datatime must have the same number of spatial points"
@@ -123,28 +123,30 @@ function FindDelay(
 end
 
 function FindDelay(
-    gridding    :: Grid{T}                       ,
-    data        :: AbstractArray{Complex{T}, 2}  ,
-    kspha       :: AbstractArray{T, 2}           , 
-    StartTime   :: T                             ,
-    dt          :: T                             ;
-    JumpFact    :: Int64                = 3      ,
-    Δτ_min      :: T                    = 0.005  ,
-    intermode   :: Interpolations.InterpolationType = AkimaMonotonicInterpolation(),
-    fieldmap    :: AbstractArray{T, 2}  = zeros(T,(gridding.nX, gridding.nY)), 
-    csm         :: Array{Complex{T}, 3} = ones(Complex{T},(gridding.nX, gridding.nY)..., 1), 
-    sim_method  :: BlochHighOrder       = BlochHighOrder("111"),
-    Nblocks     :: Int64                = 50     , 
-    use_gpu     :: Bool                 = true   , 
-    solver      :: String               = "cgnr" ,
-    reg         :: String               = "L2"   ,
-    iter_max    :: Int64                = 10     ,
-    λ           :: T                    = 0.     ,
-    verbose     :: Bool                 = false  , 
+    gridding    :: Grid{T}                                                                  ,
+    data        :: AbstractArray{Complex{T}, 2}                                             ,
+    kspha       :: AbstractArray{T, 2}                                                      , 
+    StartTime   :: T                                                                        ,
+    dt          :: T                                                                        ;
+    JumpFact    :: Int64                = 3                                                 ,
+    Δτ_min      :: T                    = 0.005                                             ,
+    intermode   :: Interpolations.InterpolationType = AkimaMonotonicInterpolation()         ,
+    fieldmap    :: AbstractArray{T, 2}  = zeros(T,(gridding.nX, gridding.nY))               , 
+    csm         :: Array{Complex{T}, 3} = ones(Complex{T},(gridding.nX, gridding.nY)..., 1) , 
+    sim_method  :: BlochHighOrder       = BlochHighOrder("111")                             ,
+    Nblocks     :: Int64                = 50                                                , 
+    use_gpu     :: Bool                 = true                                              , 
+    solver      :: String               = "cgnr"                                            ,
+    reg         :: String               = "L2"                                              ,
+    iter_max    :: Int64                = 10                                                ,
+    λ           :: T                    = 0.                                                ,
+    verbose     :: Bool                 = false                                             , 
     ) ::T where {T<:AbstractFloat} 
     nSample, nCha = size(data);
     datatime = T.(collect(dt * (0:nSample-1)));
-    return FindDelay(gridding, data, kspha, datatime, StartTime, dt; 
-        JumpFact=JumpFact, Δτ_min=Δτ_min, intermode=intermode, fieldmap=fieldmap, csm=csm, sim_method=sim_method, 
-        Nblocks=Nblocks, use_gpu=use_gpu, solver=solver, reg=reg, iter_max=iter_max, λ=λ, verbose=verbose);
+    return FindDelay(
+        gridding, data, kspha, datatime, StartTime, dt; 
+        JumpFact=JumpFact, Δτ_min=Δτ_min, intermode=intermode, 
+        fieldmap=fieldmap, csm=csm, sim_method=sim_method, Nblocks=Nblocks, use_gpu=use_gpu, 
+        solver=solver, reg=reg, iter_max=iter_max, λ=λ, verbose=verbose);
 end
