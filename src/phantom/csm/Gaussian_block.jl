@@ -1,5 +1,5 @@
 """
-v2.0 version of csm_Gaussian_grid_block, real-valued, with GPU acceleration
+v2.0 version of csm_Gaussian_grid_block, complex-valued, with GPU acceleration
 """
 function csm_Gaussian_grid_block_pha(
     nX::Int64, 
