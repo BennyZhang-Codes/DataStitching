@@ -32,7 +32,7 @@ print("$(@__DIR__)")
 # 1. read the *.seq file and reverse the sign of the gradient (axis x)
 seq = read_seq(seq_file)[4:end];   # read_seq function from KomaMRI.jl, return a struct of Sequence
 seq.GR[1,:] = -seq.GR[1,:];        # reverse the sign of the gradient (axis x)
-plot_seq(seq)                      # plot_seq function from KomaMRI.jl, plot the Sequence
+HighOrderMRI.KomaMRI.plot_seq(seq)  # plt_seq function from KomaMRI.jl, plt the Sequence
 
 
 grad = MAT.matread(dfc_file);
@@ -53,8 +53,8 @@ hoseqStitched.GR_dfc[2:4, :] = hoseqStitched.SEQ.GR;    # copy the 1st-order nom
 hoseqStandard.GR_dfc[2:4, :] = hoseqStandard.SEQ.GR;    # copy the 1st-order nominal gradient data from the seq object to the hoseq object
 hoseqStitched.GR_dfc[:,5] = GR_dfcStitched;             # "5" is the index of the readout block in the spiral sequence
 hoseqStandard.GR_dfc[:,5] = GR_dfcStandard;             # "5" is the index of the readout block in the spiral sequence
-plot_seq(hoseqStitched)
-plot_seq(hoseqStandard)
+plt_seq(hoseqStitched)
+plt_seq(hoseqStandard)
 
 
 #########################################################################################
@@ -97,13 +97,13 @@ sim_params["return_type"] = "mat";    # setting with "mat", return the signal da
 sim_params["precision"]   = "f64"   
 
 # 3. simulate
-signal = simulate(obj, hoseqStitched, sys; sim_params);
-raw = signal_to_raw_data(signal, hoseqStitched, :nominal; sim_params=copy(sim_params));
+signal    = simulate(obj, hoseqStitched, sys; sim_params);
+raw       = signal_to_raw_data(signal, hoseqStitched, :nominal; sim_params=copy(sim_params));
 img_nufft = recon_2d(raw);      
 fig_nufft = plt_image(rotl90(img_nufft))
 
 # 4. Adding noise to signal data
-snr = 10;
+snr  = 10;
 data = AddNoise(signal[:,:,1], snr);
 nSample, nCha = size(data);
 # show the effect of noise
@@ -148,10 +148,10 @@ x, y = x .- nX/2 .- 1, y .- nY/2 .- 1
 x, y = x * Δx, y * Δy; 
 gridding = Grid(nX=nX, nY=nY, nZ=nZ, Δx=Δx, Δy=Δy, Δz=Δz, x=T.(x), y=T.(y), z=T.(z));
 
-BHO = BlochHighOrder("111");  
+recon_terms = "111";  
 #= The string "111" is a three-digit flag that indicates whether the 0th, 1st, and 2nd order terms of 
 a measurement are used. For example, "110" means only the 0th and 1st order terms are used. =#
-Nblocks = 20;   # the number is set according to the GPU memory.
+nBlock = 20;   # the number is set according to the GPU memory.
 use_gpu = true;
 verbose = false;
 
@@ -163,44 +163,28 @@ recParams[:regularization] = regularization  # ["L2", "L1", "L21", "TV", "LLR", 
 recParams[:λ]              = λ
 recParams[:iterations]     = iter
 recParams[:solver]         = solver
-recParams[:solverInfo] = SolverInfo(vec(Complex{T}.(x_ref)), store_solutions=true)
 
 weight = SampleDensity(kspha'[2:3,:], (nX, nY));
 
-HOOp = HighOrderOp(gridding, T.(kspha[:, 1:9]'), T.(datatime); sim_method=BHO, tr_nominal=T.(kspha_nominal'), 
-                        Nblocks=Nblocks, fieldmap=T.(b0), use_gpu=use_gpu, verbose=verbose);
+HOOp = HighOrderOp(gridding, T.(kspha[:, 1:9]'), T.(datatime); recon_terms=recon_terms, k_nominal=T.(kspha_nominal'), 
+                        nBlock=nBlock, fieldmap=T.(b0), use_gpu=use_gpu, verbose=verbose);
 
 # recon with stitched measurement, with density weighting, with ΔB₀
 @time x1 = recon_HOOp(HOOp, Complex{T}.(data), Complex{T}.(weight), recParams);
 plt_image(abs.(x1); vmaxp=99.9, title="w/  ΔB₀, stitched: 111, w/  density weighting")
-solverinfo1 = recParams[:solverInfo];
-solverinfo1.convMeas
 
-
-recParams = Dict{Symbol,Any}()
-recParams[:reconSize]      = (nX, nY)
-recParams[:regularization] = regularization  # ["L2", "L1", "L21", "TV", "LLR", "Positive", "Proj", "Nuclear"]
-recParams[:λ]              = λ
-recParams[:iterations]     = iter
-recParams[:solver]         = solver
-recParams[:solverInfo] = SolverInfo(vec(Complex{T}.(x_ref)), store_solutions=true)
-# recon with stitched measurement, without density weighting, with ΔB₀
-@time x2 = recon_HOOp(HOOp, Complex{T}.(data), recParams);
-plt_image(abs.(x2); vmaxp=99.9, title="w/  ΔB₀, stitched: 111, w/o  density weighting")
-solverinfo2 = recParams[:solverInfo];
-solverinfo2.convMeas
 
 # recon with stitched measurement, with density weighting, without ΔB₀
-HOOp = HighOrderOp(gridding, T.(kspha[:, 1:9]'), T.(datatime); sim_method=BHO, tr_nominal=T.(kspha_nominal'), 
-                        Nblocks=Nblocks, fieldmap=T.(b0.*0), use_gpu=use_gpu, verbose=verbose);
+HOOp = HighOrderOp(gridding, T.(kspha[:, 1:9]'), T.(datatime); recon_terms=recon_terms, k_nominal=T.(kspha_nominal'), 
+                        nBlock=nBlock, fieldmap=T.(b0.*0), use_gpu=use_gpu, verbose=verbose);
 @time x = recon_HOOp(HOOp, Complex{T}.(data), Complex{T}.(weight), recParams);
 plt_image(abs.(x); vmaxp=99.9, title="w/o ΔB₀, stitched: 111, w/  density weighting")
 
 
 # recon with nominal trajectory, with density weighting, with ΔB₀
-BHO = BlochHighOrder("000");  # "000" indicates that no measured field dynamics are used, only nominal kspace trajectory is used.
-HOOp = HighOrderOp(gridding, T.(kspha[:, 1:9]'), T.(datatime); sim_method=BHO, tr_nominal=T.(kspha_nominal'), 
-                        Nblocks=Nblocks, fieldmap=T.(b0), use_gpu=use_gpu, verbose=verbose);
+recon_terms = "000";  # "000" indicates that no measured field dynamics are used, only nominal kspace trajectory is used.
+HOOp = HighOrderOp(gridding, T.(kspha[:, 1:9]'), T.(datatime); recon_terms=recon_terms, k_nominal=T.(kspha_nominal'), 
+                        nBlock=nBlock, fieldmap=T.(b0), use_gpu=use_gpu, verbose=verbose);
 @time x = recon_HOOp(HOOp, Complex{T}.(data), Complex{T}.(weight), recParams);
 plt_image(abs.(x); vmaxp=99.9, title="w/  ΔB₀, nominal, w/  density weighting")
 # you can try different recons like: "011", "101", "110"...

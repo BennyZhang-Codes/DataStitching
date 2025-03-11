@@ -9,13 +9,13 @@ import RegularizedLeastSquares: SolverInfo
 #        sequence and dynamic field data.
 #########################################################################################
 
-seq_file = "$(@__DIR__)/demo/MultiChannel/xw_sp2d_7T-1mm-200-r3.seq"   # *.seq file is the pulseq's sequence file
+seq_file = "$(@__DIR__)/demo/MultiChannel/xw_sp2d_7T-1mm-200-r4.seq"   # *.seq file is the pulseq's sequence file
 # under-sampling factor: R = 4
 # inplane resolution: 1 mm x 1 mm
 # FOV: 200 mm x 200 mm
 # readout duration: 29 ms
 
-dfc_file = "$(@__DIR__)/demo/MultiChannel/xw_sp2d_7T-1mm-200-r3.mat"   # *.mat file contains the dynamic field data from both stitching method and the standard method.
+dfc_file = "$(@__DIR__)/demo/MultiChannel/xw_sp2d_7T-1mm-200-r4.mat"   # *.mat file contains the dynamic field data from both stitching method and the standard method.
 # The dynamic field data is stored in the *.mat file with the following keys:
 #= 
 "dt"                     [s], time interval between two time points.
