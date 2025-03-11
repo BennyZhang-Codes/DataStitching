@@ -52,7 +52,7 @@ function plot_phantom_map(
 		unit = " ms"
 		if key  == :T1
 			cmax_key = 2500/factor
-			colors = MAT.matread(path*"/assets/T1cm.mat")["T1colormap"]
+			colors = MAT.matread("$(dirname(@__DIR__))/assets/T1cm.mat")["T1colormap"]
 			N, _ = size(colors)
 			idx = range(0,1;length=N) #range(0,T,N) works in Julia 1.7
 			colormap = [[idx[n], "rgb($(floor(Int,colors[n,1]*255)),$(floor(Int,colors[n,2]*255)),$(floor(Int,colors[n,3]*255)))"] for n=1:N]
@@ -60,7 +60,7 @@ function plot_phantom_map(
 			if key == :T2
 				cmax_key = 250/factor
 			end
-    		colors = MAT.matread(path*"/assets/T2cm.mat")["T2colormap"]
+    		colors = MAT.matread("$(dirname(@__DIR__))/assets/T2cm.mat")["T2colormap"]
 			N, _ = size(colors)
 			idx = range(0,1;length=N) #range(0,T,N) works in Julia 1.7
 			colormap = [[idx[n], "rgb($(floor(Int,colors[n,1]*255)),$(floor(Int,colors[n,2]*255)),$(floor(Int,colors[n,3]*255)))"] for n=1:N]
