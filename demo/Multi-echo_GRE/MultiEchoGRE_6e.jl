@@ -16,11 +16,13 @@ nCha, nZ, nY, nX, nAvg, nSli, nCon, nPha, nRep, nSet, nSeg = shape; println(shap
 kdata = get_kdata(raw, shape);
 kdata = dropdims(kdata, dims = tuple(findall(size(kdata) .== 1)...));
 kdims = [mrddims[idx] for idx in 1:length(shape) if shape[idx]>1];
-@info size(kdata); println(kdims);
 
 if ReadoutMode=="Bipolar"
     kdata[:,:,:, collect(range(2, nCon, step=2))] = kdata[:,:,end:-1:1, collect(range(2, nCon, step=2))]; # reverse the even echoes because of bipolar readout
 end
+
+@info TE, ReadoutMode
+@info size(kdata), kdims
 
 ############
 # IFFT
@@ -36,9 +38,7 @@ fig  = plt_images(imgs; width=5, height=5, vminp=0, vmaxp=99)
 # using firtst echo for coil sensitivity estimation
 Con = 1
 T   = Float32
-
 _, ktraj_adc = get_kspace(seq);
-
 ktraj = reshape(ktraj_adc[:,1:2], nX, nCon*nY, :)[:, collect(range(Con,nCon*nY,step=nCon)), :];
 ktraj = reshape(ktraj.*0, nX*nY, :);
 tr    = Trajectory(T.(ktraj'), nY, nX, circular=false, cartesian=true); #plot_traj2d(tr)
@@ -52,9 +52,9 @@ dat[1,1,1]   = reshape(k_img,:,nCha);
 acqData      = AcquisitionData(tr, dat, encodingSize=(nX, nY));
 
 # espirit
-sensitivity = espirit(acqData, (6,6), 30, eigThresh_1=0.02, eigThresh_2=0.99);  # (nX, nY, 1, nCha)
-smap = permutedims(sensitivity, [2,1,4,3])[:,:,:,1];# (nY, nX, nCha, 1)
-fig = plt_images(permutedims(abs.(smap), [3,1,2]); width=5, height=5)
+sensitivity  = espirit(acqData, (6,6), 30, eigThresh_1=0.02, eigThresh_2=0.99);  # (nX, nY, 1, nCha)
+smap         = permutedims(sensitivity, [2,1,4,3])[:,:,:,1]; # (nY, nX, nCha, 1)
+fig          = plt_images(permutedims(abs.(smap), [3,1,2]); width=5, height=5)
 
 
 ############
@@ -75,8 +75,8 @@ ydata    = permutedims(images, [2,3,1,4]);    # (nY, nX, nCha, nCon)
 
 yik_sos = sum(conj(smap) .* ydata; dims=3); # coil combine
 yik_sos = yik_sos[:,:,1,:]; # (nY, nX, nCon)
-fig = plt_images(permutedims(  abs.(yik_sos), [3,1,2]); width=5, height=5)
-fig = plt_images(permutedims(angle.(yik_sos), [3,1,2]); width=5, height=5)
+fig = plt_images(permutedims(  abs.(yik_sos), [3,1,2]); width=5, height=5, vminp=0, vmaxp=99)
+fig = plt_images(permutedims(angle.(yik_sos), [3,1,2]); width=5, height=5, vmin=-π, vmax=π)
 
 (yik_sos_scaled, scale_b0) = b0scale(yik_sos, echotime);
 

@@ -1,17 +1,23 @@
+Nx = 200; % 200, 280, 332, 400
+roDuration = 1.0e-3;
+% Nx = 400;
+% roDuration = 1.6e-3;
 % set system limits
-sys = mr.opts('MaxGrad', 40, 'GradUnit', 'mT/m', ...
-    'MaxSlew', 180, 'SlewUnit', 'T/m/s', ... 
+sys = mr.opts('MaxGrad', 50, 'GradUnit', 'mT/m', ...
+    'MaxSlew', 140, 'SlewUnit', 'T/m/s', ... 
     'rfRingdownTime', 20e-6, 'rfDeadTime', 100e-6, 'adcDeadTime', 10e-6);
 
 % basic parameters
 seq=mr.Sequence(sys);           % Create a new sequence object
-fov=200e-3; Nx=200; Ny=Nx;      % Define FOV and resolution
+fov=200e-3; 
+% Nx=200; 
+Ny=Nx;      % Define FOV and resolution
 alpha=10;                       % flip angle
-sliceThickness=2e-3;            % slice
+sliceThickness=1e-3;            % slice
 TR=25e-3;                       % TR, a single value
-prepscans = 40; % number of dummy preparation scans
+prepscans = 10; % number of dummy preparation scans
 nTE = 6;
-TE1 = 3.06*1e-3;  % first echo time 
+TE1 = 4.08*1e-3;  % first echo time 
 esp = 2.04*1e-3;
 TE=(0:nTE-1) * esp + TE1;               % give a vector here to have multiple TEs % TODO: reduce TEs
 %TODO: play with TEs to make them really minimal
@@ -19,11 +25,12 @@ TE=(0:nTE-1) * esp + TE1;               % give a vector here to have multiple TE
 % more in-depth parameters
 rfSpoilingInc=117;              % RF spoiling increment
 rfDuration=2e-3;
-roDuration=1.8e-3;              % not all values are possible, watch out for the checkTiming output
+% roDuration=1.8e-3;              % not all values are possible, watch out for the checkTiming output
 adcDwell = round(roDuration/Nx/seq.adcRasterTime)* seq.adcRasterTime;
 roDuration = adcDwell * Nx;
 BWPerPixel = 1/roDuration;
-
+disp(BWPerPixel)
+%%
 
 % Create alpha-degree slice selection pulse and corresponding gradients 
 [rf, gz, gzReph] = mr.makeSincPulse(alpha*pi/180,'Duration',rfDuration,...
@@ -114,25 +121,32 @@ else
 end
 
 %% prepare sequence export
+res = round(1e3*fov/Nx, 2);
+a = fix(res);
+b = (res - a)*100;
+if mod(b, 10) == 0
+    b = b/10;
+end
+prefix = [num2str(a),'p',num2str(b),'_',num2str(Nx),'_r1'];
+
 seq.setDefinition('FOV', [fov fov sliceThickness]);
 seq.setDefinition('MatrixSize', [Nx Ny 1]);
 seq.setDefinition('FlipAngle', alpha);
 seq.setDefinition('SliceThickness', sliceThickness);
 seq.setDefinition('TR', TR);
 seq.setDefinition('TE', TE);
-seq.setDefinition('MultiEchoMode', 'Continuous');
 seq.setDefinition('ReadoutMode', 'Bipolar');
 seq.setDefinition('Dummy', prepscans);
 seq.setDefinition('ESP', esp);
 seq.setDefinition('BW', BWPerPixel);
 seq.setDefinition('ADC_DwellTime', adcDwell);
-seq.setDefinition('Name', sprintf('fmgre%se', num2str(nTE)));
+seq.setDefinition('Name', sprintf('b%s_%sp%s', num2str(nTE), num2str(a), num2str(b)));
 seq.setDefinition('Developer', 'Jinyuan Zhang');
 
-seq.write(sprintf('grec%se_fov%s_%s_tr%s_fa%s_bw%s.seq', num2str(nTE), num2str(fov*1e3), num2str(Nx), num2str(TR*1e3), num2str(alpha), num2str(round(BWPerPixel))));
+seq.write(sprintf('greb%se_%s_tr%s_fa%s_bw%s.seq', num2str(nTE), prefix, num2str(TR*1e3), num2str(alpha), num2str(round(BWPerPixel))));
 
 %% plot sequence and k-space diagrams
-seq.plot('TimeDisp', 'ms', 'Label', 'LIN,ECO');
+seq.plot('timeRange', [6 15]*TR, 'TimeDisp', 'ms', 'Label', 'LIN,ECO');
 % seq.plot('timeRange', [0 30]*TR, 'TimeDisp', 'ms', 'Label', 'LIN,ECO');
 % ('timeRange', [0 nTRs]*this.seq_params.TR, 'TimeDisp', 'ms', 'label', 'lin')
 % k-space trajectory calculation
@@ -144,6 +158,16 @@ axis('equal'); % enforce aspect ratio for the correct trajectory display
 hold;plot(ktraj_adc(1,:),ktraj_adc(2,:),'r.'); % plot the sampling points
 title('full k-space trajectory (k_x x k_y)');
 
+%% PNS calc
+warning('OFF', 'mr:restoreShape');
+[pns_ok, pns_n, pns_c, tpns] = seq.calcPNS('MP_GPA_K2259_2000V_650A_SC72CD_EGA.asc'); % TERRA-XJ
+
+if (pns_ok)
+    fprintf('PNS check passed successfully\n');
+else
+    fprintf('PNS check failed! The sequence will probably be stopped by the Gradient Watchdog\n');
+end
+
 %% very optional slow step, but useful for testing during development e.g. for the real TE, TR or for staying within slewrate limits  
-rep = seq.testReport;
-fprintf([rep{:}]);
+% rep = seq.testReport;
+% fprintf([rep{:}]);
