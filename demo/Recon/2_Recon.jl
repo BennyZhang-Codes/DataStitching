@@ -72,7 +72,7 @@ recParams[:solver]         = solver
 kdata = data["kdata"];
 kdata = kdata ./ exp.(1im.*k0_ecc)';
 
-labelStitched = [    "Stitched",     "Stitched  wo dB0"];
+labelStitched = [    "Stitched",      "Stitched_wo_dB0"];
 recons        = [         "111",                  "111"];
 kdatas        = [         kdata,                  kdata];
 weights       = [weightStitched,         weightStitched]; 
