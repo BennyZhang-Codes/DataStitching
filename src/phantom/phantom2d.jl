@@ -90,26 +90,3 @@ function brain_phantom2D(
 	return obj
 end
   
-
-function load_phantom_mat(
-    objbrain::BrainPhantom;        # PhantomType
-    axis::String="axial",          # orientation
-    ss::Int64=4,                   # undersample
-    location::Float64=0.5,         # relative location in the slice direction
-)
-    @assert 0 <= location <= 1 "location must be between 0 and 1"
-    @assert axis in ["axial", "coronal", "sagittal"] "axis must be one of the following: axial, coronal, sagittal"
-    data = MAT.matread(objbrain.matpath)["data"]
-    M, N, Z = size(data)
-    if axis == "axial"
-        loc   = Int32(ceil(Z*location))
-        class = data[1:ss:end,1:ss:end, loc]
-    elseif axis == "coronal"
-        loc   = Int32(ceil(M*location))
-        class = data[loc, 1:ss:end,1:ss:end]   
-    elseif axis == "sagittal"
-        loc   = Int32(ceil(N*location))
-        class = data[1:ss:end, loc,1:ss:end]
-    end
-    return class, loc
-end

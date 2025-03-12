@@ -1,3 +1,8 @@
+export load_raw, load_seq, load_dfc
+export load_dfc_mat
+export load_hoseq
+
+
 """
     seq = load_seq(; seq="spiral", r=2)
 
