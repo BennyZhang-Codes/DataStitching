@@ -5,6 +5,32 @@ export BrainPhantom
 include("SpinProperty.jl")
 export SpinProperty_1p5T
 
+export load_phantom_mat
+function load_phantom_mat(
+    objbrain::BrainPhantom;        # PhantomType
+    axis::String="axial",          # orientation
+    ss::Int64=4,                   # undersample
+    location::Float64=0.5,         # relative location in the slice direction
+)
+    @assert 0 <= location <= 1 "location must be between 0 and 1"
+    @assert axis in ["axial", "coronal", "sagittal"] "axis must be one of the following: axial, coronal, sagittal"
+    data = MAT.matread(objbrain.matpath)["data"]
+    M, N, Z = size(data)
+    if axis == "axial"
+        loc   = Int32(ceil(Z*location))
+        class = data[1:ss:end,1:ss:end, loc]
+    elseif axis == "coronal"
+        loc   = Int32(ceil(M*location))
+        class = data[loc, 1:ss:end,1:ss:end]   
+    elseif axis == "sagittal"
+        loc   = Int32(ceil(N*location))
+        class = data[1:ss:end, loc,1:ss:end]
+    end
+    return class, loc
+end
+
+
+# HO_Phantom type, support coil-sensitivity map (CSM)
 include("hohantom2d.jl")
 export brain_hophantom2D
 
@@ -20,7 +46,6 @@ include("phantom2d.jl")
 include("phantom2d_reference.jl")
 include("phantom3d.jl")
 
-export load_phantom_mat
 export brain_phantom2D_reference
 
 # function to print the information of a Phantom object
@@ -31,29 +56,3 @@ end
 
 export info
 
-
-
-##########
-# obj = brain_phantom2D(BrainPhantom(); ss=3, location=0.8, B0map=:quadratic, maxOffresonance=10.); info(obj); plot_phantom_map(obj, :Δw)
-# ref = brain_phantom2D_reference(BrainPhantom();B0map=:quadratic,key=:Δw, maxOffresonance=10.); plot_image(ref,zmin=-10)
-
-# B0map = brain_phantom2D_reference(BrainPhantom(); ss=3, location=0.8,target_fov=(150, 150), target_resolution=(1,1),
-#                                            B0map=:quadratic,key=:Δw, maxOffresonance=5.);
-# Nx = Ny = 150
-# Δx = Δy = 1e-3 # m
-
-# x, y = 1:Nx, 1:Ny
-# x, y, z = vec(x .+ y'*0.0), vec(x*0.0 .+ y'), vec(x*0.0 .+ y'*0.0) #grid points
-# x, y = x .- Nx/2 .- 1, y .- Ny/2 .- 1
-
-# plot_bgcolor = "rgb(22,26,29)"
-# grid_color = "rgb(40,52,66)"
-# p1 = plot(scatter3d(x=x, y=y, z=vec(B0map),       marker=attr(size=0.7), mode="markers"), Layout(
-#     paper_bgcolor="rgba(0,0,0,0)", 
-#     scene=attr(xaxis=attr(backgroundcolor=plot_bgcolor,gridcolor=grid_color,zerolinecolor=grid_color),
-#                 yaxis=attr(backgroundcolor=plot_bgcolor,gridcolor=grid_color,zerolinecolor=grid_color),
-#                 zaxis=attr(backgroundcolor=plot_bgcolor,gridcolor=grid_color,zerolinecolor=grid_color)),
-#     font=attr(family="Times New Roman",color="gray"),
-#     width=500,height=500))
-
-# savefig(p1, "/B0map3D.svg",            width=500,height=500,format="svg")

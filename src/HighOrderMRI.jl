@@ -44,7 +44,7 @@ include("phantom/phantom.jl")
 include("simulation/simulation.jl")
 include("mrd/mrd.jl")
 include("reconstruction/recon.jl")
-include("example/example.jl")
+include("load/load.jl")
 include("synchronization/synchronization.jl")
 
 include("plot/plot.jl")

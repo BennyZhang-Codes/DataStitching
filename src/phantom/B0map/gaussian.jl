@@ -1,0 +1,1 @@
+# TODO: synthetic ΔB0 map generation with Gaussian distribution 
