@@ -1,7 +1,6 @@
 # HighOrderMRI.jl
 
-This is a Julia toolbox for MR simulation and reconstruction that can incorporate dynamic field changes associated with the gradients throughout the sequence.
-This is an extension of [KomaMRI.jl](https://github.com/JuliaHealth/KomaMRI.jl) (a Julia package for highly efficient MR simulations) and [MRIReco.jl] (https://github.com/MagneticResonanceImaging/MRIReco.jl)(a Julia package for MRI reconstruction).
+This is a Julia toolbox for MR simulation and reconstruction that can incorporate dynamic field changes associated with the gradients throughout the sequence. This is an extension of [KomaMRI.jl](https://github.com/JuliaHealth/KomaMRI.jl) (a Julia package for highly efficient MR simulations) and [MRIReco.jl](https://github.com/MagneticResonanceImaging/MRIReco.jl) (a Julia package for MRI reconstruction).
 
 For MRI image reconstruction with field dynamics, we have built an extended signal encoding operator `HighOrderOp` to construct the signal equation. `HighOrderOp` inherits from `AbstractLinearOperator` in [LinearOperators.jl](https://github.com/JuliaSmoothOptimizers/LinearOperators.jl). Then, image reconstruction problem can be solved using algorithms from [RegularizedLeastSquares.jl](https://github.com/JuliaImageRecon/RegularizedLeastSquares.jl).
 
@@ -27,7 +26,7 @@ You may run the [demo](https://github.com/BennyZhang-Codes/HighOrderMRI.jl/tree/
 
 For MRI reconstruction incorporating measured field dynamics, we first estimate the synchronization delay between the MRI data and the field measurements. The final reconstruction is then performed using the synchronized field dynamics.
 
-This demo includes single-shot spiral imaging data (1 mm in-plane resolution, ~29 ms readout), nominal kspace trajectory (Nominal) and field dynamics measured using both our data stitching method (Stitched) and the conventional single measurement approach (Standard).
+This demo includes single-shot spiral imaging data (7T, 1 mm in-plane resolution, ~29 ms readout), nominal kspace trajectory (Nominal) and field dynamics measured (with Dynamic Field Camera) using both our data stitching method (Stitched) and the conventional single measurement approach (Standard).
 
 In this case, our data stitching method performs comparably to the standard method. For further details on how our data stitching method outperforms conventional approaches, please refer to our abstracts mentioned above.
 
