@@ -205,10 +205,14 @@ function prod_dt_HighOrderOp(
         if verbose
             next!(progress_bar, showvalues=[(:nBlock, block)])
         end
-        CUDA.unsafe_free!(ϕ)
-        CUDA.unsafe_free!(e)
+        if use_gpu
+            CUDA.unsafe_free!(ϕ)
+            CUDA.unsafe_free!(e)
+        end
     end
-    CUDA.unsafe_free!(x)
+    if use_gpu
+        CUDA.unsafe_free!(x)
+    end
     out = out ./ sqrt(nVox)
     if use_gpu
         out = out |> cpu
@@ -253,10 +257,14 @@ function prod_HighOrderOp(
         if verbose
             next!(progress_bar, showvalues=[(:nBlock, block)])
         end
-        CUDA.unsafe_free!(ϕ)
-        CUDA.unsafe_free!(e)
+        if use_gpu
+            CUDA.unsafe_free!(ϕ)
+            CUDA.unsafe_free!(e)
+        end
     end
-    CUDA.unsafe_free!(x)
+    if use_gpu
+        CUDA.unsafe_free!(x)
+    end
     out = out ./ sqrt(nVox)
     if use_gpu
         out = out |> cpu
@@ -305,10 +313,14 @@ function ctprod_HighOrderOp(
         if verbose
             next!(progress_bar, showvalues=[(:nBlock, block)])
         end
-        CUDA.unsafe_free!(ϕ)
-        CUDA.unsafe_free!(e)
+        if use_gpu
+            CUDA.unsafe_free!(ϕ)
+            CUDA.unsafe_free!(e)
+        end
     end
-    CUDA.unsafe_free!(y)
+    if use_gpu
+        CUDA.unsafe_free!(y)
+    end
     out = out ./ sqrt(nVox)
     out = out .* csmC
     if use_gpu
