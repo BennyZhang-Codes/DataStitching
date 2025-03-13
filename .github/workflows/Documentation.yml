@@ -43,7 +43,6 @@ jobs:
             Pkg.build("PyCall")  # rebuild PyCall
             Pkg.instantiate()
           '
-          julia --project=docs -e 'using PyCall'  # 验证安装
 
       # - name: Install dependencies
       #   run: julia --color=yes --project=docs/ -e 'using Pkg; Pkg.develop(PackageSpec(path=pwd())); Pkg.instantiate()'
