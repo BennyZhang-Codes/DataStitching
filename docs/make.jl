@@ -20,7 +20,7 @@ makedocs(
 
 
 deploydocs(
-    repo = "github.com/BennyZhang-Codes/HighOrderMRI.git",
+    repo = "github.com/BennyZhang-Codes/HighOrderMRI.jl.git",
     devbranch = "main",  
     branch = "gh-pages",
     push_preview = true,
