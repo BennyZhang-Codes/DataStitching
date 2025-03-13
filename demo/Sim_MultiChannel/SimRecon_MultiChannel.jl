@@ -8,12 +8,12 @@ import RegularizedLeastSquares: SolverInfo
 #     c. Create a HO_Sequence object as defined in HighOrderMRI.jl by combining the 
 #        sequence and dynamic field data.
 #########################################################################################
-path     = joinpath(@__DIR__, "demo/MultiChannel")
+path     = joinpath(@__DIR__, "demo/Sim_MultiChannel")
 seq_file = "$(path)/7T_1p0_200_r4.seq"   # *.seq file is the pulseq's sequence file
 # under-sampling factor: R = 4
 # inplane resolution: 1 mm x 1 mm
 # FOV: 200 mm x 200 mm
-# readout duration: 29 ms
+# readout duration: ~29 ms
 
 dfc_file = "$(path)/7T_1p0_200_r4.mat"   # *.mat file contains the dynamic field data from both stitching method and the standard method.
 # The dynamic field data is stored in the *.mat file with the following keys:
@@ -73,7 +73,7 @@ T2 = false    # turn off T2
 ss = 1        # set phantom down-sample factor to 5
 location = 0.65
 BHO = BlochHighOrder("111", true, true)                          # ["111"] turn on all order terms of dynamic field change. turn on Δw_excitation, Δw_precession
-phantom = BrainPhantom(prefix="brain3D", x=0.2, y=0.2, z=0.2) # setting for Phantom: decide which phantom file to use, loading phantom from src/phantom/mat folder                                
+phantom = BrainPhantom(prefix="brain3D", x=0.2, y=0.2, z=10.0) # setting for Phantom: decide which phantom file to use, loading phantom from src/phantom/mat folder                                
 # setting the coil sensitivity used in the simulation
 csm_type  = :real_32cha;      # a simulated birdcage coil-sensitivity
 csm_nCoil = 32;              # 9-channel
@@ -89,7 +89,7 @@ obj = brain_hophantom2D(phantom; ss=ss, location=location,
                         db0_type=db0_type, db0_max=db0_max); 
 obj.Δw .= B0 ? obj.Δw : obj.Δw * 0;     # set Δw to 0 if B0=false
 obj.T2 .= T2 ? obj.T2 : obj.T2 * Inf;   # cancel T2 relaxiation
-# plt_phantom_map(obj, :ρ)
+# plt_phantom(obj, :ρ)
 
 # 2. scanner & sim_params
 sys = Scanner();
@@ -133,7 +133,7 @@ fig_csm = plt_images(abs.(csm); dim=3, nRow=csm_nRow, nCol=csm_nCol)
 b0map     = brain_phantom2D_reference(phantom, :Δw, (T.(nX), T.(nY)), (T.(Δx*1e3), T.(Δy*1e3)); 
                     location=location, ss=ss, db0_type=db0_type, db0_max=db0_max);
 b0map     = rotl90(b0map);
-fig_b0map = plt_B0map(b0map)
+fig_b0map = plt_B0map(-b0map)
 
 # Proton-density map (reference)
 x_ref   = brain_phantom2D_reference(phantom, :ρ, (T.(nX), T.(nY)), (T.(Δx*1e3), T.(Δy*1e3)); location=location, ss=ss);
@@ -188,14 +188,24 @@ weight = SampleDensity(kspha_stitched'[2:3,:], (nX, nY));
 HOOp = HighOrderOp(gridding, T.(kspha_stitched'), T.(datatime); recon_terms=recon_terms, k_nominal=T.(kspha_nominal'), 
                         nBlock=nBlock, fieldmap=T.(b0), csm=Complex{T}.(csm), use_gpu=use_gpu, verbose=verbose);
 
+
 # recon with stitched measurement, with density weighting, with ΔB₀
 @time x = recon_HOOp(HOOp, Complex{T}.(data), Complex{T}.(weight), recParams);
-plt_image(abs.(x); vmaxp=99.9, title="recon: stitched")
+plt_image(abs.(x); vmaxp=99.9, title="Stitched")
 
 # ssim, compared with the ground truth
 @info "SSIM" SSIM=HO_SSIM(x_ref, abs.(x))
 
-
 # to see the reconstructed images at each iteration
 iter = 5;
 plt_image(reshape(abs.(recParams[:solverInfo].x_iter[iter+1]), nX, nY); vmaxp=99.9, title="iter $(iter)")
+
+
+
+# recon with Nominal trajectory
+recon_terms = "000";
+HOOp = HighOrderOp(gridding, T.(kspha_stitched'), T.(datatime); recon_terms=recon_terms, k_nominal=T.(kspha_nominal'), 
+                        nBlock=nBlock, fieldmap=T.(b0), csm=Complex{T}.(csm), use_gpu=use_gpu, verbose=verbose);
+# recon with stitched measurement, with density weighting, with ΔB₀
+@time x = recon_HOOp(HOOp, Complex{T}.(data), Complex{T}.(weight), recParams);
+plt_image(abs.(x); vmaxp=99.9, title="Nominal")
