@@ -39,13 +39,13 @@ ThreadsX = "ac1d9e8a-700a-412c-b207-f0111f4b6c0d"
 
 [compat]
 Interpolations = "0.15"
-KomaMRI = "0.8.0"
-KomaMRIBase = "0.8.1"
-KomaMRICore = "0.8.0"
-KomaMRIFiles = "0.8.0"
-KomaMRIPlots = "0.8.0"
+KomaMRI = "=0.8.0"
+KomaMRIBase = "=0.8.1"
+KomaMRICore = "=0.8.0"
+KomaMRIFiles = "=0.8.0"
+KomaMRIPlots = "=0.8.0"
 LinearOperators = "2"
-MRIReco = "0.8"
+MRIReco = "=0.8.0"
 RegularizedLeastSquares = "0.10.0"
 
 [extras]
