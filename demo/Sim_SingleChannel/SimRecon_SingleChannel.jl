@@ -8,14 +8,14 @@ import RegularizedLeastSquares: SolverInfo
 #     c. Create a HO_Sequence object as defined in HighOrderMRI.jl by combining the 
 #        sequence and dynamic field data.
 #########################################################################################
-
-seq_file = "$(@__DIR__)/demo/SingleChannel/1mm_R1.seq"   # *.seq file is the pulseq's sequence file
+path     = joinpath(@__DIR__, "demo/Sim_SingleChannel")
+seq_file = "$(path)/1mm_R1.seq"   # *.seq file is the pulseq's sequence file
 # under-sampling factor: R = 1
 # inplane resolution: 1 mm x 1 mm
 # FOV: 150 mm x 150 mm
-# readout duration: 88 ms
+# readout duration: ~88 ms
 
-dfc_file = "$(@__DIR__)/demo/SingleChannel/1mm_R1.mat"   # *.mat file contains the dynamic field data from both stitching method and the standard method.
+dfc_file = "$(path)/1mm_R1.mat"   # *.mat file contains the dynamic field data from both stitching method and the standard method.
 # The dynamic field data is stored in the *.mat file with the following keys:
 #= 
 "dt"               [s], time interval between two time points.
@@ -121,7 +121,7 @@ fig_nufft = plt_image(rotl90(img_nufft))
 # ΔB₀ map (the same as the one used for simulation), we will use this map in reconstruction
 b0map = brain_phantom2D_reference(phantom, :Δw, (T.(nX), T.(nY)), (T.(Δx*1e3), T.(Δy*1e3)); location=location, ss=ss, db0_type=db0_type, db0_max=db0_max);
 b0map = rotl90(b0map);
-fig_b0map = plt_B0map(b0map)
+fig_b0map = plt_B0map(-b0map)
 
 # Proton-density map (the reference of recon, because we didn't consider T2 in simulation of single-shot spiral)
 x_ref = brain_phantom2D_reference(phantom, :ρ, (T.(nX), T.(nY)), (T.(Δx*1e3), T.(Δy*1e3)); location=location, ss=ss);
@@ -171,14 +171,14 @@ HOOp = HighOrderOp(gridding, T.(kspha[:, 1:9]'), T.(datatime); recon_terms=recon
 
 # recon with stitched measurement, with density weighting, with ΔB₀
 @time x1 = recon_HOOp(HOOp, Complex{T}.(data), Complex{T}.(weight), recParams);
-plt_image(abs.(x1); vmaxp=99.9, title="w/  ΔB₀, stitched: 111, w/  density weighting")
+plt_image(abs.(x1); vmaxp=99.9, title="Stitched, w/  ΔB₀")
 
 
 # recon with stitched measurement, with density weighting, without ΔB₀
 HOOp = HighOrderOp(gridding, T.(kspha[:, 1:9]'), T.(datatime); recon_terms=recon_terms, k_nominal=T.(kspha_nominal'), 
                         nBlock=nBlock, fieldmap=T.(b0.*0), use_gpu=use_gpu, verbose=verbose);
 @time x = recon_HOOp(HOOp, Complex{T}.(data), Complex{T}.(weight), recParams);
-plt_image(abs.(x); vmaxp=99.9, title="w/o ΔB₀, stitched: 111, w/  density weighting")
+plt_image(abs.(x); vmaxp=99.9, title="Stitched, w/o ΔB₀")
 
 
 # recon with nominal trajectory, with density weighting, with ΔB₀
@@ -186,5 +186,7 @@ recon_terms = "000";  # "000" indicates that no measured field dynamics are used
 HOOp = HighOrderOp(gridding, T.(kspha[:, 1:9]'), T.(datatime); recon_terms=recon_terms, k_nominal=T.(kspha_nominal'), 
                         nBlock=nBlock, fieldmap=T.(b0), use_gpu=use_gpu, verbose=verbose);
 @time x = recon_HOOp(HOOp, Complex{T}.(data), Complex{T}.(weight), recParams);
-plt_image(abs.(x); vmaxp=99.9, title="w/  ΔB₀, nominal, w/  density weighting")
+plt_image(abs.(x); vmaxp=99.9, title="Nominal, w/  ΔB₀")
+
 # you can try different recons like: "011", "101", "110"...
+# try replace 'kspha_stitched' with 'kspha_standard' to see the difference between stitching and standard methods.
