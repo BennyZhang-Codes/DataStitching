@@ -1,5 +1,7 @@
 # HighOrderMRI.jl
 
+[![CI](https://github.com/BennyZhang-Codes/HighOrderMRI.jl/actions/workflows/CI.yml/badge.svg)](https://github.com/BennyZhang-Codes/HighOrderMRI.jl/actions/workflows/CI.yml) [![Documentation](https://github.com/BennyZhang-Codes/HighOrderMRI.jl/actions/workflows/Documentation.yml/badge.svg)](https://github.com/BennyZhang-Codes/HighOrderMRI.jl/actions/workflows/Documentation.yml)
+
 This is a Julia toolbox for MR simulation and reconstruction that can incorporate dynamic field changes associated with the gradients throughout the sequence. This is an extension of [KomaMRI.jl](https://github.com/JuliaHealth/KomaMRI.jl) (a Julia package for highly efficient MR simulations) and [MRIReco.jl](https://github.com/MagneticResonanceImaging/MRIReco.jl) (a Julia package for MRI reconstruction).
 
 For MRI image reconstruction with field dynamics, we have built an extended signal encoding operator `HighOrderOp` to construct the signal equation. `HighOrderOp` inherits from `AbstractLinearOperator` in [LinearOperators.jl](https://github.com/JuliaSmoothOptimizers/LinearOperators.jl). Then, image reconstruction problem can be solved using algorithms from [RegularizedLeastSquares.jl](https://github.com/JuliaImageRecon/RegularizedLeastSquares.jl).
