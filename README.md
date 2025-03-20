@@ -19,6 +19,15 @@ If you use the toolbox, please consider citing the following abstracts:
 * Support the model-based synchronization delay estimation algorithm (Dubovan PI, Baron CA. 2023, [https://doi.org/10.1002/mrm.29460](https://doi.org/10.1002/mrm.29460)).
 * GPU acceleration with `CUDA.jl` (only NVIDIA GPU has been tested). If the GPU memory is not enough, the calculation can be divided into blocks.
 
+## Installation
+
+The current version is mainly based on two other packages: KomaMRI.jl (version: 0.8.0) and MRIReco.jl (version: 0.8.0).
+
+```julia
+using Pkg
+Pkg.add(url="https://github.com/BennyZhang-Codes/HighOrderMRI.jl.git")
+```
+
 ## Demo
 
 This repository provides a set of demo scripts that allow users to perform simulations and reconstructions using both our data stitching method and the standard approach.
@@ -46,17 +55,6 @@ This demo simulates and reconstructs an under-sampled single-shot spiral sequenc
 ### [Multi-echo Gradient Echo (ME-GRE)](https://github.com/BennyZhang-Codes/HighOrderMRI.jl/tree/main/demo/Multi-echo_GRE)
 
 This demo estimates the ΔB₀ map using [MRIFieldmaps.jl](https://github.com/MagneticResonanceImaging/MRIFieldmaps.jl) and the coil sensitivity map using ESPIRiT, based on ME-GRE data in the [ISMRMRD](https://github.com/ismrmrd/ismrmrd) format. Additionally, the ME-GRE sequence can be modified within the [source code](https://github.com/BennyZhang-Codes/HighOrderMRI.jl/tree/main/demo/Multi-echo_GRE/pulseq) ([Pulseq](https://github.com/pulseq/pulseq), MATLAB version).
-
-## Required dependencies:
-
-The current version is mainly based on two other packages: KomaMRI.jl (version: 0.8.0) and MRIReco.jl (version: 0.8.0).
-
-- `Julia` 1.9.4
-- `KomaMRI` 0.8.0
-- `MRIReco` 0.8.0
-- `RegularizedLeastSquares` 0.10.0
-- `MRIFieldmaps` 0.0.3
-- `PyPlot` 2.11.5
 
 ## Copyright & License Notice
 
