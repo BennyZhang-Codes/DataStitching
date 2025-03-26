@@ -4,7 +4,7 @@
 
 ---
 
-[![CI](https://github.com/BennyZhang-Codes/HighOrderMRI.jl/actions/workflows/CI.yml/badge.svg)](https://github.com/BennyZhang-Codes/HighOrderMRI.jl/actions/workflows/CI.yml) [![Documentation](https://github.com/BennyZhang-Codes/HighOrderMRI.jl/actions/workflows/Documentation.yml/badge.svg)](https://github.com/BennyZhang-Codes/HighOrderMRI.jl/actions/workflows/Documentation.yml)
+[![CI](https://github.com/BennyZhang-Codes/DataStitching/actions/workflows/CI.yml/badge.svg)](https://github.com/BennyZhang-Codes/DataStitching/actions/workflows/CI.yml) [![Documentation](https://github.com/BennyZhang-Codes/DataStitching/actions/workflows/Documentation.yml/badge.svg)](https://github.com/BennyZhang-Codes/DataStitching/actions/workflows/Documentation.yml)
 
 This repository provides code and tools for **data stitching** in dynamic field monitoring using **NMR probes**. It is a **Julia toolbox** for **MR simulation and reconstruction**, designed to handle **dynamic field changes** introduced by gradients throughout an MR sequence.
 
