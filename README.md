@@ -1,16 +1,15 @@
-# HighOrderMRI.jl
+# Data stitching for dynamic field monitoring
 
 [![CI](https://github.com/BennyZhang-Codes/HighOrderMRI.jl/actions/workflows/CI.yml/badge.svg)](https://github.com/BennyZhang-Codes/HighOrderMRI.jl/actions/workflows/CI.yml) [![Documentation](https://github.com/BennyZhang-Codes/HighOrderMRI.jl/actions/workflows/Documentation.yml/badge.svg)](https://github.com/BennyZhang-Codes/HighOrderMRI.jl/actions/workflows/Documentation.yml)
 
 This is a Julia toolbox for MR simulation and reconstruction that can incorporate dynamic field changes associated with the gradients throughout the sequence. This is an extension of [KomaMRI.jl](https://github.com/JuliaHealth/KomaMRI.jl) (a Julia package for highly efficient MR simulations) and [MRIReco.jl](https://github.com/MagneticResonanceImaging/MRIReco.jl) (a Julia package for MRI reconstruction).
 
-For MRI image reconstruction with field dynamics, we have built an extended signal encoding operator `HighOrderOp` to construct the signal equation. `HighOrderOp` inherits from `AbstractLinearOperator` in [LinearOperators.jl](https://github.com/JuliaSmoothOptimizers/LinearOperators.jl). Then, image reconstruction problem can be solved using algorithms from [RegularizedLeastSquares.jl](https://github.com/JuliaImageRecon/RegularizedLeastSquares.jl).
+For MRI image reconstruction with field dynamics, we have developed a module `HighOrderMRI.jl` where an extended signal encoding operator `HighOrderOp` is implemented to construct the signal equation. The operator `HighOrderOp` inherits from `AbstractLinearOperator` in [LinearOperators.jl](https://github.com/JuliaSmoothOptimizers/LinearOperators.jl). The image reconstruction problem can be solved using any algorithms from [RegularizedLeastSquares.jl](https://github.com/JuliaImageRecon/RegularizedLeastSquares.jl).
 
-If you use the toolbox, please consider citing the following abstracts:
+If you use the toolbox, please consider citing the following paper:
 
-[1] Zhang, Z., Auerbach, E. J., Bratch, A., Grant, A. N., Zhuo, Y., He, S., Chen, L., Ugurbil, K., Wu, X. "A stitching method for dynamic field monitoring using NMR probes", 2024 ISMRM, Singapore
+Jinyuan Zhang, Zihao Zhang*, Zhentao Zuo, Rong Xue, Yan Zhuo, Cameron Cushing, Alexander Bratch, Edward Auerbach, Andrea Grant, Jing An, Kamil Ugurbil, Xiaoping Wu. "Data stitching for dynamic field monitoring with NMR probes", MRM, submitted.
 
-[2] Zhang, J., Zuo, Z., Xue, R.,  Zhuo, Y., Cushing, C., Bratch, A., Auerbach, E. J., Grant, A. N., Ugurbil, K., Wu, X., Zhang, Z. "A stitching method for dynamic field monitoring using NMR probes: validation in simulation and human experiments", 2025 ISMRM, Hawaii
 
 ## Features
 
