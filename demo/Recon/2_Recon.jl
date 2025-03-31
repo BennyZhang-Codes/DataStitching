@@ -1,3 +1,4 @@
+using HighOrderMRI
 using MAT
 using CUDA
 CUDA.device!(0)
@@ -74,7 +75,7 @@ kdata = kdata ./ exp.(1im.*k0_ecc)';
 
 labelStitched = [    "Stitched",      "Stitched_wo_dB0"];
 recons        = [         "111",                  "111"];
-kdatas        = [         kdata,                  kdata];
+kdatas        = [         kdata,                  kdata];Stitched_wo_dB0
 weights       = [weightStitched,         weightStitched]; 
 b0s           = [            b0,                  b0.*0];
 imgStitched   = Array{Complex{T},3}(undef, nX, nY, length(labelStitched));
