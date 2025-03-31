@@ -1,5 +1,5 @@
 <p align="center">
-  <a><img src="docs/src/README/logo.svg" width=400/></a>
+  <a><img src="docs/src/README/logo.svg" /></a>
 </p>
 
 ---
@@ -16,7 +16,6 @@ This project extends the capabilities of:
 If you use the toolbox, please consider citing the following paper:
 
 Jinyuan Zhang, Zihao Zhang*, Zhentao Zuo, Rong Xue, Yan Zhuo, Cameron Cushing, Alexander Bratch, Edward Auerbach, Andrea Grant, Jing An, Kamil Ugurbil, Xiaoping Wu. "Data stitching for dynamic field monitoring with NMR probes", MRM, submitted.
-
 
 <p align="center">
   <a><img src="docs/src/README/0p5.jpg"/></a>
@@ -56,7 +55,7 @@ For a **~29 ms readout** (1 mm in-plane resolution, R=4), our data stitching met
 | ------------------------------------------------------------------------------- | ------------------------------------------------------------------------------- |
 | ![~86 ms, Stitched](demo/Data-Stitching/result/7T_0p5_400_r4_Stitched_Bfield.png) | ![~86 ms, Standard](demo/Data-Stitching/result/7T_0p5_400_r4_Standard_Bfield.png) | -->
 
-### [Reconstruction & Synchronization](demo/Recon)
+### [Reconstruction &amp; Synchronization](demo/Recon)
 
 For MRI reconstruction incorporating measured field dynamics, we first estimate the synchronization delay between the MRI data and the field measurements. The final reconstruction is then performed using the synchronized field dynamics.
 
@@ -65,13 +64,13 @@ This demo includes single-shot spiral imaging data (7T, 1 mm in-plane resolution
 In this case, our data stitching method performs comparably to the standard method. For further details on how our data stitching method outperforms conventional approaches, please refer to our abstracts mentioned above.
 
 | ![1p0_Nominal](demo/Recon/result/Nominal.png) | ![1p0_Standard](demo/Recon/result/Standard.png) | ![1p0_Stitched](demo/Recon/result/Stitched.png) | ![1p0_Stitched_wo_dB0](demo/Recon/result/Stitched_wo_dB0.png) |
-| ------------------------------------------- | --------------------------------------------- | --------------------------------------------- | ---------------------------------------------------- |
+| ------------------------------------------- | --------------------------------------------- | --------------------------------------------- | ----------------------------------------------------------- |
 
-### [Single-Channel Simulation & Reconstruction](demo/Sim_SingleChannel)
+### [Single-Channel Simulation &amp; Reconstruction](demo/Sim_SingleChannel)
 
 This demo simulates and reconstructs a fully-sampled single-shot spiral sequence (1 mm resolution) [[.seq file]](demo/Sim_SingleChannel/1mm_R1.seq) with field dynamics and ΔB₀. Reconstruction is based on a extended signal encoding model, which includes the field dynamics (up to second-order) and off-resonance.
 
-### [Multi-Channel Simulation & Reconstruction](demo/Sim_MultiChannel)
+### [Multi-Channel Simulation &amp; Reconstruction](demo/Sim_MultiChannel)
 
 This demo simulates and reconstructs an under-sampled single-shot spiral sequence (1 mm resolution, R=4) [[.seq file]](demo/Sim_MultiChannel/7T_1p0_200_r4.seq) with field dynamics and ΔB₀.
 
