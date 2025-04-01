@@ -6,12 +6,9 @@
 
 [![CI](https://github.com/BennyZhang-Codes/DataStitching/actions/workflows/CI.yml/badge.svg)](https://github.com/BennyZhang-Codes/DataStitching/actions/workflows/CI.yml) [![Documentation](https://github.com/BennyZhang-Codes/DataStitching/actions/workflows/Documentation.yml/badge.svg)](https://github.com/BennyZhang-Codes/DataStitching/actions/workflows/Documentation.yml)
 
-This repository provides code and tools for **data stitching** in dynamic field monitoring using **NMR probes**. It is a **Julia toolbox** for **MR simulation and reconstruction**, designed to handle **dynamic field changes** introduced by gradients throughout an MR sequence.
+This repository provides code and tools for **data stitching** in dynamic field monitoring using **NMR probes**. It is a **Julia toolbox** for **MR simulation and reconstruction** that can incorporate **dynamic field changes** associated with the gradients throughout the sequence. This is an extension of [KomaMRI.jl](https://github.com/JuliaHealth/KomaMRI.jl) (a Julia package for highly efficient MR simulations) and [MRIReco.jl](https://github.com/MagneticResonanceImaging/MRIReco.jl) (a Julia package for MRI reconstruction).
 
-This project extends the capabilities of:
-
-* [KomaMRI.jl](https://github.com/JuliaHealth/KomaMRI.jl) – a Julia package for highly efficient MR simulations.
-* [MRIReco.jl](https://github.com/MagneticResonanceImaging/MRIReco.jl) – a Julia package for MRI reconstruction.
+For MRI image reconstruction with field dynamics, we have developed a module `HighOrderMRI.jl` where an extended signal encoding operator `HighOrderOp` is implemented to construct the signal equation. The operator `HighOrderOp` inherits from `AbstractLinearOperator` in [LinearOperators.jl](https://github.com/JuliaSmoothOptimizers/LinearOperators.jl). The image reconstruction problem can be solved using any algorithms from [RegularizedLeastSquares.jl](https://github.com/JuliaImageRecon/RegularizedLeastSquares.jl).
 
 If you use the toolbox, please consider citing the following paper:
 
