@@ -11,3 +11,5 @@ include("HighOrderOp_v1.jl")
 include("HighOrderOp_v1p1.jl")
 include("HighOrderOp_v2.jl")
 include("HighOrderOp_v3.jl")
+
+include("HighOrderOp3D.jl")

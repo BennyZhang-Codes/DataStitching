@@ -21,7 +21,7 @@ julia> weights = SampleDensity(tr, shape);
 """
 function SampleDensity(tr::AbstractArray{T,2}, shape::Tuple) where T
     C = maximum(2*abs.(tr[:]));  #Normalize k-space to -.5 to .5 for NUFFT
-    tr = tr[1:2,:] ./ C;
+    tr = tr ./ C;
     weights = Vector{Complex{T}}(undef, size(tr,2))
     plan = plan_nfft(Float64.(tr), shape, m=2, σ=2)
     weights = Complex{T}.(sqrt.(sdc(plan, iters=10)))
