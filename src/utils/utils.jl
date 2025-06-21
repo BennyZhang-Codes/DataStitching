@@ -11,6 +11,8 @@ export HO_img_scale, HO_MSE, HO_RMSE, HO_NRMSE, HO_SSIM
 include("ImageResize.jl")
 export imresize_real, imresize_complex
 
+include("fieldmap.jl")
+
 
 """
     factor_a, factor_b = get_factors(num::Int64)
