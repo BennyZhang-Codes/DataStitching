@@ -66,3 +66,36 @@ function InterpTrajTime(
     datatime = dt * (0:nSample-1)
     return InterpTrajTime(traj, dt, delTime, datatime; intermode=intermode)
 end
+
+
+"""
+    For multishot cases, you can use this method.
+    traj 
+# Arguments
+- `traj::AbstractArray{<:Real, 3}`: [nShot, nSample, nTerm], trajectory data (2D array, where each row is a point in the trajectory)
+- `dt::Float64`: time delay between input samples
+- `delTime::Float64`: [nShot], time delay to be added or subtracted from time
+
+"""
+function InterpTrajTime(
+    traj      ::AbstractArray{T, 3}      , 
+    dt        ::Real                     , 
+    delTime   ::AbstractVector{T}        ,
+    datatime  ::AbstractArray{T, 2}      ;
+    intermode ::Interpolations.InterpolationType = AkimaMonotonicInterpolation()
+    ) where {T<:Real}
+    @assert size(traj, 1) == length(delTime) "Number of shots in trajectory must match length of delTime vector"
+    @assert size(datatime, 1) == length(delTime) "Number of shots in datatime must match length of delTime vector"
+
+    nShot, _, nTerm = size(traj)
+    traj_interp = []
+    for i in 1:nShot
+        shot_interp = InterpTrajTime(traj[i, :, :], dt, delTime[i], datatime[i, :]; intermode=intermode)
+        push!(traj_interp, shot_interp)
+    end
+    traj_out = Array{T}(undef, nShot, size(datatime, 2), nTerm)
+    for ishot in 1:nShot
+        traj_out[ishot,:,:] = traj_interp[ishot]
+    end
+    return traj_out
+end
