@@ -13,6 +13,8 @@ export imresize_real, imresize_complex
 
 include("fieldmap.jl")
 
+include("conversion.jl")
+export grad2traj, traj2grad
 
 """
     factor_a, factor_b = get_factors(num::Int64)

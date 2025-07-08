@@ -77,6 +77,13 @@ function plt_seqd(
     ax.plot(hoseqd.seqd.t*1e3, hoseqd.h6*1e3, label="h6", marker="o", color=sh.h6.color, markersize=marker_size, linewidth=linewidth)
     ax.plot(hoseqd.seqd.t*1e3, hoseqd.h7*1e3, label="h7", marker="o", color=sh.h7.color, markersize=marker_size, linewidth=linewidth)
     ax.plot(hoseqd.seqd.t*1e3, hoseqd.h8*1e3, label="h8", marker="o", color=sh.h8.color, markersize=marker_size, linewidth=linewidth)
+    ax.plot(hoseqd.seqd.t*1e3, hoseqd.h9*1e3, label="h9", marker="o", color=sh.h9.color, markersize=marker_size, linewidth=linewidth)
+    ax.plot(hoseqd.seqd.t*1e3, hoseqd.h10*1e3, label="h10", marker="o", color=sh.h10.color, markersize=marker_size, linewidth=linewidth)
+    ax.plot(hoseqd.seqd.t*1e3, hoseqd.h11*1e3, label="h11", marker="o", color=sh.h11.color, markersize=marker_size, linewidth=linewidth)
+    ax.plot(hoseqd.seqd.t*1e3, hoseqd.h12*1e3, label="h12", marker="o", color=sh.h12.color, markersize=marker_size, linewidth=linewidth)
+    ax.plot(hoseqd.seqd.t*1e3, hoseqd.h13*1e3, label="h13", marker="o", color=sh.h13.color, markersize=marker_size, linewidth=linewidth)
+    ax.plot(hoseqd.seqd.t*1e3, hoseqd.h14*1e3, label="h14", marker="o", color=sh.h14.color, markersize=marker_size, linewidth=linewidth)
+    ax.plot(hoseqd.seqd.t*1e3, hoseqd.h15*1e3, label="h15", marker="o", color=sh.h15.color, markersize=marker_size, linewidth=linewidth)
 
     ax.set_xlabel(xlabel, fontsize=fontsize_label, color=color_label, labelpad=pad_label)
     ax.set_ylabel(ylabel, fontsize=fontsize_label, color=color_label, labelpad=pad_label)

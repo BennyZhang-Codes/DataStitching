@@ -88,6 +88,13 @@ function plt_seq(
     ax.plot(samples.h6.t*1e3, samples.h6.A*1e3, label="h6", color=sh.h6.color, linewidth=linewidth)
     ax.plot(samples.h7.t*1e3, samples.h7.A*1e3, label="h7", color=sh.h7.color, linewidth=linewidth)
     ax.plot(samples.h8.t*1e3, samples.h8.A*1e3, label="h8", color=sh.h8.color, linewidth=linewidth)
+    ax.plot(samples.h9.t*1e3, samples.h9.A*1e3, label="h9", color=sh.h9.color, linewidth=linewidth)
+    ax.plot(samples.h10.t*1e3, samples.h10.A*1e3, label="h10", color=sh.h10.color, linewidth=linewidth)
+    ax.plot(samples.h11.t*1e3, samples.h11.A*1e3, label="h11", color=sh.h11.color, linewidth=linewidth)
+    ax.plot(samples.h12.t*1e3, samples.h12.A*1e3, label="h12", color=sh.h12.color, linewidth=linewidth)
+    ax.plot(samples.h13.t*1e3, samples.h13.A*1e3, label="h13", color=sh.h13.color, linewidth=linewidth)
+    ax.plot(samples.h14.t*1e3, samples.h14.A*1e3, label="h14", color=sh.h14.color, linewidth=linewidth)
+    ax.plot(samples.h15.t*1e3, samples.h15.A*1e3, label="h15", color=sh.h15.color, linewidth=linewidth)
 
     ax.set_xlabel(xlabel, fontsize=fontsize_label, color=color_label, labelpad=pad_label)
     ax.set_ylabel(ylabel, fontsize=fontsize_label, color=color_label, labelpad=pad_label)

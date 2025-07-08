@@ -35,12 +35,20 @@ function run_spin_precession!(p::HO_Phantom{T}, hoseqd::HO_DiscreteSequence{T}, 
     Bzh6 = (3zt.^2-(xt.^2 .+ yt.^2 .+ zt.^2)) .* hoseqd.h6'
     Bzh7 = (xt .* zt) .* hoseqd.h7'
     Bzh8 = (xt.^2 .- yt.^2) .* hoseqd.h8'
+    Bzh9 = (3 .* yt .* xt.^2 .- yt.^3) .* hoseqd.h9'
+    Bzh10 = (xt .* zt .* yt) .* hoseqd.h10'
+    Bzh11 = (5 .* zt.^2 .- (xt.^2 .+ yt.^2 .+ zt.^2)) .* yt .* hoseqd.h11'
+    Bzh12 = (5 .* zt.^3 .- 3 .* zt .* (xt.^2 .+ yt.^2 .+ zt.^2)) .* hoseqd.h12'
+    Bzh13 = (5 .* zt.^2 .- (xt.^2 .+ yt.^2 .+ zt.^2)) .* xt .* hoseqd.h13'
+    Bzh14 = (xt.^2 .* zt .- yt.^2 .* zt) .* hoseqd.h14'
+    Bzh15 = (xt.^3 .- 3 .* xt .* yt.^2) .* hoseqd.h15'
 
     Bz0 = sim_method.ho0 ? hoseqd.h0' : 0
     Bz1 = sim_method.ho1 ? Bzh1 .+ Bzh2 .+ Bzh3 : xt .* seq.Gx' .+ yt .* seq.Gy' .+ zt .* seq.Gz'
     Bz2 = sim_method.ho2 ? Bzh4 .+ Bzh5 .+ Bzh6 .+ Bzh7 .+ Bzh8 : 0
+    Bz3 = sim_method.ho3 ? Bzh9 .+ Bzh10 .+ Bzh11 .+ Bzh12 .+ Bzh13 .+ Bzh14 .+ Bzh15 : 0
 
-    Bz = sim_method.Δw_precession ? Bz0 .+ Bz1 .+ Bz2 .+ p.Δw / T(2π * γ) : Bz0 .+ Bz1 .+ Bz2
+    Bz = sim_method.Δw_precession ? Bz0 .+ Bz1 .+ Bz2 .+ Bz3 .+ p.Δw / T(2π * γ) : Bz0 .+ Bz1 .+ Bz2 .+ Bz3
     #Rotation
     if is_ADC_on(seq)
         ϕ = T(-2π * γ) .* cumtrapz(seq.Δt', Bz)

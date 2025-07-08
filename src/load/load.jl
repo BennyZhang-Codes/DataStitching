@@ -109,6 +109,6 @@ function load_hoseq(;dfc_method::Symbol=:Stitched, seqname::String="spiral", r::
     hoseq = HO_Sequence(seq);              # convert to HO_Sequence object
     GR_dfc, ntStitched, ntStandard = load_dfc(;dfc_method=dfc_method, seqname=seqname, r=r);
     hoseq.GR_dfc[2:4, :] = hoseq.SEQ.GR;
-    hoseq.GR_dfc[:,8] = GR_dfc;            # "8" is the index of the readout block in the spiral sequence
+    hoseq.GR_dfc[1:size(GR_dfc,1),8] = GR_dfc;            # "8" is the index of the readout block in the spiral sequence
     return hoseq
 end
