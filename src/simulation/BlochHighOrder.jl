@@ -21,7 +21,7 @@ Base.@kwdef struct BlochHighOrder <: SimulationMethod
     ho3::Bool = true
     Δw_excitation::Bool = true
     Δw_precession::Bool = true
-    name::String = string(Int(ho0)) * string(Int(ho1)) * string(Int(ho2))
+    name::String = string(Int(ho0)) * string(Int(ho1)) * string(Int(ho2)) * string(Int(ho3))
 end
 
 function BlochHighOrder(name::String)
