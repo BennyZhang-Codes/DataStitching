@@ -58,7 +58,7 @@ For more details on how our data stitching method improves over conventional app
 
 <table>
   <tr>
-    <th colspan="8" style="text-align:center">2D Spiral (1 mm in-plane resolution)</th>
+    <th colspan="8" style="text-align:center">2D Spiral (1.0 mm in-plane resolution)</th>
   </tr>
   <tr>
     <td><img src="demo/Recon/result/7T_2D_Spiral_1p0_200_r4_Nominal.png" width="250"/></td>
@@ -76,7 +76,7 @@ For more details on how our data stitching method improves over conventional app
     <td><img src="demo/Recon/result/7T_2D_Spiral_0p5_400_r4_Stitched_wo_dB0.png" width="250"/></td>
   </tr>
   <tr>
-    <th colspan="8" style="text-align:center">2D EPI (0.5 mm in-plane resolution)</th>
+    <th colspan="8" style="text-align:center">2D EPI (1.0 mm in-plane resolution)</th>
   </tr>
   <tr>
     <td><img src="demo/Recon/result/7T_2D_EPI_1p0_200_r4_Nominal.png" width="250"/></td>
