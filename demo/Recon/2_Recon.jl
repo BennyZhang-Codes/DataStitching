@@ -5,7 +5,14 @@ CUDA.device!(0)
 
 T             = Float64;
 path          = joinpath(@__DIR__, "demo/Recon")
-data_file     = "$(path)/data_1p0_200_r4.mat"
+data_mat      = "7T_2D_Spiral_1p0_200_r4.mat"  
+"""
+7T_2D_Spiral_1p0_200_r4.mat
+7T_2D_Spiral_0p5_400_r4.mat
+7T_2D_EPI_1p0_200_r4.mat
+7T_2D_EPI_0p5_400_r5.mat
+"""
+data_file     = joinpath(path, data_mat)
 
 @info "data file: $(data_file)"
 data          = matread(data_file);
@@ -19,29 +26,47 @@ datatime      = data["datatime"];           # time stamps of k-space data
 matrixSize    = data["matrixSize"];         # matrix size
 FOV           = data["FOV"];                # field of view
 
-k0_ecc        = data["k0_ecc"];             # b0 compensation of scanner from ECC model
-dt            = data["dfc_dt"];             # dwell time of field dynamics
-ksphaStitched = data["dfc_ksphaStitched"];  # coefficients of the field dynamics with data stitching method
-ksphaStandard = data["dfc_ksphaStandard"];  # coefficients of the field dynamics with standard method
-startStitched = data["dfc_startStitched"];  # start time of the field dynamics with data stitching method
-startStandard = data["dfc_startStandard"];  # start time of the field dynamics with standard method
+k0_ecc        = data["k0_adc"];             # b0 compensation of scanner from ECC model
 
-ksphaNominal  = data["ksphaNominal"];       # nominal kspace trajectory, kx, ky
-startNominal  = data["startNominal"];       # start time of the nominal trajectory
+dt_adc        = data["dt_adc"];
 
-tau_Nominal   = data["tau_Nominal"];        # synchronization delay between the nominal trajectory and the MRI data
-tau_Stitched  = data["tau_Stitched"];       # synchronization delay between the stitched trajectory and the MRI data    
-tau_Standard  = data["tau_Standard"];       # synchronization delay between the standard trajectory and the MRI data
+# dwell time of the trajectories
+dt_Stitched   = data["dt_Stitched"];
+dt_Standard   = data["dt_Standard"];
+dt_GIRF       = data["dt_GIRF"];
+dt_Nominal    = data["dt_Nominal"];
 
+# phase coefficients
+ksphaStitched = data["ksphaStitched"];     
+ksphaStandard = data["ksphaStandard"];     
+ksphaGIRF     = data["ksphaGIRF"];         
+ksphaNominal  = data["ksphaNominal"];      
+
+# start time of the field dynamics
+startStitched = data["startStitched"]; 
+startStandard = data["startStandard"]; 
+startGIRF     = data["startGIRF"];     
+startNominal  = data["startNominal"];  
+
+# synchronization delay between the trajectories and the MRI data
+tauStitched   = data["tauStitched"]; 
+tauStandard   = data["tauStandard"];      
+tauGIRF       = data["tauGIRF"];              
+tauNominal    = data["tauNominal"];      
+
+datatime      = vec(datatime);
 
 # comparion of the field dynamics with or without synchronization
-# plt_ksphas([InterpTrajTime(ksphaStitched, dt, startStitched, datatime), InterpTrajTime(ksphaStitched, dt, startStitched+tau_Stitched*dt, datatime)], dt)
-# plt_ksphas([InterpTrajTime(ksphaStandard, dt, startStandard, datatime), InterpTrajTime(ksphaStandard, dt, startStandard+tau_Standard*dt, datatime)], dt)
-# plt_ksphas([InterpTrajTime(ksphaNominal , dt, startNominal , datatime), InterpTrajTime(ksphaNominal , dt, startNominal +tau_Nominal *dt, datatime)], dt)
+plt_ksphas([InterpTrajTime(ksphaStitched, dt_Stitched, startStitched, datatime), InterpTrajTime(ksphaStitched, dt_Stitched, startStitched+tauStitched*dt_adc, datatime)], dt_adc)
+plt_ksphas([InterpTrajTime(ksphaStandard, dt_Standard, startStandard, datatime), InterpTrajTime(ksphaStandard, dt_Standard, startStandard+tauStandard*dt_adc, datatime)], dt_adc)
+plt_ksphas([InterpTrajTime(ksphaGIRF    , dt_GIRF    , startGIRF    , datatime), InterpTrajTime(ksphaGIRF    , dt_GIRF    , startGIRF    +tauGIRF    *dt_adc, datatime)], dt_adc)
+plt_ksphas([InterpTrajTime(ksphaNominal , dt_Nominal , startNominal , datatime), InterpTrajTime(ksphaNominal , dt_Nominal , startNominal +tauNominal *dt_adc, datatime)], dt_adc)
 
-ksphaStitched = InterpTrajTime(ksphaStitched, dt, startStitched+tau_Stitched*dt, datatime);
-ksphaStandard = InterpTrajTime(ksphaStandard, dt, startStandard+tau_Standard*dt, datatime);
-ksphaNominal  = InterpTrajTime(ksphaNominal , dt, startNominal +tau_Nominal *dt, datatime);
+
+ksphaStitched = InterpTrajTime(ksphaStitched, dt_Stitched, startStitched + tauStitched * dt_adc, datatime);
+ksphaStandard = InterpTrajTime(ksphaStandard, dt_Standard, startStandard + tauStandard * dt_adc, datatime);
+ksphaGIRF     = InterpTrajTime(ksphaGIRF    , dt_GIRF    , startGIRF     + tauGIRF     * dt_adc, datatime);
+ksphaNominal  = InterpTrajTime(ksphaNominal , dt_Nominal , startNominal  + tauNominal  * dt_adc, datatime);
 
 # prepare some parameters for reconstruction
 # 1. gridding 
@@ -52,11 +77,12 @@ gridding      = Grid(nX, nY, nZ, Δx, Δy, Δz; exchange_xy=true, reverse_x=fals
 # 2. sampling density 
 weightStitched = SampleDensity(ksphaStitched'[2:3,:], (nX, nY));
 weightStandard = SampleDensity(ksphaStandard'[2:3,:], (nX, nY));
+weightGIRF     = SampleDensity(    ksphaGIRF'[2:3,:], (nX, nY));
 weightNominal  = SampleDensity( ksphaNominal'[2:3,:], (nX, nY));
 
 use_gpu = true;
 verbose = false;
-nBlock  = 20;
+nBlock  = 100;
 
 solver = "cgnr"; reg = "L2"; iter = 20; λ = 1e-9
 recParams = Dict{Symbol,Any}()
@@ -67,52 +93,78 @@ recParams[:iterations]     = iter
 recParams[:solver]         = solver
 
 
-###########################################################################
-# recon with field dynamics measured by our data stitching method
-###########################################################################
+##########################################################################################
+# recon with field dynamics measured by data stitching method
+##########################################################################################
 kdata = data["kdata"];
-kdata = kdata ./ exp.(1im.*k0_ecc)';
+kdata = kdata ./ exp.(2π*1im.*k0_ecc)';
+kdata = kdata .* exp.(-2π*1im.*ksphaStitched[:, 1]);
 
-labelStitched = [    "Stitched",      "Stitched_wo_dB0"];
-recons        = [         "111",                  "111"];
-kdatas        = [         kdata,                  kdata];Stitched_wo_dB0
-weights       = [weightStitched,         weightStitched]; 
-b0s           = [            b0,                  b0.*0];
+labelStitched = [    "Stitched",   "Stitched_wo_dB0"];
+recons        = [        "0111",              "0111"];
+kdatas        = [         kdata,               kdata];
+weights       = [weightStitched,      weightStitched]; 
+b0s           = [            b0,               b0.*0];
 imgStitched   = Array{Complex{T},3}(undef, nX, nY, length(labelStitched));
 idxs           = collect(1:length(labelStitched));
 for (idx, label, recon, kdata, weight, b0) in zip(idxs, labelStitched, recons, kdatas, weights, b0s)
-    @info "[$(idx)] $(label)"
-    HOOp = HighOrderOp(gridding, T.(ksphaStitched'), T.(datatime); recon_terms=recon, k_nominal=ksphaNominal[:, 2:4]', 
+    @info "[$(idx)] $(label) $(recon)"
+    HOOp = HighOrderOp(gridding, T.(ksphaStitched'), T.(datatime); recon_terms=recon, 
         nBlock=nBlock, csm=Complex{T}.(csm), fieldmap=T.(b0), use_gpu=use_gpu, verbose=verbose);
     @time x = recon_HOOp(HOOp, Complex{T}.(kdata), Complex{T}.(weight), recParams);
     imgStitched[:, :, idx] = x;
-    fig = plt_image(abs.(x); title=label, vmaxp=99.9)
-    fig.savefig("$(path)/$(label).png", dpi=300, transparent=false, bbox_inches="tight", pad_inches=0.0)
+    fig = plt_image(abs.(x); title=label, vmaxp=99.5)
+    fig.savefig("$(path)/result/$(data_mat[1:end-4])_$(label).png", dpi=300, transparent=false, bbox_inches="tight", pad_inches=0.0)
 end
 
-###########################################################################
-# recon with field dynamics measured by conventional single measurement
-###########################################################################
+
+##########################################################################################
+# recon with field dynamics measured by data stitching method
+##########################################################################################
 kdata = data["kdata"];
-kdata = kdata ./ exp.(1im.*k0_ecc)';
+kdata = kdata ./ exp.(2π*1im.*k0_ecc)';
+kdata = kdata .* exp.(-2π*1im.*ksphaStandard[:, 1]);
 
 labelStandard = [    "Standard"];
-recons        = [         "111"];
+recons        = [        "0111"];
 kdatas        = [         kdata];
 weights       = [weightStandard]; 
 b0s           = [            b0];
 imgStandard   = Array{Complex{T},3}(undef, nX, nY, length(labelStandard));
 idxs           = collect(1:length(labelStandard));
 for (idx, label, recon, kdata, weight, b0) in zip(idxs, labelStandard, recons, kdatas, weights, b0s)
-    @info "[$(idx)] $(label)"
-    HOOp = HighOrderOp(gridding, T.(ksphaStandard'), T.(datatime); recon_terms=recon, k_nominal=ksphaNominal[:, 2:4]', 
+    @info "[$(idx)] $(label) $(recon)"
+    HOOp = HighOrderOp(gridding, T.(ksphaStandard'), T.(datatime); recon_terms=recon, 
         nBlock=nBlock, csm=Complex{T}.(csm), fieldmap=T.(b0), use_gpu=use_gpu, verbose=verbose);
     @time x = recon_HOOp(HOOp, Complex{T}.(kdata), Complex{T}.(weight), recParams);
     imgStandard[:, :, idx] = x;
-    fig = plt_image(abs.(x); title=label, vmaxp=99.9)
-    fig.savefig("$(path)/$(label).png", dpi=300, transparent=false, bbox_inches="tight", pad_inches=0.0)
+    fig = plt_image(abs.(x); title=label, vmaxp=99.5)
+    fig.savefig("$(path)/result/$(data_mat[1:end-4])_$(label).png", dpi=300, transparent=false, bbox_inches="tight", pad_inches=0.0)
 end
 
+##########################################################################################
+# recon with field dynamics measured by data stitching method
+##########################################################################################
+kdata = data["kdata"];
+kdata = kdata ./ exp.(2π*1im.*k0_ecc)';
+kdata = kdata .* exp.(-2π*1im.*ksphaGIRF[:, 1]);
+
+labelGIRF     = [        "GIRF"];
+recons        = [        "0111"];
+kdatas        = [         kdata];
+weights       = [    weightGIRF]; 
+b0s           = [            b0];
+imgGIRF   = Array{Complex{T},3}(undef, nX, nY, length(labelGIRF));
+idxs           = collect(1:length(labelGIRF));
+for (idx, label, recon, kdata, weight, b0) in zip(idxs, labelGIRF, recons, kdatas, weights, b0s)
+    @info "[$(idx)] $(label) $(recon)"
+    HOOp = HighOrderOp(gridding, T.(ksphaGIRF'), T.(datatime); recon_terms=recon, 
+        nBlock=nBlock, csm=Complex{T}.(csm), fieldmap=T.(b0), use_gpu=use_gpu, verbose=verbose);
+    @time x = recon_HOOp(HOOp, Complex{T}.(kdata), Complex{T}.(weight), recParams);
+    imgGIRF[:, :, idx] = x;
+    fig = plt_image(abs.(x); title=label, vmaxp=99.5)
+    fig.savefig("$(path)/result/$(data_mat[1:end-4])_$(label).png", dpi=300, transparent=false, bbox_inches="tight", pad_inches=0.0)
+end
 
 ###########################################################################
 # recon with nominal trajectory
@@ -128,10 +180,10 @@ imgNominal    = Array{Complex{T},3}(undef, nX, nY, length(labelNominal));
 idxs           = collect(1:length(labelNominal));
 for (idx, label, recon, kdata, weight, b0) in zip(idxs, labelNominal, recons, kdatas, weights, b0s)
     @info "[$(idx)] $(label)"
-    HOOp = HighOrderOp(gridding, T.(ksphaNominal'), T.(datatime); recon_terms=recon, k_nominal=ksphaNominal[:, 2:4]', 
+    HOOp = HighOrderOp(gridding, T.(ksphaNominal'), T.(datatime); recon_terms=recon, 
         nBlock=nBlock, csm=Complex{T}.(csm), fieldmap=T.(b0), use_gpu=use_gpu, verbose=verbose);
     @time x = recon_HOOp(HOOp, Complex{T}.(kdata), Complex{T}.(weight), recParams);
     imgNominal[:, :, idx] = x;
-    fig = plt_image(abs.(x); title=label, vmaxp=99.9)
-    fig.savefig("$(path)/$(label).png", dpi=300, transparent=false, bbox_inches="tight", pad_inches=0.0)
+    fig = plt_image(abs.(x); title=label, vmaxp=99.5)
+    fig.savefig("$(path)/result/$(data_mat[1:end-4])_$(label).png", dpi=300, transparent=false, bbox_inches="tight", pad_inches=0.0)
 end

@@ -42,26 +42,48 @@ Several demo scripts are available to guide users through **simulations** and **
 
 This demo demonstrates our **data stitching method** for dynamic field monitoring using NMR probes. It illustrates how field segments can be stitched together to form a complete time course of the full readout gradient.
 
-For a **~29 ms readout** (1 mm in-plane resolution, R=4), our data stitching method performs comparably to the standard single-measurement approach. However, for a **longer and higher resolution ~86 ms readout** (0.5 mm in-plane resolution, R=4), our stitching method continues to produce reasonable results, whereas the standard method fails.
+For a **~29 ms readout** (1 mm in-plane resolution, R=4), our data stitching method performs comparably to the standard single-measurement approach. However, for a **longer and higher resolution ~88 ms readout** (0.5 mm in-plane resolution, R=4), our stitching method continues to produce reasonable results, whereas the standard method fails.
 
-| **~29 ms, 1 mm, R = 4**                                                 | **~86 ms, 0.5 mm, R = 4**                                                |
+| **~29 ms, 1 mm, R = 4**                                                 | **~88 ms, 0.5 mm, R = 4**                                                |
 | ----------------------------------------------------------------------------- | ------------------------------------------------------------------------------ |
 | ![~~29 ms, 1 mm, R = 4](demo/Data-Stitching/result/7T_1p0_200_r4_ksphadiff.png) | ![~86 ms, 0.5 mm, R = 4](demo/Data-Stitching/result/7T_0p5_400_r4_ksphadiff.png) |
-
-<!-- | **~86 ms, Stitched**                                                      | **~86 ms, Standard**                                                      |
-| ------------------------------------------------------------------------------- | ------------------------------------------------------------------------------- |
-| ![~86 ms, Stitched](demo/Data-Stitching/result/7T_0p5_400_r4_Stitched_Bfield.png) | ![~86 ms, Standard](demo/Data-Stitching/result/7T_0p5_400_r4_Standard_Bfield.png) | -->
 
 ### [Reconstruction &amp; Synchronization](demo/Recon)
 
 For MRI reconstruction incorporating measured field dynamics, we first estimate the synchronization delay between the MRI data and the field measurements. The final reconstruction is then performed using the synchronized field dynamics.
 
-This demo includes single-shot spiral imaging data (7T, 1 mm in-plane resolution, ~29 ms readout), nominal kspace trajectory (Nominal) and field dynamics measured (with Dynamic Field Camera) using both our data stitching method (Stitched) and the conventional single measurement approach (Standard).
+This demo includes 2D single-shot spiral imaging (1 mm resolution with ~29 ms readout, and 0.5 mm resolution with ~88 ms readout) and 2D single-shot EPI imaging (1 mm resolution with ~40 ms readout, and 0.5 mm resolution with ~89 ms readout), all acquired on a 7T Terra scanner. Reconstructions are shown for the nominal k-space trajectory (Nominal), and using measured field dynamics from a Dynamic Field Camera with both our data stitching method (Stitched) and the conventional single measurement approach (Standard).
 
-In this case, our data stitching method performs comparably to the standard method. For further details on how our data stitching method outperforms conventional approaches, please refer to our abstracts mentioned above.
+For more details on how our data stitching method improves over conventional approaches, please refer to the referenced paper.
 
-| ![1p0_Nominal](demo/Recon/result/Nominal.png) | ![1p0_Standard](demo/Recon/result/Standard.png) | ![1p0_Stitched](demo/Recon/result/Stitched.png) | ![1p0_Stitched_wo_dB0](demo/Recon/result/Stitched_wo_dB0.png) |
-| ------------------------------------------- | --------------------------------------------- | --------------------------------------------- | ----------------------------------------------------------- |
+<table>
+  <tr>
+    <th colspan="8" style="text-align:center">1 mm in-plane resolution: 2D Spiral (left) & 2D EPI (right)</th>
+  </tr>
+  <tr>
+    <td><img src="demo/Recon/result/7T_2D_Spiral_1p0_200_r4_Nominal.png" width="250"/></td>
+    <td><img src="demo/Recon/result/7T_2D_Spiral_1p0_200_r4_Standard.png" width="250"/></td>
+    <td><img src="demo/Recon/result/7T_2D_Spiral_1p0_200_r4_Stitched.png" width="250"/></td>
+    <td><img src="demo/Recon/result/7T_2D_Spiral_1p0_200_r4_Stitched_wo_dB0.png" width="250"/></td>
+    <td><img src="demo/Recon/result/7T_2D_EPI_1p0_200_r4_Nominal.png" width="250"/></td>
+    <td><img src="demo/Recon/result/7T_2D_EPI_1p0_200_r4_Standard.png" width="250"/></td>
+    <td><img src="demo/Recon/result/7T_2D_EPI_1p0_200_r4_Stitched.png" width="250"/></td>
+    <td><img src="demo/Recon/result/7T_2D_EPI_1p0_200_r4_Stitched_wo_dB0.png" width="250"/></td>
+  </tr>
+  <tr>
+    <th colspan="8" style="text-align:center">0.5 mm in-plane resolution: 2D Spiral (left) & 2D EPI (right)</th>
+  </tr>
+  <tr>
+    <td><img src="demo/Recon/result/7T_2D_Spiral_0p5_400_r4_Nominal.png" width="250"/></td>
+    <td><img src="demo/Recon/result/7T_2D_Spiral_0p5_400_r4_Standard.png" width="250"/></td>
+    <td><img src="demo/Recon/result/7T_2D_Spiral_0p5_400_r4_Stitched.png" width="250"/></td>
+    <td><img src="demo/Recon/result/7T_2D_Spiral_0p5_400_r4_Stitched_wo_dB0.png" width="250"/></td>
+    <td><img src="demo/Recon/result/7T_2D_EPI_0p5_400_r5_Nominal.png" width="250"/></td>
+    <td><img src="demo/Recon/result/7T_2D_EPI_0p5_400_r5_Standard.png" width="250"/></td>
+    <td><img src="demo/Recon/result/7T_2D_EPI_0p5_400_r5_Stitched.png" width="250"/></td>
+    <td><img src="demo/Recon/result/7T_2D_EPI_0p5_400_r5_Stitched_wo_dB0.png" width="250"/></td>
+  </tr>
+</table>
 
 ### [Single-Channel Simulation &amp; Reconstruction](demo/Sim_SingleChannel)
 
