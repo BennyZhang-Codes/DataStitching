@@ -58,26 +58,36 @@ For more details on how our data stitching method improves over conventional app
 
 <table>
   <tr>
-    <th colspan="8" style="text-align:center">1 mm in-plane resolution: 2D Spiral (left) & 2D EPI (right)</th>
+    <th colspan="8" style="text-align:center">2D Spiral (1 mm in-plane resolution)</th>
   </tr>
   <tr>
     <td><img src="demo/Recon/result/7T_2D_Spiral_1p0_200_r4_Nominal.png" width="250"/></td>
     <td><img src="demo/Recon/result/7T_2D_Spiral_1p0_200_r4_Standard.png" width="250"/></td>
     <td><img src="demo/Recon/result/7T_2D_Spiral_1p0_200_r4_Stitched.png" width="250"/></td>
     <td><img src="demo/Recon/result/7T_2D_Spiral_1p0_200_r4_Stitched_wo_dB0.png" width="250"/></td>
-    <td><img src="demo/Recon/result/7T_2D_EPI_1p0_200_r4_Nominal.png" width="250"/></td>
-    <td><img src="demo/Recon/result/7T_2D_EPI_1p0_200_r4_Standard.png" width="250"/></td>
-    <td><img src="demo/Recon/result/7T_2D_EPI_1p0_200_r4_Stitched.png" width="250"/></td>
-    <td><img src="demo/Recon/result/7T_2D_EPI_1p0_200_r4_Stitched_wo_dB0.png" width="250"/></td>
   </tr>
   <tr>
-    <th colspan="8" style="text-align:center">0.5 mm in-plane resolution: 2D Spiral (left) & 2D EPI (right)</th>
+    <th colspan="8" style="text-align:center">2D Spiral (0.5 mm in-plane resolution)</th>
   </tr>
   <tr>
     <td><img src="demo/Recon/result/7T_2D_Spiral_0p5_400_r4_Nominal.png" width="250"/></td>
     <td><img src="demo/Recon/result/7T_2D_Spiral_0p5_400_r4_Standard.png" width="250"/></td>
     <td><img src="demo/Recon/result/7T_2D_Spiral_0p5_400_r4_Stitched.png" width="250"/></td>
     <td><img src="demo/Recon/result/7T_2D_Spiral_0p5_400_r4_Stitched_wo_dB0.png" width="250"/></td>
+  </tr>
+  <tr>
+    <th colspan="8" style="text-align:center">2D EPI (0.5 mm in-plane resolution)</th>
+  </tr>
+  <tr>
+    <td><img src="demo/Recon/result/7T_2D_EPI_1p0_200_r4_Nominal.png" width="250"/></td>
+    <td><img src="demo/Recon/result/7T_2D_EPI_1p0_200_r4_Standard.png" width="250"/></td>
+    <td><img src="demo/Recon/result/7T_2D_EPI_1p0_200_r4_Stitched.png" width="250"/></td>
+    <td><img src="demo/Recon/result/7T_2D_EPI_1p0_200_r4_Stitched_wo_dB0.png" width="250"/></td>
+  </tr>
+  <tr>
+    <th colspan="8" style="text-align:center">2D EPI (0.5 mm in-plane resolution)</th>
+  </tr>
+  <tr>
     <td><img src="demo/Recon/result/7T_2D_EPI_0p5_400_r5_Nominal.png" width="250"/></td>
     <td><img src="demo/Recon/result/7T_2D_EPI_0p5_400_r5_Standard.png" width="250"/></td>
     <td><img src="demo/Recon/result/7T_2D_EPI_0p5_400_r5_Stitched.png" width="250"/></td>
