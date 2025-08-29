@@ -35,13 +35,13 @@ seq.GR[1,:] = -seq.GR[1,:];        # reverse the sign of the gradient (axis x)
 HighOrderMRI.KomaMRI.plot_seq(seq)  # plt_seq function from KomaMRI.jl, plt the Sequence
 
 
-grad = MAT.matread(dfc_file);
-Δt = grad["dt"];
-nGradSample, nTerm = size(grad["skopeStitched"])              
-dfcStitched = grad["skopeStitched"]' * 1e-3; # mT, mT/m, mT/m² => T, T/m, T/m²
-dfcStandard = grad["skopeStandard"]' * 1e-3; # mT, mT/m, mT/m² => T, T/m, T/m²
-ntStitched  = grad["ntStitched"]
-ntStandard  = grad["ntStandard"]
+dfc_data = MAT.matread(dfc_file);
+Δt = dfc_data["dt"];
+nGradSample, nTerm = size(dfc_data["skopeStitched"])              
+dfcStitched = dfc_data["skopeStitched"]' * 1e-3; # mT, mT/m, mT/m² => T, T/m, T/m²
+dfcStandard = dfc_data["skopeStandard"]' * 1e-3; # mT, mT/m, mT/m² => T, T/m, T/m²
+ntStitched  = dfc_data["ntStitched"]
+ntStandard  = dfc_data["ntStandard"]
 t = Δt * (nGradSample-1);
 GR_dfcStitched = reshape([KomaMRIBase.Grad(dfcStitched[idx,:], t, Δt/2, Δt/2, 0) for idx=1:9], :, 1);
 GR_dfcStandard = reshape([KomaMRIBase.Grad(dfcStandard[idx,:], t, Δt/2, Δt/2, 0) for idx=1:9], :, 1);
@@ -51,8 +51,8 @@ hoseqStitched = HO_Sequence(seq);                       # hoseq, defined in High
 hoseqStandard = HO_Sequence(seq);                       # hoseq, defined in HighOrderMRI.jl
 hoseqStitched.GR_dfc[2:4, :] = hoseqStitched.SEQ.GR;    # copy the 1st-order nominal gradient data from the seq object to the hoseq object
 hoseqStandard.GR_dfc[2:4, :] = hoseqStandard.SEQ.GR;    # copy the 1st-order nominal gradient data from the seq object to the hoseq object
-hoseqStitched.GR_dfc[:,5] = GR_dfcStitched;             # "5" is the index of the readout block in the spiral sequence
-hoseqStandard.GR_dfc[:,5] = GR_dfcStandard;             # "5" is the index of the readout block in the spiral sequence
+hoseqStitched.GR_dfc[1:9,5] = GR_dfcStitched;             # "5" is the index of the readout block in the spiral sequence
+hoseqStandard.GR_dfc[1:9,5] = GR_dfcStandard;             # "5" is the index of the readout block in the spiral sequence
 plt_seq(hoseqStitched)
 plt_seq(hoseqStandard)
 
@@ -71,7 +71,7 @@ B0 = true     # turn on B0
 T2 = false    # turn off T2
 ss = 5        # set phantom down-sample factor to 5
 location = 0.8
-BHO = BlochHighOrder("111", true, true)                          # ["111"] turn on all order terms of dynamic field change. turn on Δw_excitation, Δw_precession
+BHO = BlochHighOrder("1110", true, true)                          # ["1110"] turn on up to second order terms of dynamic field change. turn on Δw_excitation, Δw_precession
 phantom = BrainPhantom(prefix="brain3D724", x=0.2, y=0.2, z=0.2) # setting for Phantom: decide which phantom file to use, loading phantom from src/phantom/mat folder
 # settings for phantom
 csm_type  = :fan;      # all values are 1.0 + 0.0im, single channel
@@ -95,6 +95,9 @@ sim_params = KomaMRICore.default_sim_params();
 sim_params["sim_method"]  = BHO;      # using "BlochHighOrder" for simulation with high-order terms
 sim_params["return_type"] = "mat";    # setting with "mat", return the signal data for all channel
 sim_params["precision"]   = "f64"   
+sim_params["gpu"]         = true;     # using GPU for simulation
+sim_params["gpu_device"]  = 0;        # set the GPU device number, if using GPU for simulation
+sim_params["Nblocks"]     = 20;       # the number of blocks for GPU simulation, set according to the GPU memory
 
 # 3. simulate
 signal    = simulate(obj, hoseqStitched, sys; sim_params);
@@ -148,14 +151,14 @@ x, y = x .- nX/2 .- 1, y .- nY/2 .- 1
 x, y = x * Δx, y * Δy; 
 gridding = Grid(nX=nX, nY=nY, nZ=nZ, Δx=Δx, Δy=Δy, Δz=Δz, x=T.(x), y=T.(y), z=T.(z));
 
-recon_terms = "111";  
-#= The string "111" is a three-digit flag that indicates whether the 0th, 1st, and 2nd order terms of 
-a measurement are used. For example, "110" means only the 0th and 1st order terms are used. =#
+recon_terms = "1110";  
+#= The string "1110" is a four-digit flag that indicates whether the 0th, 1st, 2nd, and 3rd order terms 
+of a measurement are used. For example, "1110" means that terms up to the second order are included.. =#
 nBlock = 20;   # the number is set according to the GPU memory.
 use_gpu = true;
 verbose = false;
 
-solver = "admm"; regularization = "TV"; iter = 20; λ = 1e-1;
+# solver = "admm"; regularization = "TV"; iter = 20; λ = 1e-1;
 solver = "cgnr"; regularization = "L2"; iter = 20; λ = 1e-7;
 recParams = Dict{Symbol,Any}()
 recParams[:reconSize]      = (nX, nY)
@@ -166,7 +169,7 @@ recParams[:solver]         = solver
 
 weight = SampleDensity(kspha'[2:3,:], (nX, nY));
 
-HOOp = HighOrderOp(gridding, T.(kspha[:, 1:9]'), T.(datatime); recon_terms=recon_terms, k_nominal=T.(kspha_nominal'), 
+HOOp = HighOrderOp(gridding, T.(kspha'), T.(datatime); recon_terms=recon_terms, k_nominal=T.(kspha_nominal'), 
                         nBlock=nBlock, fieldmap=T.(b0), use_gpu=use_gpu, verbose=verbose);
 
 # recon with stitched measurement, with density weighting, with ΔB₀
@@ -175,18 +178,18 @@ plt_image(abs.(x1); vmaxp=99.9, title="Stitched, w/  ΔB₀")
 
 
 # recon with stitched measurement, with density weighting, without ΔB₀
-HOOp = HighOrderOp(gridding, T.(kspha[:, 1:9]'), T.(datatime); recon_terms=recon_terms, k_nominal=T.(kspha_nominal'), 
+HOOp = HighOrderOp(gridding, T.(kspha'), T.(datatime); recon_terms=recon_terms, k_nominal=T.(kspha_nominal'), 
                         nBlock=nBlock, fieldmap=T.(b0.*0), use_gpu=use_gpu, verbose=verbose);
 @time x = recon_HOOp(HOOp, Complex{T}.(data), Complex{T}.(weight), recParams);
 plt_image(abs.(x); vmaxp=99.9, title="Stitched, w/o ΔB₀")
 
 
 # recon with nominal trajectory, with density weighting, with ΔB₀
-recon_terms = "000";  # "000" indicates that no measured field dynamics are used, only nominal kspace trajectory is used.
-HOOp = HighOrderOp(gridding, T.(kspha[:, 1:9]'), T.(datatime); recon_terms=recon_terms, k_nominal=T.(kspha_nominal'), 
+recon_terms = "0000";  # "0000" indicates that no measured field dynamics are used, only nominal kspace trajectory is used.
+HOOp = HighOrderOp(gridding, T.(kspha'), T.(datatime); recon_terms=recon_terms, k_nominal=T.(kspha_nominal'), 
                         nBlock=nBlock, fieldmap=T.(b0), use_gpu=use_gpu, verbose=verbose);
 @time x = recon_HOOp(HOOp, Complex{T}.(data), Complex{T}.(weight), recParams);
 plt_image(abs.(x); vmaxp=99.9, title="Nominal, w/  ΔB₀")
 
-# you can try different recons like: "011", "101", "110"...
+# you can try different recons like: "0111", "1011"...
 # try replace 'kspha_stitched' with 'kspha_standard' to see the difference between stitching and standard methods.

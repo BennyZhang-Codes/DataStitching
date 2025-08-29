@@ -15,47 +15,75 @@ seq_file = "$(path)/7T_1p0_200_r4.seq"   # *.seq file is the pulseq's sequence f
 # FOV: 200 mm x 200 mm
 # readout duration: ~29 ms
 
-dfc_file = "$(path)/7T_1p0_200_r4.mat"   # *.mat file contains the dynamic field data from both stitching method and the standard method.
-# The dynamic field data is stored in the *.mat file with the following keys:
-#= 
-"dt"                     [s], time interval between two time points.
-"delayStandard"          [s], inital delay time in the field monitoring.
-"delayStitched"          [s], inital delay time in the field monitoring.
-"nSampleAllSegStandard"  number of time points of the standard method.
-"nSampleAllSegStitched"  number of time points of the stitched method. A vector, one element for each segment.
-"bfieldStandard"         [mT], fields of dynamic measurment (up to 2nd order) of the standard method.
-"bfieldStitched"         [mT], fields of dynamic measurment (up to 2nd order) of the stitched method.
-"ksphaStandard"          [rad], coefficients of dynamic measurment (up to 2nd order) of the standard method.
-"ksphaStitched"          [rad], coefficients of dynamic measurment (up to 2nd order) of the stitched method.
-=#
+dfc_file = "$(path)/7T_1p0_200_r4.mat"   # *.mat file contains the nominal and measured trajectories.
 
+dfc_data = MAT.matread(dfc_file);
+dt_Stitched   = dfc_data["dt_Stitched"];
+dt_Standard   = dfc_data["dt_Standard"];
+dt_Nominal    = dfc_data["dt_Nominal"];
 
-# 1. read the *.seq file and reverse the sign of the gradient (axis x)
+ksphaStitched = -dfc_data["ksphaStitched"];   # coefficients of dynamic measurment (up to 3rd order) of the data stitching method
+ksphaStandard = -dfc_data["ksphaStandard"];   # coefficients of dynamic measurment (up to 3rd order) of the standard method
+ksphaNominal  = -dfc_data["ksphaNominal"];    # coefficients of nominal trajectory (1st order)
+
+startStitched = dfc_data["startStitched"];
+startStandard = dfc_data["startStandard"];
+startNominal  = dfc_data["startNominal"];
+
+tauStitched   = dfc_data["tauStitched"];      # synchronization delay
+tauStandard   = dfc_data["tauStandard"];
+tauNominal    = dfc_data["tauNominal"];
+
+dt_adc        = dfc_data["dt_adc"];
+datatime      = vec(dfc_data["datatime"]);
+
+ksphaNominal  = InterpTrajTime(ksphaNominal , dt_Nominal , startNominal  + tauNominal  * dt_adc, datatime);
+ksphaStandard = InterpTrajTime(ksphaStandard, dt_Standard, startStandard + tauStandard * dt_adc, datatime);
+ksphaStitched = InterpTrajTime(ksphaStitched, dt_Stitched, startStitched + tauStitched * dt_adc, datatime);
+
+bfieldNominal  = traj2grad(ksphaNominal , dt_adc; dim=1) / γ * 1e3; # convert to mT/m
+bfieldStandard = traj2grad(ksphaStandard, dt_adc; dim=1) / γ * 1e3; 
+bfieldStitched = traj2grad(ksphaStitched, dt_adc; dim=1) / γ * 1e3;
+
+# 1. read the *.seq file
 seq = read_seq(seq_file)[3:end-3]; # read_seq function from KomaMRI.jl, return a struct of Sequence
-seq.GR[1,:] = -seq.GR[1,:];        # reverse the sign of the gradient (axis x)
 HighOrderMRI.KomaMRI.plot_seq(seq) # plot_seq function from KomaMRI.jl, plot the Sequence
 
+nSample = size(datatime, 1);    
+nTerm       = 16;
 
-grad = MAT.matread(dfc_file);
-Δt = grad["dt"];
-nGradSample, nTerm = size(grad["bfieldStitched"])              
-dfcStitched = grad["bfieldStitched"]' * 1e-3; # mT, mT/m, mT/m² => T, T/m, T/m²
-dfcStandard = grad["bfieldStandard"]' * 1e-3; # mT, mT/m, mT/m² => T, T/m, T/m²
-ntStitched  = grad["nSampleAllSegStitched"]
-ntStandard  = grad["nSampleAllSegStandard"]
-t = Δt * (nGradSample-1);
-GR_dfcStitched = reshape([KomaMRIBase.Grad(dfcStitched[idx,:], t, Δt/2, Δt/2, 0) for idx=1:9], :, 1);
-GR_dfcStandard = reshape([KomaMRIBase.Grad(dfcStandard[idx,:], t, Δt/2, Δt/2, 0) for idx=1:9], :, 1);
+dfcNominal  = bfieldNominal'  * 1e-3; # mT => T
+dfcStandard = bfieldStandard' * 1e-3; 
+dfcStitched = bfieldStitched' * 1e-3; 
 
+t = dt_adc * (nSample-1);
 
-hoseqStitched = HO_Sequence(seq);                       # hoseq, defined in HighOrderMRI.jl
-hoseqStandard = HO_Sequence(seq);                       # hoseq, defined in HighOrderMRI.jl
-hoseqStitched.GR_dfc[2:4, :] = hoseqStitched.SEQ.GR;    # copy the 1st-order nominal gradient data from the seq object to the hoseq object
-hoseqStandard.GR_dfc[2:4, :] = hoseqStandard.SEQ.GR;    # copy the 1st-order nominal gradient data from the seq object to the hoseq object
-hoseqStitched.GR_dfc[:,5] = GR_dfcStitched;             # "5" is the index of the readout block in the spiral sequence
-hoseqStandard.GR_dfc[:,5] = GR_dfcStandard;             # "5" is the index of the readout block in the spiral sequence
-plt_seq(hoseqStitched)
+GR_dfcNominal  = reshape([KomaMRIBase.Grad(dfcNominal[idx,:] , t, dt_adc/2, dt_adc/2, 0) for idx=1:9], :, 1);
+GR_dfcStandard = reshape([KomaMRIBase.Grad(dfcStandard[idx,:], t, dt_adc/2, dt_adc/2, 0) for idx=1:nTerm], :, 1);
+GR_dfcStitched = reshape([KomaMRIBase.Grad(dfcStitched[idx,:], t, dt_adc/2, dt_adc/2, 0) for idx=1:nTerm], :, 1);
+
+hoseqNominal  = HO_Sequence(seq);   # hoseq
+hoseqStandard = HO_Sequence(seq);   
+hoseqStitched = HO_Sequence(seq);   
+
+# copy the 1st-order nominal gradient data from the seq object to the hoseq object
+hoseqNominal.GR_dfc[2:4, :]  = hoseqNominal.SEQ.GR;     
+hoseqStandard.GR_dfc[2:4, :] = hoseqStandard.SEQ.GR;    
+hoseqStitched.GR_dfc[2:4, :] = hoseqStitched.SEQ.GR;    
+
+# "5" is the index of the readout block in the spiral sequence
+hoseqNominal.GR_dfc[1:9,5]  = GR_dfcNominal;   
+hoseqStandard.GR_dfc[:,5] = GR_dfcStandard;             
+hoseqStitched.GR_dfc[:,5] = GR_dfcStitched;            
+
+plt_seq(hoseqNominal)
 plt_seq(hoseqStandard)
+plt_seq(hoseqStitched)
+
+# kspha used for recon, extracted from the hoseq object
+_, _, _, kspha_nominal  = get_kspace(hoseqNominal;  Δt=1);
+_, _, _, kspha_standard = get_kspace(hoseqStandard; Δt=1);
+_, _, _, kspha_stitched = get_kspace(hoseqStitched; Δt=1);
 
 
 #########################################################################################
@@ -72,7 +100,7 @@ B0 = true     # turn on B0
 T2 = false    # turn off T2
 ss = 1        # set phantom down-sample factor to 5
 location = 0.65
-BHO = BlochHighOrder("111", true, true)                          # ["111"] turn on all order terms of dynamic field change. turn on Δw_excitation, Δw_precession
+BHO = BlochHighOrder("1111", true, true)                       # ["1111"] turn on all order terms of dynamic field change. turn on Δw_excitation, Δw_precession
 phantom = BrainPhantom(prefix="brain3D", x=0.2, y=0.2, z=10.0) # setting for Phantom: decide which phantom file to use, loading phantom from src/phantom/mat folder                                
 # setting the coil sensitivity used in the simulation
 csm_type  = :real_32cha;      # a simulated birdcage coil-sensitivity
@@ -97,8 +125,9 @@ sim_params = KomaMRICore.default_sim_params();
 sim_params["sim_method"]  = BHO;      # using "BlochHighOrder" for simulation with high-order terms
 sim_params["return_type"] = "mat";    # setting with "mat", return the signal data for all channel
 sim_params["precision"]   = "f64";
-sim_params["Nblocks"]     = 1000;
-sim_params["gpu_device"]  = 0;    
+sim_params["gpu"]         = true;     # using GPU for simulation
+sim_params["gpu_device"]  = 0;        # set the GPU device number, if using GPU for simulation
+sim_params["Nblocks"]     = 2000;     # the number of blocks for GPU simulation, set according to the GPU memory
 
 # 3. simulate
 signal    = simulate(obj, hoseqStitched, sys; sim_params);          
@@ -140,24 +169,17 @@ x_ref   = brain_phantom2D_reference(phantom, :ρ, (T.(nX), T.(nY)), (T.(Δx*1e3)
 x_ref   = rotl90(x_ref);
 fig_ref = plt_image(x_ref)
 
-# headmask     = brain_phantom2D_reference(phantom, :headmask, (T.(nX), T.(nY)), (T.(Δx*1e3), T.(Δy*1e3)); location=location, ss=ss);
-# headmask     = rotl90(headmask);
-# fig_headmask = plt_image(headmask)
-
 #############################################################################
 # HighOrderOp, the extended signal model for high-order terms
 #############################################################################
+nSample, nCha = size(data);
 # get the k coefficients for the nominal (x,y,z) and the stitching measurement (up to second order)
-_, kspha_nominal, _, kspha_stitched = get_kspace(hoseqStitched; Δt=1);
-_,             _, _, kspha_standard = get_kspace(hoseqStandard; Δt=1);
 datatime = KomaMRIBase.get_adc_sampling_times(hoseqStitched.SEQ);
 # Add a negative sign, as the phase term used in the model is positive.
 kspha_stitched = -kspha_stitched;  
 kspha_standard = -kspha_standard;
 kspha_nominal  = -kspha_nominal;
 b0             = -b0map;            
-
-nSample, nCha = size(data);
 
 # For HighOrderOp
 x, y = 1:nX, 1:nY;
@@ -166,7 +188,7 @@ x, y = x .- nX/2 .- 1, y .- nY/2 .- 1
 x, y = x * Δx, y * Δy; 
 gridding = Grid(nX=nX, nY=nY, nZ=nZ, Δx=Δx, Δy=Δy, Δz=Δz, x=T.(x), y=T.(y), z=T.(z));
 
-recon_terms = "111";  
+recon_terms = "1111";  
 #= The string "111" is a three-digit flag that indicates whether the 0th, 1st, and 2nd order terms of 
 a measurement are used. For example, "110" means only the 0th and 1st order terms are used. =#
 nBlock  = 20;   # the number is set according to the GPU memory.
@@ -185,7 +207,7 @@ recParams[:solverInfo] = SolverInfo(vec(Complex{T}.(x_ref)), store_solutions=tru
 
 weight = SampleDensity(kspha_stitched'[2:3,:], (nX, nY));
 
-HOOp = HighOrderOp(gridding, T.(kspha_stitched'), T.(datatime); recon_terms=recon_terms, k_nominal=T.(kspha_nominal'), 
+HOOp = HighOrderOp(gridding, T.(kspha_stitched'), T.(datatime); recon_terms=recon_terms, #k_nominal=kspha_nominal', 
                         nBlock=nBlock, fieldmap=T.(b0), csm=Complex{T}.(csm), use_gpu=use_gpu, verbose=verbose);
 
 
@@ -201,11 +223,9 @@ iter = 5;
 plt_image(reshape(abs.(recParams[:solverInfo].x_iter[iter+1]), nX, nY); vmaxp=99.9, title="iter $(iter)")
 
 
-
-# recon with Nominal trajectory
-recon_terms = "000";
-HOOp = HighOrderOp(gridding, T.(kspha_stitched'), T.(datatime); recon_terms=recon_terms, k_nominal=T.(kspha_nominal'), 
+# recon with Nominal trajectory, with density weighting, with ΔB₀
+recon_terms = "0100";
+HOOp = HighOrderOp(gridding, T.(kspha_nominal'), T.(datatime); recon_terms=recon_terms, 
                         nBlock=nBlock, fieldmap=T.(b0), csm=Complex{T}.(csm), use_gpu=use_gpu, verbose=verbose);
-# recon with stitched measurement, with density weighting, with ΔB₀
 @time x = recon_HOOp(HOOp, Complex{T}.(data), Complex{T}.(weight), recParams);
 plt_image(abs.(x); vmaxp=99.9, title="Nominal")
