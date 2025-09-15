@@ -65,3 +65,25 @@ function load_csm(
     end
     return csm
 end
+
+
+function load_csm(
+    type::Symbol                    , 
+    nX::Int64                       , 
+    nY::Int64                       ,
+    nZ::Int64                       ,
+    nCoil::Int64                    ;
+    nRow                  = nothing ,
+    nCol                  = nothing ,
+    nBlock                = 3       ,
+    overlap::Real         = 1       ,  # overlap between fan coils, for csm_Fan_binary
+    relative_radius::Real = 1.5     ,  # relative radius of the coil, for csm_Birdcage
+    use_gpu               = false   ,
+    verbose::Bool         = false
+)
+    @assert type in csm_list "type must be one of the following: :real_32cha"
+    if type == :real_32cha
+        csm = csm_Real_32cha(nX, nY, nZ; verbose=verbose)
+    end
+    return csm
+end

@@ -40,6 +40,7 @@ import Functors: @functor
 
 include("utils/utils.jl")
 include("datatypes/datatypes.jl")
+include("grid/Grid.jl")             # grid for simulation and reconstruction
 include("phantom/phantom.jl")
 include("simulation/simulation.jl")
 include("mrd/mrd.jl")

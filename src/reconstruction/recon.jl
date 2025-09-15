@@ -1,7 +1,4 @@
 
-# grid for reconstruction
-include("Grid/Grid.jl")
-
 # spatial basis functions
 include("SphericalHarmonics/SphericalHarmonics.jl")
 

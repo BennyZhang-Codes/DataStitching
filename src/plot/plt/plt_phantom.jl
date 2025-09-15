@@ -37,6 +37,7 @@ julia> fig = plt_phantom(phantom, :T1)
 function plt_phantom(
     ph                 :: HO_Phantom,
     key                :: Symbol    ;
+	coil_idx           = 1          ,
     t0                 = 0          ,
     view_2d            = false      ,
     xlabel             = "x [cm]"   ,
@@ -56,9 +57,22 @@ function plt_phantom(
     )
     colors = PyPlot.matplotlib.colors
     ListedColormap = colors.ListedColormap
-
-	cmin_key = minimum(getproperty(ph,key))
-	cmax_key = maximum(getproperty(ph,key))
+    if key == :csm_mag
+        cmin_key = minimum(abs.(ph.csm[:,coil_idx]))
+        cmax_key = maximum(abs.(ph.csm[:,coil_idx]))
+    elseif key == :csm_pha
+        cmin_key = minimum(angle.(ph.csm[:,coil_idx]))
+        cmax_key = maximum(angle.(ph.csm[:,coil_idx]))
+    elseif key == :csm_real
+        cmin_key = minimum(real.(ph.csm[:,coil_idx]))
+        cmax_key = maximum(real.(ph.csm[:,coil_idx]))
+    elseif key == :csm_imag
+        cmin_key = minimum(imag.(ph.csm[:,coil_idx]))
+        cmax_key = maximum(imag.(ph.csm[:,coil_idx]))
+    else
+        cmin_key = minimum(getproperty(ph,key))
+        cmax_key = maximum(getproperty(ph,key))
+    end
 	if key == :T1 || key == :T2 || key == :T2s
 		cmin_key = 0
 		factor = 1e3
@@ -82,6 +96,10 @@ function plt_phantom(
 		factor = 1/(2π)
 		unit = " Hz"
 		cmap="gray"
+    elseif key == :csm_mag || key == :csm_pha || key == :csm_real || key == :csm_imag
+        factor = 1
+        unit=""
+        cmap="gray"
 	else
 		factor = 1
 		cmin_key = 0
@@ -94,6 +112,18 @@ function plt_phantom(
     xf =  maximum(abs.([ph.x ph.y ph.z]))*1e2
 
 	fig = plt.figure(figsize=(width/2.53999863, height/2.53999863),facecolor=color_facecolor)
+
+    if key == :csm_mag
+        c = abs.(ph.csm[:,coil_idx])*factor;
+    elseif key == :csm_pha
+        c = angle.(ph.csm[:,coil_idx])*factor;
+    elseif key == :csm_real
+        c = real.(ph.csm[:,coil_idx])*factor;
+    elseif key == :csm_imag
+        c = imag.(ph.csm[:,coil_idx])*factor;
+    else
+        c = getproperty(ph, key)*factor;
+    end
 
     if view_2d
         ax = fig.add_subplot(1, 1, 1)
@@ -112,7 +142,7 @@ function plt_phantom(
         sc = ax.scatter(
             (ph.x .+ ph.ux(ph.x,ph.y,ph.z,t0*1e-3))*1e2,
             (ph.y .+ ph.uy(ph.x,ph.y,ph.z,t0*1e-3))*1e2,
-            marker=".", s=markersize, c=getproperty(ph,key)*factor,  
+            marker=".", s=markersize, c=c,  
             cmap=cmap, vmin=cmin_key, vmax=cmax_key
         )
         cb = fig.colorbar(sc, ax=ax, shrink=0.6)
@@ -148,7 +178,7 @@ function plt_phantom(
             (ph.x .+ ph.ux(ph.x,ph.y,ph.z,t0*1e-3))*1e2,
             (ph.y .+ ph.uy(ph.x,ph.y,ph.z,t0*1e-3))*1e2,
             (ph.z .+ ph.uz(ph.x,ph.y,ph.z,t0*1e-3))*1e2, 
-            marker=".", s=markersize, c=getproperty(ph,key)*factor,  
+            marker=".", s=markersize, c=c,  
             cmap=cmap, vmin=cmin_key, vmax=cmax_key
         )
         cb = fig.colorbar(sc, ax=ax, shrink=0.6)

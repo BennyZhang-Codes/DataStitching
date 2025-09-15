@@ -16,6 +16,9 @@ include("fieldmap.jl")
 include("conversion.jl")
 export grad2traj, traj2grad
 
+include("mosaic.jl")
+export mosaic
+
 """
     factor_a, factor_b = get_factors(num::Int64)
 

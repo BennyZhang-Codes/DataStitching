@@ -35,3 +35,6 @@ export plt_phantom
 
 include("plt_magnetization.jl")
 export plt_magnetization
+
+include("plt_grid.jl")
+export plt_grid
