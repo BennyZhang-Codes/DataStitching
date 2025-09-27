@@ -1,54 +1,43 @@
+b0_list = [
+    :real,    
+]
+export b0_list
 
 """
-    B0map = load_B0map(B0_file::Symbol; axis="axial", ss=1, location=0.5)
+    b0map = load_b0map(type::Symbol, nX::Int64, nY::Int64, nZ::Int64; axis="axial", ss=4, location=[160,200], verbose=false)
 
 # Description
-    Loads the B0map from the BrainPhantom package.
+    Loads the B0 map of the phantom and resizes it according to the specified dimensions `(nX, nY, nZ)`.  
+    You can specify the orientation (`axis`), undersampling factor (`ss`), and slice selection (`location`).  
 
 # Arguments
-- `B0_file::Symbol`: The name of the B0map file to load. Must be one of `:B0` or `:B0_medianfiltered_r4`.
-- `axis::String`: The axis along which to extract the B0map. Must be one of `"axial"`, `"coronal"`, or `"sagittal"`.
-- `ss::Int`: The subsampling factor.
-- `location::Float64`: The location along the specified axis at which to extract the B0map. Must be between 0 and 1.
+- `type::Symbol`: type of B0 map to load
+- `nX::Int64`: number of voxels of the phantom in the x-direction  
+- `nY::Int64`: number of voxels of the phantom in the y-direction  
+- `nZ::Int64`: number of voxels of the phantom in the z-direction 
+- `axis::String="axial"`: orientation of slices, must be one of `"axial"`, `"coronal"`, `"sagittal"`  
+- `ss::Int64=4`: undersampling factor for spatial dimensions  
+- `location::Vector{Int64}=[160,200]`:  
+    - if length is 1 → index of a single slice  
+    - if length is 2 → `[start, end]` slice range  
+- `verbose::Bool=false`: whether to print progress messages  
 
 # Returns
-- `B0map::Array{Float64, 2}`: The B0map.
+- `b0map::Array{Float64, 2}`: The b0map.
 """
-function load_B0map(
-    B0_file::Symbol; 
-    axis::String = "axial",          # orientation
-    ss::Int64    = 4,                   # undersample
-    start_end    = [160, 200],        # only used for 3D phantom
-    location::Float64 = 0.5,         # relative location in the slice direction
-    )
-    @assert B0_file in [:B0, :B0_3D, :B0_medianfiltered_r4] "B0_file must be one of the following: :B0, :B0_3D, :B0_medianfiltered_r4"
-    @assert axis in ["axial", "coronal", "sagittal"] "axis must be one of the following: axial, coronal, sagittal"
-    @assert 0 <= location <= 1 "location must be between 0 and 1"
-    if B0_file == :B0_medianfiltered_r4
-        obj = BrainPhantom("brain3D_B0_medianfiltered_r4"; x=1, y=1, z=1)
-    elseif B0_file == :B0
-        obj = BrainPhantom("brain3D_B0"; x=1, y=1, z=1)
-    elseif B0_file == :B0_3D
-        obj = BrainPhantom("brain3D_B0"; x=2, y=2, z=2)
+function load_b0map(
+    type     :: Symbol                      , 
+    nX       :: Int64                       , 
+    nY       :: Int64                       ,
+    nZ       :: Int64                       ;
+    axis     :: String         = "axial"    ,  # orientation
+    ss       :: Int64          = 4          ,  # undersample
+    location :: Vector{Int64}  = [160, 200] ,  # [slice] for one slice, [start, end] for multiple slices
+    verbose  :: Bool           = false      ,
+)
+    @assert type in b0_list "type must be one of the following: :real"
+    if type == :real
+        b0 = b0_real(nX, nY, nZ; axis=axis, ss=ss, location=location, verbose=verbose)
     end
-
-    B0data = MAT.matread(obj.matpath)["data"];
-
-    M, N, Z = size(B0data)
-    if Z == 1 # 2D phantom
-        if axis == "axial"
-            loc   = Int32(ceil(Z*location))
-            B0map = B0data[1:ss:end,1:ss:end, loc]
-        elseif axis == "coronal"
-            loc   = Int32(ceil(M*location))
-            B0map = B0data[loc, 1:ss:end,1:ss:end]
-        elseif axis == "sagittal"
-            loc   = Int32(ceil(N*location))
-            B0map = B0data[1:ss:end, loc,1:ss:end]
-        end
-    else # 3D phantom
-        loc = Int32(0)
-        B0map = B0data[1:ss:end, 1:ss:end, start_end[1]:ss:start_end[2]]
-    end
-	return B0map
+    return b0
 end

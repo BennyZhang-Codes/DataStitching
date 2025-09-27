@@ -1,2 +1,5 @@
-include("load_B0map.jl")
-export load_B0map
+include("b0_real.jl")
+export b0_real
+
+include("load_b0map.jl")
+export load_b0map

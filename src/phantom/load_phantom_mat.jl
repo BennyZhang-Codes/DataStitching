@@ -1,28 +1,44 @@
 function load_phantom_mat(
-    objbrain::BrainPhantom;        # PhantomType
-    axis::String="axial",          # orientation
-    ss::Int64=4,                   # undersample
-    start_end = [160, 200],        # only used for 3D phantom
-    location::Float64=0.5,         # relative location in the slice direction
+    objbrain  :: BrainPhantom                ;  # PhantomType
+    axis      :: String         = "axial"    ,  # orientation
+    ss        :: Int64          = 4          ,  # undersample
+    location  :: Vector{Int64}  = [160, 200] ,  # [slice] for one slice, [start, end] for multiple slices
 )
-    @assert 0 <= location <= 1 "location must be between 0 and 1"
     @assert axis in ["axial", "coronal", "sagittal"] "axis must be one of the following: axial, coronal, sagittal"
+    @assert length(location) in (1,2) "location must have length 1 (single slice) or 2 (slice range)"
+
     data = MAT.matread(objbrain.matpath)["data"]
-    M, N, Z = size(data)
-    if Z == 1 # 2D phantom
+
+    nY, nX, nZ = size(data)
+    size_phantom = (nX, nY, nZ)
+
+    if length(location) == 1 # 2D phantom
+        idx = location[1]
         if axis == "axial"
-            loc   = Int32(ceil(Z*location))
-            class = data[1:ss:end,1:ss:end, loc]
+            @assert 0 < idx <= nZ "slice index out of range"
+            class = data[1:ss:end, 1:ss:end, idx]
         elseif axis == "coronal"
-            loc   = Int32(ceil(M*location))
-            class = data[loc, 1:ss:end,1:ss:end]   
+            @assert 0 < idx <= nY "slice index out of range"
+            class = data[idx, 1:ss:end, 1:ss:end]   
         elseif axis == "sagittal"
-            loc   = Int32(ceil(N*location))
-            class = data[1:ss:end, loc,1:ss:end]
+            @assert 0 < idx <= nX "slice index out of range"
+            class = data[1:ss:end, idx, 1:ss:end]
         end
-    else # 3D phantom
-        loc = Int32(0)
-        class = data[1:ss:end, 1:ss:end, start_end[1]:ss:start_end[2]]
+     elseif length(location) == 2 # 3D phantom
+        start_idx, end_idx = location
+        @assert start_idx <= end_idx "start index must be <= end index"
+        if axis == "axial"
+            @assert 0 < start_idx <= nZ && 0 < end_idx <= nZ "slice range out of bounds"
+            class = data[1:ss:end, 1:ss:end, start_idx:ss:end_idx]
+        elseif axis == "coronal"
+            @assert 0 < start_idx <= nY && 0 < end_idx <= nY "slice range out of bounds"
+            class = data[start_idx:ss:end_idx, 1:ss:end, 1:ss:end]   
+        elseif axis == "sagittal"
+            @assert 0 < start_idx <= nX && 0 < end_idx <= nX "slice range out of bounds"
+            class = data[1:ss:end, start_idx:ss:end_idx, 1:ss:end]
+        end
+    else
+        throw(ArgumentError("location must have length 1 (single slice) or 2 (slice range)"))
     end
-    return class, loc
+    return class, size_phantom
 end
