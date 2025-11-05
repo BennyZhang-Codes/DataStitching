@@ -12,7 +12,7 @@ For MRI image reconstruction with field dynamics, we have developed a module `Hi
 
 If you use the toolbox, please consider citing the following paper:
 
-Jinyuan Zhang, Zihao Zhang*, Zhentao Zuo, Rong Xue, Yan Zhuo, Cameron Cushing, Alexander Bratch, Edward Auerbach, Andrea Grant, Jing An, Kamil Ugurbil, Xiaoping Wu. "Data stitching for dynamic field monitoring with NMR probes", MRM, submitted.
+Jinyuan Zhang, Zihao Zhang*, Zhentao Zuo, Rong Xue, Yan Zhuo, Cameron Cushing, Alexander Bratch, Edward Auerbach, Andrea Grant, Jing An, Kamil Ugurbil, Xiaoping Wu. "Data stitching for dynamic field monitoring with NMR probes", MRM 2025. In press.
 
 <p align="center">
   <a><img src="docs/src/README/0p5.jpg"/></a>
